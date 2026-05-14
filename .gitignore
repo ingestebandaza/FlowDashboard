@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.dist-info/
+env/
+venv/
+*.log
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Archivos de configuración local (no subir)
+.supabase_config.json
+.env
