@@ -1,0 +1,5045 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlowLogin</title>
+  <script src="./wsapi.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1220;
+      --panel: #111a2e;
+      --panel-soft: #0f1a30;
+      --ink: #e7eefc;
+      --muted: #9fb0cc;
+      --line: #23314d;
+      --brand: #4f8dff;
+      --brand-dark: #3a73d9;
+      --accent: #22b86f;
+      --danger: #d45862;
+      --shadow: 0 16px 40px rgba(2, 8, 20, 0.45);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(79, 141, 255, 0.16), transparent 34rem),
+        linear-gradient(135deg, #0b1325 0%, var(--bg) 48%, #0a1120 100%);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 12px));
+      margin: 0 auto;
+      padding: 0;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 380px;
+      height: 180px;
+    }
+
+    .brand-mark img {
+      display: block;
+      width: 380px;
+      max-width: none;
+      max-height: none;
+    }
+
+    .icon {
+      display: inline-grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      color: #9fd0ff;
+      background: linear-gradient(135deg, rgba(79, 141, 255, 0.2), rgba(139, 92, 246, 0.16));
+    }
+
+    .icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.45rem, 3vw, 2.2rem);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 38px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink);
+      background: rgba(15, 26, 48, 0.75);
+      white-space: nowrap;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #a9b4c4;
+    }
+
+    .status-pill.is-online {
+      border-color: rgba(34, 184, 111, 0.48);
+      background:
+        radial-gradient(circle at left, rgba(34, 184, 111, 0.22), transparent 62%),
+        rgba(15, 26, 48, 0.82);
+      box-shadow: 0 0 0 1px rgba(34, 184, 111, 0.12), 0 12px 28px rgba(34, 184, 111, 0.14);
+      animation: connectedGlow 2.8s ease-in-out infinite;
+    }
+
+    .status-pill.is-online .dot {
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(24, 160, 88, 0.13), 0 0 16px rgba(34, 184, 111, 0.68);
+      animation: connectedDot 1.6s ease-in-out infinite;
+    }
+
+    .status-pill.is-online .js-status-text {
+      animation: connectedText 2.8s ease-in-out infinite;
+    }
+
+    @keyframes connectedGlow {
+      0%,
+      100% {
+        box-shadow: 0 0 0 1px rgba(34, 184, 111, 0.12), 0 12px 28px rgba(34, 184, 111, 0.12);
+      }
+
+      50% {
+        box-shadow: 0 0 0 1px rgba(34, 184, 111, 0.3), 0 14px 34px rgba(34, 184, 111, 0.24);
+      }
+    }
+
+    @keyframes connectedDot {
+      0%,
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 4px rgba(24, 160, 88, 0.12), 0 0 12px rgba(34, 184, 111, 0.58);
+      }
+
+      50% {
+        transform: scale(1.14);
+        box-shadow: 0 0 0 8px rgba(24, 160, 88, 0.08), 0 0 22px rgba(34, 184, 111, 0.78);
+      }
+    }
+
+    @keyframes connectedText {
+      0%,
+      100% {
+        color: var(--ink);
+      }
+
+      50% {
+        color: #c8ffe4;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .status-pill.is-online,
+      .status-pill.is-online .dot,
+      .status-pill.is-online .js-status-text,
+      .category-btn.is-running,
+      .flow-run-btn.is-running,
+      .flow-run-btn.is-running svg {
+        animation: none;
+      }
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .left-column,
+    .right-column {
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      border: 1px solid rgba(79, 141, 255, 0.16);
+      border-radius: 18px;
+      background:
+        linear-gradient(145deg, rgba(24, 38, 68, 0.96), rgba(11, 20, 39, 0.94)),
+        radial-gradient(circle at top right, rgba(34, 184, 111, 0.14), transparent 18rem);
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+      backdrop-filter: blur(14px);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid rgba(79, 141, 255, 0.14);
+      background: linear-gradient(90deg, rgba(79, 141, 255, 0.14), rgba(34, 184, 111, 0.08));
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .panel-header-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-title-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .panel-title-main {
+      line-height: 1.12;
+    }
+
+    .selected-devices-note {
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 600;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .device-panel .panel-header {
+      gap: 8px;
+      padding: 12px 12px;
+    }
+
+    .device-panel .panel-title {
+      gap: 7px;
+      min-width: 0;
+      font-size: 0.92rem;
+    }
+
+    .device-panel .icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+    }
+
+    .device-panel .icon svg {
+      width: 19px;
+      height: 19px;
+    }
+
+    .device-header-actions {
+      flex: 0 0 auto;
+      gap: 5px;
+    }
+
+    .device-header-actions .counter {
+      min-width: 26px;
+      padding: 3px 7px;
+      font-size: 0.78rem;
+    }
+
+    .collapse-btn {
+      display: inline-grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 11px;
+      color: #9fd0ff;
+      background: linear-gradient(135deg, rgba(79, 141, 255, 0.2), rgba(139, 92, 246, 0.16));
+      cursor: pointer;
+      transition: transform 0.16s ease, background 0.16s ease;
+    }
+
+    .collapse-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.16s ease;
+    }
+
+    .collapse-btn:hover {
+      background: linear-gradient(135deg, rgba(79, 141, 255, 0.34), rgba(139, 92, 246, 0.26));
+      transform: translateY(-1px);
+    }
+
+    .counter {
+      min-width: 30px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      color: #dce8ff;
+      background: linear-gradient(135deg, rgba(79, 141, 255, 0.45), rgba(34, 184, 111, 0.32));
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.86rem;
+      box-shadow: 0 10px 20px rgba(79, 141, 255, 0.16);
+    }
+
+    .panel-body {
+      padding: 18px;
+    }
+
+    .device-header-actions .btn {
+      width: 30px;
+      min-width: 30px;
+      min-height: 30px;
+      border-radius: 10px;
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.24);
+    }
+
+    .device-header-actions .btn svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .device-header-actions .js-connect-btn {
+      background: linear-gradient(135deg, #28d17c, #12b8c4);
+    }
+
+    .device-header-actions .js-refresh-btn {
+      color: #dff7ff;
+      background: linear-gradient(135deg, #2b6df6, #18b6d7);
+    }
+
+    .categories-panel {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      overflow: visible;
+      backdrop-filter: none;
+    }
+
+    .categories-panel .panel-body {
+      padding: 0;
+    }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 8px;
+      overflow: visible;
+    }
+
+    .category-btn {
+      position: relative;
+      display: inline-flex;
+      min-width: 0;
+      overflow: hidden;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 84px;
+      padding: 10px 6px 11px;
+      border: 1px solid var(--action-color, #4f8dff);
+      border-radius: 18px;
+      color: #f5f8ff;
+      background:
+        linear-gradient(145deg, rgba(16, 21, 31, 0.96), rgba(10, 15, 24, 0.98)),
+        radial-gradient(circle at top left, color-mix(in srgb, var(--action-color, #4f8dff) 16%, transparent), transparent 68%);
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--action-color, #4f8dff) 18%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .category-btn::after {
+      content: "";
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--action-color, #4f8dff);
+      opacity: 0.55;
+      box-shadow: 0 0 10px var(--action-color, #4f8dff);
+    }
+
+    .category-icon {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      color: var(--action-color, #4f8dff);
+      font-size: 1.65rem;
+      line-height: 1;
+      filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.35));
+    }
+
+    .category-icon svg {
+      width: 30px;
+      height: 30px;
+      display: block;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.1;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .category-icon.logo-fill svg {
+      fill: currentColor;
+      stroke: none;
+    }
+
+    .category-label {
+      display: block;
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.15;
+    }
+
+    .category-btn:hover,
+    .category-btn.is-selected {
+      border-color: var(--action-color, #4f8dff);
+      background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--action-color, #4f8dff) 30%, transparent), transparent 72%),
+        linear-gradient(145deg, rgba(20, 31, 50, 0.98), rgba(12, 18, 29, 0.98));
+      box-shadow: 0 16px 28px rgba(0, 0, 0, 0.28), 0 0 24px color-mix(in srgb, var(--action-color, #4f8dff) 28%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--action-color, #4f8dff) 34%, transparent);
+      transform: translateY(-1px);
+    }
+
+    .category-btn.is-selected::after {
+      opacity: 1;
+      transform: scale(1.35);
+      box-shadow: 0 0 16px var(--action-color, #4f8dff);
+    }
+
+    .category-btn.is-running {
+      animation: flowCardRunning 1.8s ease-in-out infinite;
+    }
+
+    .flow-run-grid {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 7px;
+    }
+
+    .flow-run-btn {
+      justify-self: center;
+      display: inline-grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border: 1px solid color-mix(in srgb, var(--flow-color, #4f8dff) 38%, transparent);
+      border-radius: 999px;
+      color: #ffffff;
+      background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--flow-color, #4f8dff) 28%, transparent), transparent 68%),
+        rgba(11, 17, 28, 0.96);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--flow-color, #4f8dff) 18%, transparent);
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, opacity 0.16s ease;
+    }
+
+    .flow-run-btn svg {
+      width: 13px;
+      height: 13px;
+      fill: currentColor;
+      stroke: none;
+    }
+
+    .flow-run-btn:hover:not(:disabled) {
+      transform: translateY(-1px) scale(1.06);
+      border-color: color-mix(in srgb, var(--flow-color, #4f8dff) 72%, transparent);
+      box-shadow: 0 0 18px color-mix(in srgb, var(--flow-color, #4f8dff) 26%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--flow-color, #4f8dff) 28%, transparent);
+    }
+
+    .flow-run-btn:disabled {
+      cursor: not-allowed;
+      color: #607088;
+      opacity: 0.46;
+      filter: grayscale(0.35);
+    }
+
+    .flow-run-btn.is-running {
+      opacity: 1;
+      filter: none;
+      cursor: pointer;
+      animation: flowPlayRunning 1.15s ease-in-out infinite;
+      border-color: rgba(244, 63, 94, 0.82);
+      background:
+        radial-gradient(circle at top left, rgba(244, 63, 94, 0.45), transparent 68%),
+        rgba(34, 12, 24, 0.96);
+      box-shadow: 0 0 20px rgba(244, 63, 94, 0.34), inset 0 0 0 1px rgba(244, 63, 94, 0.38);
+    }
+
+    .flow-run-btn.is-running svg {
+      animation: flowPlayIcon 0.9s ease-in-out infinite;
+    }
+
+    @keyframes flowPlayRunning {
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.13);
+      }
+    }
+
+    @keyframes flowPlayIcon {
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      50% {
+        transform: translateX(1px);
+      }
+    }
+
+    @keyframes flowCardRunning {
+      0%,
+      100% {
+        box-shadow: 0 16px 28px rgba(0, 0, 0, 0.28), 0 0 18px color-mix(in srgb, var(--action-color, #4f8dff) 22%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--action-color, #4f8dff) 34%, transparent);
+      }
+
+      50% {
+        box-shadow: 0 18px 32px rgba(0, 0, 0, 0.32), 0 0 34px color-mix(in srgb, var(--action-color, #4f8dff) 42%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--action-color, #4f8dff) 48%, transparent);
+      }
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 48px;
+      min-width: 48px;
+      min-height: 48px;
+      padding: 0;
+      border-radius: 16px;
+      color: #fff;
+      background: linear-gradient(135deg, #4f8dff, #8b5cf6);
+      box-shadow: 0 14px 28px rgba(79, 141, 255, 0.28);
+      cursor: pointer;
+      transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+    }
+
+    .btn svg,
+    .quick-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .btn:hover {
+      filter: saturate(1.18) brightness(1.08);
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 18px 34px rgba(79, 141, 255, 0.35);
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      transform: none;
+      color: #5f6e84;
+      background: #1a253f;
+      box-shadow: none;
+      filter: grayscale(0.45);
+    }
+
+    .btn.secondary {
+      color: #9fd0ff;
+      background: linear-gradient(135deg, #182640, #25365a);
+      box-shadow: 0 14px 26px rgba(16, 28, 52, 0.4);
+    }
+
+    .btn.secondary:hover {
+      background: linear-gradient(135deg, #223353, #304777);
+    }
+
+    .btn.success {
+      background: linear-gradient(135deg, #22b86f, #12b5cb);
+      box-shadow: 0 14px 28px rgba(34, 184, 111, 0.24);
+    }
+
+    .devices-workspace {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .zoom-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .zoom-control input {
+      width: 160px;
+      accent-color: #22b86f;
+    }
+
+    .device-selection-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .device-select-btn {
+      display: inline-grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border: 1px solid rgba(79, 141, 255, 0.2);
+      border-radius: 10px;
+      color: #eaf2ff;
+      background: linear-gradient(145deg, rgba(21, 31, 50, 0.95), rgba(11, 17, 28, 0.96));
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+    }
+
+    .device-select-btn svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .device-select-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: color-mix(in srgb, var(--select-color, #22b86f) 58%, transparent);
+      background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--select-color, #22b86f) 24%, transparent), transparent 70%),
+        linear-gradient(145deg, rgba(22, 34, 54, 0.98), rgba(12, 18, 29, 0.98));
+      box-shadow: 0 10px 20px color-mix(in srgb, var(--select-color, #22b86f) 18%, transparent);
+    }
+
+    .device-select-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.46;
+    }
+
+    .device-select-btn.select-all {
+      --select-color: #22b86f;
+    }
+
+    .device-select-btn.clear-selected-accounts {
+      --select-color: #ffd166;
+      color: #ffe8a8;
+    }
+
+    .device-select-btn.clear-selection {
+      --select-color: #ff5c7a;
+    }
+
+    .device-list {
+      --device-tile-size: 132px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(var(--device-tile-size), 1fr));
+      gap: 10px;
+      min-height: 150px;
+      max-height: 430px;
+      overflow: auto;
+      padding-right: 4px;
+      user-select: none;
+    }
+
+    .device-card {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px 28px 12px 12px;
+      border: 1px solid rgba(79, 141, 255, 0.15);
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(21, 33, 58, 0.96), rgba(13, 23, 43, 0.96));
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+      touch-action: none;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease, background 0.16s ease;
+    }
+
+    .device-action-btn {
+      position: absolute;
+      top: 8px;
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 8px;
+      color: #bcd7ff;
+      background: rgba(79, 141, 255, 0.16);
+      border: 1px solid rgba(79, 141, 255, 0.22);
+      cursor: pointer;
+      opacity: 0.78;
+      transition: opacity 0.16s ease, background 0.16s ease, transform 0.16s ease;
+    }
+
+    .device-action-btn:hover {
+      opacity: 1;
+      background: rgba(79, 141, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .device-action-btn svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .device-person-btn {
+      right: 38px;
+    }
+
+    .device-edit-btn {
+      right: 8px;
+    }
+
+    .device-person-btn.has-data {
+      color: #d7ffe7;
+      background: rgba(34, 184, 111, 0.2);
+      border-color: rgba(34, 184, 111, 0.32);
+      opacity: 1;
+    }
+
+    .account-status-column {
+      position: absolute;
+      top: clamp(34px, calc(var(--device-tile-size) * 0.29), 58px);
+      right: clamp(5px, calc(var(--device-tile-size) * 0.06), 10px);
+      bottom: clamp(7px, calc(var(--device-tile-size) * 0.07), 14px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      max-height: calc(100% - clamp(34px, calc(var(--device-tile-size) * 0.29), 58px) - clamp(7px, calc(var(--device-tile-size) * 0.07), 14px));
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .account-status-item {
+      position: relative;
+      display: grid;
+      place-items: center;
+      pointer-events: auto;
+    }
+
+    .account-status-dot {
+      width: clamp(4px, calc(var(--device-tile-size) * 0.052), 9px);
+      height: clamp(4px, calc(var(--device-tile-size) * 0.052), 9px);
+      flex: 0 0 clamp(4px, calc(var(--device-tile-size) * 0.052), 9px);
+      border-radius: 999px;
+      background: #5f6e84;
+      border: 1px solid rgba(220, 230, 248, 0.25);
+      box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    }
+
+    .account-status-dot.is-running {
+      background: #4f8dff;
+      border-color: rgba(190, 216, 255, 0.55);
+      box-shadow: 0 0 10px rgba(79, 141, 255, 0.7);
+      animation: accountStatusPulse 1.2s ease-in-out infinite;
+    }
+
+    .account-status-dot.is-retrying {
+      background: #ffd166;
+      border-color: rgba(255, 235, 170, 0.58);
+      box-shadow: 0 0 10px rgba(255, 209, 102, 0.72);
+      animation: accountStatusPulse 1.1s ease-in-out infinite;
+    }
+
+    .account-status-dot.is-success {
+      background: #22b86f;
+      border-color: rgba(220, 255, 235, 0.5);
+      box-shadow: 0 0 10px rgba(34, 184, 111, 0.72);
+      animation: accountStatusPulse 1.6s ease-in-out infinite;
+    }
+
+    .account-status-dot.is-error {
+      background: #d45862;
+      border-color: rgba(255, 190, 198, 0.55);
+      box-shadow: 0 0 10px rgba(212, 88, 98, 0.72);
+      animation: accountStatusPulse 1.6s ease-in-out infinite;
+    }
+
+    .account-status-dot.is-already {
+      background: #ff9f43;
+      border-color: rgba(255, 215, 170, 0.58);
+      box-shadow: 0 0 10px rgba(255, 159, 67, 0.72);
+      animation: accountStatusPulse 1.6s ease-in-out infinite;
+    }
+
+    .account-status-dot.is-review {
+      background: #a78bfa;
+      border-color: rgba(218, 207, 255, 0.58);
+      box-shadow: 0 0 10px rgba(167, 139, 250, 0.72);
+      animation: accountStatusPulse 1.6s ease-in-out infinite;
+    }
+
+    .account-status-actions {
+      position: absolute;
+      right: calc(100% + 4px);
+      display: inline-flex;
+      gap: 2px;
+      opacity: 0;
+      transition: opacity 0.14s ease;
+      pointer-events: auto;
+    }
+
+    .account-status-item:hover .account-status-actions {
+      opacity: 1;
+    }
+
+    .dot-action {
+      display: inline-grid;
+      place-items: center;
+      width: 13px;
+      height: 13px;
+      border-radius: 4px;
+      color: #ffffff;
+      background: rgba(15, 26, 48, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      cursor: pointer;
+    }
+
+    .dot-action svg {
+      width: 9px;
+      height: 9px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .dot-action.retry {
+      color: #a9d0ff;
+    }
+
+    .dot-action.replace {
+      color: #ffd166;
+    }
+
+    .device-flow-menu {
+      position: fixed;
+      z-index: 45;
+      display: none;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+      padding: 7px;
+      border: 1px solid rgba(79, 141, 255, 0.3);
+      border-radius: 12px;
+      background:
+        radial-gradient(circle at top left, rgba(20, 184, 166, 0.16), transparent 5rem),
+        rgba(8, 15, 28, 0.96);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(12px);
+    }
+
+    .device-flow-menu.is-open {
+      display: flex;
+    }
+
+    .device-flow-menu-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 7px;
+      min-width: 154px;
+      height: 30px;
+      padding: 0 9px;
+      border: 1px solid color-mix(in srgb, var(--flow-menu-color, #14b8a6) 44%, transparent);
+      border-radius: 9px;
+      color: #ffffff;
+      background: color-mix(in srgb, var(--flow-menu-color, #14b8a6) 18%, rgba(10, 20, 36, 0.92));
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .device-flow-menu-btn:hover {
+      transform: translateY(-1px);
+      border-color: color-mix(in srgb, var(--flow-menu-color, #14b8a6) 72%, transparent);
+      background: color-mix(in srgb, var(--flow-menu-color, #14b8a6) 28%, rgba(10, 20, 36, 0.92));
+    }
+
+    .device-flow-menu-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      transform: none;
+      filter: grayscale(0.55);
+    }
+
+    .device-flow-menu-btn svg {
+      flex: 0 0 auto;
+      width: 15px;
+      height: 15px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .device-flow-menu-btn span {
+      min-width: 0;
+      overflow: hidden;
+      font-size: 10px;
+      font-weight: 850;
+      line-height: 1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .device-login-summary {
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.58rem;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    @keyframes accountStatusPulse {
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 0.78;
+      }
+
+      50% {
+        transform: scale(1.22);
+        opacity: 1;
+      }
+    }
+
+    .device-name-popover {
+      position: fixed;
+      z-index: 30;
+      display: none;
+      width: min(280px, calc(100vw - 24px));
+      padding: 12px;
+      border: 1px solid rgba(79, 141, 255, 0.34);
+      border-radius: 14px;
+      background:
+        radial-gradient(circle at top left, rgba(34, 184, 111, 0.14), transparent 9rem),
+        linear-gradient(145deg, rgba(20, 31, 52, 0.98), rgba(9, 16, 30, 0.98));
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(14px);
+    }
+
+    .device-name-popover.is-open {
+      display: grid;
+      gap: 10px;
+      animation: popoverIn 0.14s ease-out;
+    }
+
+    .device-name-popover::before {
+      content: "";
+      position: absolute;
+      top: -6px;
+      right: 22px;
+      width: 10px;
+      height: 10px;
+      border-left: 1px solid rgba(79, 141, 255, 0.34);
+      border-top: 1px solid rgba(79, 141, 255, 0.34);
+      background: rgba(20, 31, 52, 0.98);
+      transform: rotate(45deg);
+    }
+
+    .device-name-popover-title {
+      margin: 0;
+      color: #dce8ff;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .device-name-popover input {
+      min-height: 38px;
+      border-radius: 10px;
+      font-size: 0.86rem;
+    }
+
+    .device-name-popover textarea {
+      min-height: 152px;
+      max-height: 220px;
+      resize: vertical;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 400;
+      line-height: 1.35;
+    }
+
+    .device-person-popover {
+      width: min(380px, calc(100vw - 24px));
+    }
+
+    .device-person-clone-list {
+      display: grid;
+      gap: 3px;
+      max-height: 98px;
+      overflow: auto;
+    }
+
+    .device-person-clone-row {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      align-items: center;
+      gap: 6px;
+      min-height: 18px;
+      color: #b9c8e6;
+      font-size: 9px;
+    }
+
+    .device-person-clone-row span:first-child {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      color: #dce8ff;
+      background: rgba(79, 141, 255, 0.18);
+      font-weight: 900;
+    }
+
+    .device-person-clone-row span:last-child {
+      min-width: 0;
+      overflow: hidden;
+      font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .device-person-message {
+      min-height: 14px;
+      margin: -2px 0 0;
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .device-person-message.is-warning {
+      color: #ffd166;
+    }
+
+    .device-person-message.is-ok {
+      color: #9ef0c1;
+    }
+
+    .device-name-popover-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .mini-btn {
+      display: inline-grid;
+      place-items: center;
+      min-height: 32px;
+      min-width: 34px;
+      padding: 0 9px;
+      border-radius: 10px;
+      color: #dce8ff;
+      background: rgba(79, 141, 255, 0.14);
+      border: 1px solid rgba(79, 141, 255, 0.2);
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 800;
+      transition: background 0.16s ease, transform 0.16s ease;
+    }
+
+    .mini-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .mini-btn:hover {
+      background: rgba(79, 141, 255, 0.26);
+      transform: translateY(-1px);
+    }
+
+    .mini-btn.clear {
+      color: #ffd166;
+      background: rgba(245, 158, 11, 0.14);
+      border-color: rgba(245, 158, 11, 0.28);
+    }
+
+    .mini-btn.cancel {
+      color: #ffb7bf;
+      background: rgba(212, 88, 98, 0.14);
+      border-color: rgba(212, 88, 98, 0.3);
+    }
+
+    .mini-btn.primary {
+      color: #ffffff;
+      background: linear-gradient(135deg, #22b86f, #12b5cb);
+      border-color: rgba(34, 184, 111, 0.34);
+    }
+
+    @keyframes popoverIn {
+      from {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .device-card:hover,
+    .device-card.is-selected {
+      border-color: rgba(79, 141, 255, 0.85);
+      background: linear-gradient(145deg, rgba(34, 52, 88, 0.98), rgba(18, 31, 58, 0.98));
+      box-shadow: 0 8px 18px rgba(79, 141, 255, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      transform: translateY(-1px);
+    }
+
+    .device-name {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 7px;
+      font-size: 0.78rem;
+      font-weight: 400;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .device-name-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .device-country-flag {
+      width: 18px;
+      height: 13px;
+      flex: 0 0 auto;
+      border-radius: 3px;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.24);
+    }
+
+    .device-country-refresh {
+      display: inline-grid;
+      place-items: center;
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(79, 141, 255, 0.26);
+      border-radius: 6px;
+      color: #9fb0cc;
+      background: rgba(79, 141, 255, 0.12);
+      cursor: pointer;
+      transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+    }
+
+    .device-country-refresh svg {
+      width: 11px;
+      height: 11px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .device-country-refresh:hover:not(:disabled),
+    .device-country-refresh.is-loading {
+      color: #ffffff;
+      border-color: rgba(79, 141, 255, 0.64);
+      background: rgba(79, 141, 255, 0.24);
+      transform: translateY(-1px);
+    }
+
+    .device-country-refresh:disabled {
+      cursor: wait;
+      opacity: 0.7;
+    }
+
+    .device-name > span:first-child {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .device-id {
+      color: var(--muted);
+      font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.72rem;
+      word-break: break-all;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      line-clamp: 3;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      padding: 2px 7px;
+      border-radius: 999px;
+      color: #24c97b;
+      background: rgba(34, 184, 111, 0.2);
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .empty {
+      display: grid;
+      place-items: center;
+      min-height: 210px;
+      border: 1px dashed #31425f;
+      border-radius: 8px;
+      color: var(--muted);
+      text-align: center;
+      padding: 22px;
+      background: rgba(15, 26, 48, 0.7);
+    }
+
+    .device-list .empty {
+      grid-column: 1 / -1;
+      min-height: 150px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(260px, 520px) auto;
+      align-items: end;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    label {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid rgba(79, 141, 255, 0.18);
+      border-radius: 14px;
+      color: var(--ink);
+      background: rgba(7, 16, 31, 0.78);
+      outline: none;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+    }
+
+    input,
+    select {
+      height: 42px;
+      padding: 0 12px;
+    }
+
+    textarea {
+      min-height: 112px;
+      padding: 12px;
+      resize: vertical;
+      font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+      line-height: 1.45;
+    }
+
+    .accounts-input {
+      min-height: 180px;
+      max-height: 320px;
+      font-size: 11px;
+      font-weight: 400;
+    }
+
+    .account-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .account-panel-action {
+      display: inline-grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(212, 88, 98, 0.36);
+      border-radius: 8px;
+      color: #ff9aa3;
+      background: rgba(42, 13, 22, 0.72);
+      cursor: pointer;
+      transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+    }
+
+    .account-panel-action svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .account-panel-action:hover {
+      color: #ffffff;
+      border-color: rgba(212, 88, 98, 0.72);
+      background: rgba(212, 88, 98, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .account-trace {
+      display: grid;
+      gap: 7px;
+      margin-top: 8px;
+      padding: 8px;
+      border: 1px solid rgba(79, 141, 255, 0.14);
+      border-radius: 10px;
+      background: rgba(7, 16, 31, 0.38);
+    }
+
+    .account-trace.is-collapsed .account-trace-list {
+      display: none;
+    }
+
+    .account-trace-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .account-trace-title {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .account-trace-title strong {
+      color: #e6efff;
+      font-size: 10px;
+      font-weight: 900;
+      line-height: 1.1;
+      text-transform: uppercase;
+    }
+
+    .account-trace-meta {
+      min-width: 0;
+      overflow: hidden;
+      color: #8191ad;
+      font-size: 9px;
+      font-weight: 800;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .account-trace-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .account-trace-btn {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border: 1px solid rgba(79, 141, 255, 0.18);
+      border-radius: 8px;
+      color: #8fa2c2;
+      background: rgba(9, 18, 34, 0.72);
+      cursor: pointer;
+      transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+    }
+
+    .account-trace-btn svg {
+      width: 13px;
+      height: 13px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .account-trace-btn:hover,
+    .account-trace-btn.is-active {
+      color: #dce8ff;
+      border-color: color-mix(in srgb, var(--trace-btn-color, #4f8dff) 52%, transparent);
+      background: color-mix(in srgb, var(--trace-btn-color, #4f8dff) 16%, rgba(9, 18, 34, 0.72));
+      transform: translateY(-1px);
+    }
+
+    .account-trace-toggle svg {
+      transition: transform 0.16s ease;
+    }
+
+    .account-trace.is-collapsed .account-trace-toggle svg {
+      transform: rotate(-90deg);
+    }
+
+    .account-trace-list {
+      display: grid;
+      gap: 4px;
+      max-height: 138px;
+      overflow: auto;
+      padding-right: 3px;
+    }
+
+    .account-trace-row {
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 6px;
+      min-height: 24px;
+      padding: 4px 6px;
+      border: 1px solid rgba(79, 141, 255, 0.12);
+      border-radius: 8px;
+      background: rgba(7, 16, 31, 0.42);
+      font-size: 10px;
+      cursor: default;
+      transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+    }
+
+    .account-trace-row[data-device-id] {
+      cursor: pointer;
+    }
+
+    .account-trace-row.is-used {
+      border-color: color-mix(in srgb, var(--trace-color, #4f8dff) 34%, transparent);
+      background:
+        linear-gradient(90deg, color-mix(in srgb, var(--trace-color, #4f8dff) 18%, transparent), transparent 56%),
+        rgba(7, 16, 31, 0.56);
+      box-shadow: inset 3px 0 0 var(--trace-color, #4f8dff);
+    }
+
+    .account-trace-row.is-free {
+      border-color: rgba(79, 141, 255, 0.1);
+      background: rgba(7, 16, 31, 0.36);
+    }
+
+    .account-trace-row[data-device-id]:hover {
+      border-color: color-mix(in srgb, var(--trace-color, #4f8dff) 44%, transparent);
+      background: color-mix(in srgb, var(--trace-color, #4f8dff) 10%, rgba(7, 16, 31, 0.52));
+      transform: translateX(1px);
+    }
+
+    .account-trace-id,
+    .account-trace-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      border-radius: 999px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .account-trace-id {
+      color: #b9c8e6;
+      background: rgba(79, 141, 255, 0.16);
+      padding: 2px 5px;
+    }
+
+    .account-trace-line {
+      min-width: 0;
+      overflow: hidden;
+      color: #dce8ff;
+      font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .account-trace-chip {
+      gap: 4px;
+      color: var(--trace-color, #9fb0cc);
+      background: color-mix(in srgb, var(--trace-color, #9fb0cc) 14%, transparent);
+      border: 1px solid color-mix(in srgb, var(--trace-color, #9fb0cc) 28%, transparent);
+      padding: 2px 6px;
+      font-size: 9px;
+    }
+
+    .account-trace-empty {
+      color: #8191ad;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 5px 6px;
+    }
+
+    .accounts-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+      margin-bottom: 12px;
+    }
+
+    .account-tab {
+      display: grid;
+      place-items: center;
+      gap: 5px;
+      min-width: 0;
+      min-height: 56px;
+      padding: 8px 6px;
+      border: 1px solid var(--tab-color, rgba(79, 141, 255, 0.32));
+      border-radius: 14px;
+      color: #dce8ff;
+      background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--tab-color, #4f8dff) 18%, transparent), transparent 70%),
+        linear-gradient(145deg, rgba(14, 23, 40, 0.96), rgba(8, 15, 28, 0.98));
+      cursor: pointer;
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tab-color, #4f8dff) 12%, transparent);
+      transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+    }
+
+    .account-tab:hover,
+    .account-tab.is-selected {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22), 0 0 18px color-mix(in srgb, var(--tab-color, #4f8dff) 22%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--tab-color, #4f8dff) 28%, transparent);
+    }
+
+    .account-tab-icon {
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      color: var(--tab-color, #4f8dff);
+    }
+
+    .account-tab-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.1;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .account-tab-count {
+      min-width: 22px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      color: #ffffff;
+      background: color-mix(in srgb, var(--tab-color, #4f8dff) 62%, rgba(15, 26, 48, 0.9));
+      font-size: 0.68rem;
+      font-weight: 900;
+    }
+
+    .account-panel {
+      display: none;
+    }
+
+    .account-panel.is-active {
+      display: block;
+    }
+
+    .delimiter-field {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .split-accounts-btn {
+      display: inline-grid;
+      place-items: center;
+      min-width: 44px;
+      min-height: 44px;
+      border-radius: 14px;
+      color: #ffffff;
+      background: linear-gradient(135deg, #22b86f, #12b5cb);
+      box-shadow: 0 12px 24px rgba(34, 184, 111, 0.22);
+      cursor: pointer;
+      transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .split-accounts-btn:hover {
+      filter: saturate(1.14) brightness(1.08);
+      transform: translateY(-1px);
+      box-shadow: 0 16px 28px rgba(34, 184, 111, 0.28);
+    }
+
+    .split-accounts-btn:disabled {
+      cursor: not-allowed;
+      color: #5f6e84;
+      background: #1a253f;
+      box-shadow: none;
+      filter: grayscale(0.45);
+      transform: none;
+    }
+
+    .split-accounts-btn svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .device-grid-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      min-height: 32px;
+      margin-top: 10px;
+    }
+
+    .flow-agent-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .flow-agent-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 30px;
+      padding: 0 9px;
+      border: 1px solid rgba(20, 184, 166, 0.26);
+      border-radius: 999px;
+      color: #bafcf2;
+      background: rgba(20, 184, 166, 0.12);
+      font-size: 0.72rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .flow-agent-status::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #607086;
+      box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    }
+
+    .flow-agent-status.has-agents::before {
+      background: #14b8a6;
+      box-shadow: 0 0 10px rgba(20, 184, 166, 0.74);
+    }
+
+    .flow-agent-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: auto;
+      min-width: 32px;
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 10px;
+      color: #dffef8;
+      background: linear-gradient(135deg, rgba(20, 184, 166, 0.34), rgba(34, 184, 111, 0.2));
+      border: 1px solid rgba(20, 184, 166, 0.34);
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 800;
+      white-space: nowrap;
+      transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .flow-agent-btn.secondary {
+      color: #dff7ff;
+      background: linear-gradient(135deg, rgba(43, 109, 246, 0.28), rgba(24, 182, 215, 0.18));
+      border-color: rgba(24, 182, 215, 0.3);
+    }
+
+    .flow-agent-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 22px rgba(20, 184, 166, 0.14);
+    }
+
+    .flow-agent-btn:disabled {
+      cursor: not-allowed;
+      color: #5f6e84;
+      background: #1a253f;
+      border-color: rgba(95, 110, 132, 0.2);
+      box-shadow: none;
+      transform: none;
+    }
+
+    .flow-agent-btn svg {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .badge.is-agent {
+      color: #bafcf2;
+      background: rgba(20, 184, 166, 0.22);
+    }
+
+    .badge.is-adb {
+      color: #bcd7ff;
+      background: rgba(79, 141, 255, 0.16);
+    }
+
+    .badge.is-warning {
+      color: #ffe2a8;
+      background: rgba(245, 158, 11, 0.18);
+    }
+
+    .clear-device-accounts-btn {
+      display: inline-grid;
+      grid-auto-flow: column;
+      align-items: center;
+      gap: 7px;
+      min-height: 32px;
+      padding: 0 10px;
+      border-radius: 10px;
+      color: #ffb7bf;
+      background: rgba(212, 88, 98, 0.13);
+      border: 1px solid rgba(212, 88, 98, 0.28);
+      cursor: pointer;
+      font-size: 0.74rem;
+      font-weight: 800;
+      transition: background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .clear-device-accounts-btn:hover {
+      background: rgba(212, 88, 98, 0.24);
+      box-shadow: 0 12px 22px rgba(212, 88, 98, 0.14);
+      transform: translateY(-1px);
+    }
+
+    .clear-device-accounts-btn:disabled {
+      cursor: not-allowed;
+      color: #5f6e84;
+      background: #1a253f;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .clear-device-accounts-btn svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 4px rgba(20, 121, 255, 0.11);
+    }
+
+    .quick-commands {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 14px 0 18px;
+    }
+
+    .quick-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      border: 1px solid rgba(79, 141, 255, 0.18);
+      border-radius: 16px;
+      color: #fff;
+      background: linear-gradient(135deg, rgba(79, 141, 255, 0.2), rgba(139, 92, 246, 0.16));
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .quick-btn:nth-child(2) {
+      color: #64f4ac;
+      background: linear-gradient(135deg, rgba(34, 184, 111, 0.2), rgba(18, 181, 203, 0.14));
+    }
+
+    .quick-btn:nth-child(3) {
+      color: #ffd166;
+      background: linear-gradient(135deg, rgba(255, 209, 102, 0.2), rgba(244, 114, 182, 0.14));
+    }
+
+    .quick-btn:hover {
+      border-color: rgba(79, 141, 255, 0.75);
+      background: linear-gradient(135deg, rgba(79, 141, 255, 0.32), rgba(139, 92, 246, 0.28));
+      box-shadow: 0 14px 26px rgba(79, 141, 255, 0.18);
+      transform: translateY(-2px);
+    }
+
+    .output {
+      min-height: 260px;
+      max-height: 430px;
+      margin: 0;
+      padding: 16px;
+      overflow: auto;
+      border: 1px solid rgba(79, 141, 255, 0.16);
+      border-radius: 18px;
+      color: #dce8ff;
+      background:
+        radial-gradient(circle at top left, rgba(79, 141, 255, 0.1), transparent 18rem),
+        #07101f;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
+    .packages-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .script-card {
+      display: grid;
+      gap: 12px;
+      margin: 18px 0;
+      padding: 14px;
+      border: 1px solid rgba(34, 184, 111, 0.18);
+      border-radius: 18px;
+      background:
+        linear-gradient(145deg, rgba(15, 26, 48, 0.96), rgba(8, 18, 34, 0.96)),
+        radial-gradient(circle at top right, rgba(34, 184, 111, 0.16), transparent 16rem);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .script-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .script-title {
+      margin: 0;
+      font-size: 0.98rem;
+    }
+
+    .script-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .script-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      gap: 10px;
+      align-items: end;
+    }
+
+    .notice {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+
+    .accounts-meta {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .accounts-meta.is-warning {
+      color: #ffd166;
+    }
+
+    @media (max-width: 860px) {
+      .shell {
+        width: min(100% - 10px, 1180px);
+        padding: 0;
+      }
+
+      .topbar,
+      .grid,
+      .toolbar,
+      .packages-row,
+      .script-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .quick-commands {
+        grid-template-columns: 1fr;
+      }
+
+      .category-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .flow-run-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="licenseLoginModal" class="modal" style="display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center; font-family: Inter, ui-sans-serif, system-ui;">
+    <div style="background: #0d1117; border: 1px solid rgba(147, 167, 190, .16); border-radius: 12px; padding: 32px; max-width: 400px; width: 90%; box-shadow: 0 22px 80px rgba(0, 0, 0, .38);">
+      <h2 style="margin: 0 0 24px 0; color: #edf3fb; font-size: 20px;">Validar Licencia</h2>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; color: #8fa2b7; font-size: 14px; margin-bottom: 8px;">Email del Usuario</label>
+        <input type="email" id="licenseDeviceEmail" placeholder="usuario@ejemplo.com" style="width: 100%; padding: 10px; border: 1px solid rgba(147, 167, 190, .16); border-radius: 8px; background: #182332; color: #edf3fb; font-size: 14px; box-sizing: border-box;">
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; color: #8fa2b7; font-size: 14px; margin-bottom: 8px;">Clave de Licencia</label>
+        <input type="text" id="licenseKey" placeholder="LICENSE-KEY-HERE" style="width: 100%; padding: 10px; border: 1px solid rgba(147, 167, 190, .16); border-radius: 8px; background: #182332; color: #edf3fb; font-size: 14px; box-sizing: border-box;">
+      </div>
+
+      <div id="licenseMessage" style="margin-bottom: 16px; padding: 12px; border-radius: 8px; font-size: 14px; display: none;"></div>
+
+      <button id="licenseSubmitBtn" onclick="validateLicense()" style="width: 100%; padding: 10px; background: #45caff; color: #0d1117; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.15s ease;">Validar</button>
+    </div>
+  </div>
+
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <img src="./logo.png" alt="FlowLogin" />
+        </div>
+      </div>
+      <div class="status-pill js-status">
+        <span class="dot"></span>
+        <span class="js-status-text">Sin conexion</span>
+      </div>
+    </header>
+
+    <section class="grid">
+      <div class="left-column">
+        <aside class="panel device-panel js-device-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                  <rect x="7" y="2" width="10" height="20" rx="2" />
+                  <path d="M11 18h2" />
+                </svg>
+              </span>
+              Dispositivos
+            </h2>
+            <div class="panel-header-actions device-header-actions">
+              <span class="counter js-device-count">0</span>
+              <button class="btn js-connect-btn" type="button" aria-label="Conectar" title="Conectar">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" />
+                </svg>
+              </button>
+              <button class="btn secondary js-refresh-btn" type="button" aria-label="Actualizar" title="Actualizar" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+                  <path d="M20 4v6h-6" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <section class="panel accounts-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-8 0v2" />
+                  <circle cx="12" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </span>
+              Cuentas
+            </h2>
+            <span class="counter js-account-count">0</span>
+          </div>
+          <div class="panel-body">
+            <div class="accounts-tabs" role="tablist" aria-label="Listas de cuentas">
+              <button class="account-tab js-account-tab is-selected" type="button" role="tab" aria-label="Total" title="Total" aria-selected="true" aria-controls="accountsPanelTotal" data-account-tab="total" style="--tab-color: #4f8dff;">
+                <span class="account-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 6h13" /><path d="M8 12h13" /><path d="M8 18h13" /><path d="M3 6h.01" /><path d="M3 12h.01" /><path d="M3 18h.01" /></svg></span>
+                <span class="account-tab-count js-account-tab-count" data-count-for="total">0</span>
+              </button>
+              <button class="account-tab js-account-tab" type="button" role="tab" aria-label="Validos" title="Validos" aria-selected="false" aria-controls="accountsPanelValid" data-account-tab="valid" style="--tab-color: #22b86f;">
+                <span class="account-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /><circle cx="12" cy="12" r="9" /></svg></span>
+                <span class="account-tab-count js-account-tab-count" data-count-for="valid">0</span>
+              </button>
+              <button class="account-tab js-account-tab" type="button" role="tab" aria-label="No validos" title="No validos" aria-selected="false" aria-controls="accountsPanelInvalid" data-account-tab="invalid" style="--tab-color: #d45862;">
+                <span class="account-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m15 9-6 6" /><path d="m9 9 6 6" /><circle cx="12" cy="12" r="9" /></svg></span>
+                <span class="account-tab-count js-account-tab-count" data-count-for="invalid">0</span>
+              </button>
+            </div>
+
+            <div id="accountsPanelTotal" class="field account-panel is-active js-account-panel" role="tabpanel" data-account-panel="total">
+              <label for="accountsInput">Total</label>
+              <textarea id="accountsInput" class="accounts-input js-accounts-input" data-account-input="total" placeholder="Pega una cuenta por linea"></textarea>
+            </div>
+            <div id="accountsPanelValid" class="field account-panel js-account-panel" role="tabpanel" data-account-panel="valid">
+              <label for="validAccountsInput">Validos</label>
+              <textarea id="validAccountsInput" class="accounts-input js-accounts-input" data-account-input="valid" placeholder="Cuentas validas, una por linea"></textarea>
+            </div>
+            <div id="accountsPanelInvalid" class="field account-panel js-account-panel" role="tabpanel" data-account-panel="invalid">
+              <div class="account-panel-header">
+                <label for="invalidAccountsInput">No validos</label>
+                <button class="account-panel-action js-clear-invalid-accounts" type="button" aria-label="Guardar y borrar No validos" title="Guardar y borrar No validos">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M6 6l1 15h10l1-15" /><path d="m9 11 6 6" /><path d="m15 11-6 6" /></svg>
+                </button>
+              </div>
+              <textarea id="invalidAccountsInput" class="accounts-input js-accounts-input" data-account-input="invalid" placeholder="Cuentas no validas, una por linea"></textarea>
+            </div>
+            <div class="account-trace js-account-trace" aria-label="Mapa de cuentas">
+              <div class="account-trace-header">
+                <div class="account-trace-title">
+                  <strong>Mapa de cuentas</strong>
+                  <span class="account-trace-meta js-account-trace-meta">0 visibles</span>
+                </div>
+                <div class="account-trace-actions">
+                  <button class="account-trace-btn js-account-trace-filter is-active" type="button" data-trace-filter="all" style="--trace-btn-color: #4f8dff;" aria-label="Mostrar todas" title="Todas">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13" /><path d="M8 12h13" /><path d="M8 18h13" /><path d="M3 6h.01" /><path d="M3 12h.01" /><path d="M3 18h.01" /></svg>
+                  </button>
+                  <button class="account-trace-btn js-account-trace-filter" type="button" data-trace-filter="used" style="--trace-btn-color: #ffd166;" aria-label="Mostrar asignadas o usadas" title="Asignadas">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1" /><path d="M14 11a5 5 0 0 0-7.1 0l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1" /></svg>
+                  </button>
+                  <button class="account-trace-btn js-account-trace-filter" type="button" data-trace-filter="free" style="--trace-btn-color: #22b86f;" aria-label="Mostrar disponibles" title="Disponibles">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7" /><path d="M9 12l2 2 4-4" /></svg>
+                  </button>
+                  <button class="account-trace-btn account-trace-toggle js-account-trace-toggle" type="button" aria-label="Contraer mapa de cuentas" title="Contraer">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="account-trace-list js-account-trace-list" aria-label="Cuentas visibles"></div>
+            </div>
+            <div class="field delimiter-field">
+              <input id="accountDelimiter" class="js-account-delimiter" type="text" value=":" placeholder="Delimitador" aria-label="Delimitador" />
+              <input id="accountSplit" class="js-account-split" type="number" min="1" step="1" placeholder="Dividir" aria-label="Dividir" />
+              <button class="split-accounts-btn js-split-accounts-btn" type="button" aria-label="Dividir cuentas entre dispositivos" title="Dividir cuentas" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 12h14" />
+                  <path d="m13 6 6 6-6 6" />
+                </svg>
+              </button>
+            </div>
+            <p class="accounts-meta js-accounts-meta">0 cuentas detectadas.</p>
+          </div>
+        </section>
+      </div>
+
+      <div class="right-column">
+        <section class="panel categories-panel">
+          <div class="panel-body">
+            <div class="category-grid" aria-label="Opciones">
+              <button class="category-btn js-category-btn is-selected" type="button" aria-pressed="true" data-flow="FlowLogin" style="--action-color: #14b8a6;"><span class="category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19V9" /><path d="M12 19V5" /><path d="M19 19v-7" /><path d="M3 19h18" /></svg></span><span class="category-label">FlowLogin</span></button>
+              <button class="category-btn js-category-btn" type="button" aria-pressed="false" data-flow="FlowTrack" style="--action-color: #22b86f;"><span class="category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12 4 20" /><path d="M12 12l8-8" /><circle cx="12" cy="12" r="3" /><path d="M7 17c3 3 7 3 10 0" /></svg></span><span class="category-label">FlowTrack</span></button>
+              <button class="category-btn js-category-btn" type="button" aria-pressed="false" data-flow="FlowCache" style="--action-color: #f59e0b;"><span class="category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="5" rx="1.5" /><rect x="4" y="14" width="16" height="5" rx="1.5" /><path d="M8 10v4" /><path d="M16 10v4" /></svg></span><span class="category-label">FlowCaché</span></button>
+              <button class="category-btn js-category-btn" type="button" aria-pressed="false" data-flow="FlowCast" style="--action-color: #a78bfa;"><span class="category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0" /><path d="M12 18v3" /><path d="M8 21h8" /></svg></span><span class="category-label">FlowCast</span></button>
+              <button class="category-btn js-category-btn" type="button" aria-pressed="false" data-flow="FlowApple" style="--action-color: #fa2d75;"><span class="category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="4" /><path d="M14 8v7.2a2.8 2.8 0 1 1-1.7-2.6" /><path d="M14 8h4" /></svg></span><span class="category-label">FlowApple</span></button>
+              <button class="category-btn js-category-btn" type="button" aria-pressed="false" data-flow="Flowamazon" style="--action-color: #ff9900;"><span class="category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" /><path d="M8 15c2.5 2 5.5 2 8 0" /></svg></span><span class="category-label">Flowamazon</span></button>
+              <button class="category-btn js-category-btn" type="button" aria-pressed="false" data-flow="FlowGram" style="--action-color: #ec4899;"><span class="category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5" /><circle cx="12" cy="12" r="3.5" /><circle cx="16.8" cy="7.2" r="0.8" /></svg></span><span class="category-label">FlowGram</span></button>
+              <button class="category-btn js-category-btn" type="button" aria-pressed="false" data-flow="FlowTikTok" style="--action-color: #00f2ea;"><span class="category-icon logo-fill" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15.5 4c.35 2.5 1.8 4.1 4.5 4.4v3.2c-1.8 0-3.3-.5-4.5-1.4v5.3A5.5 5.5 0 1 1 10 10v3.3a2.2 2.2 0 1 0 2.2 2.2V4h3.3Z" /></svg></span><span class="category-label">FlowTikTok</span></button>
+            </div>
+            <div class="flow-run-grid" aria-label="Ejecutar flujo">
+              <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="FlowLogin" style="--flow-color: #14b8a6;" aria-label="Ejecutar FlowLogin" title="Ejecutar FlowLogin">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
+              </button>
+              <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="FlowTrack" style="--flow-color: #22b86f;" aria-label="FlowTrack no disponible" title="FlowTrack pronto" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
+              </button>
+              <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="FlowCache" style="--flow-color: #f59e0b;" aria-label="FlowCache no disponible" title="FlowCache pronto" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
+              </button>
+              <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="FlowCast" style="--flow-color: #a78bfa;" aria-label="FlowCast no disponible" title="FlowCast pronto" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
+              </button>
+              <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="FlowApple" style="--flow-color: #fa2d75;" aria-label="FlowApple no disponible" title="FlowApple pronto" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
+              </button>
+              <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="Flowamazon" style="--flow-color: #ff9900;" aria-label="Flowamazon no disponible" title="Flowamazon pronto" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
+              </button>
+              <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="FlowGram" style="--flow-color: #ec4899;" aria-label="FlowGram no disponible" title="FlowGram pronto" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
+              </button>
+              <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="FlowTikTok" style="--flow-color: #00f2ea;" aria-label="FlowTikTok no disponible" title="FlowTikTok pronto" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <path d="m8 9 3 3-3 3" />
+                <path d="M13 15h3" />
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+              </svg>
+            </span>
+            <span class="panel-title-stack">
+              <span class="panel-title-main">Dispositivos Conectados</span>
+              <span class="selected-devices-note js-selected-devices-note">0 seleccionados</span>
+            </span>
+            </h2>
+            <div class="panel-header-actions">
+              <div class="device-selection-controls" aria-label="Seleccion de dispositivos">
+                <button class="device-select-btn select-all js-select-all-devices-btn" type="button" title="Seleccionar todos" aria-label="Seleccionar todos los dispositivos">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="3" y="5" width="7" height="7" rx="1.5" />
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="5" width="7" height="7" rx="1.5" />
+                    <path d="m14 17 2.2 2.2L21 14.5" />
+                  </svg>
+                </button>
+                <button class="device-select-btn clear-selected-accounts js-clear-selected-device-accounts-btn" type="button" title="Eliminar cuentas seleccionadas" aria-label="Eliminar cuentas de los dispositivos seleccionados">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7 3h7l4 4v11a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Z" />
+                    <path d="M14 3v5h5" />
+                    <path d="M8 11h5" />
+                    <path d="M8 15h4" />
+                    <path d="M15 14l5 5" />
+                    <path d="M20 14l-5 5" />
+                  </svg>
+                </button>
+                <button class="device-select-btn clear-selection js-clear-device-selection-btn" type="button" title="Deseleccionar todos" aria-label="Deseleccionar todos los dispositivos">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="3" y="5" width="7" height="7" rx="1.5" />
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="5" width="7" height="7" rx="1.5" />
+                    <path d="m15 16 5 5" />
+                    <path d="m20 16-5 5" />
+                  </svg>
+                </button>
+              </div>
+              <label class="zoom-control" for="deviceZoom">
+                Zoom
+                <input id="deviceZoom" class="js-device-zoom" type="range" min="84" max="220" value="132" />
+              </label>
+            </div>
+          </div>
+          <div class="panel-body">
+          <section class="devices-workspace" aria-label="Dispositivos conectados">
+            <div class="device-list js-device-list">
+              <div class="empty">Conecta el servidor ADB local para ver tus dispositivos Android.</div>
+            </div>
+            <div class="device-grid-actions">
+              <div class="flow-agent-controls" aria-label="FlowAgent APK">
+                <span class="flow-agent-status js-flow-agent-status">Agent 0</span>
+                <button class="flow-agent-btn js-flow-agent-setup-btn" type="button" aria-label="Instalar FlowAgent" title="Instalar FlowAgent" disabled>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3v5" />
+                    <path d="M8 7h8" />
+                    <rect x="6" y="8" width="12" height="13" rx="3" />
+                    <path d="M9 13h6" />
+                    <path d="M9 17h4" />
+                  </svg>
+                  <span>Instalar FlowAgent</span>
+                </button>
+                <button class="flow-agent-btn secondary js-flow-agent-refresh-btn" type="button" aria-label="Actualizar FlowAgent" title="Actualizar FlowAgent" disabled>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 12a9 9 0 0 1 15-6.7" />
+                    <path d="M18 3v6h-6" />
+                    <path d="M21 12a9 9 0 0 1-15 6.7" />
+                    <path d="M6 21v-6h6" />
+                  </svg>
+                  <span>Actualizar FlowAgent</span>
+                </button>
+              </div>
+              <button class="clear-device-accounts-btn js-clear-device-accounts-btn" type="button" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 6h18" />
+                  <path d="M8 6V4h8v2" />
+                  <path d="M6 6l1 15h10l1-15" />
+                </svg>
+                Limpiar cuentas
+              </button>
+            </div>
+          </section>
+
+          <div class="toolbar">
+            <div class="field">
+              <label for="commandInput">Comando ADB</label>
+              <input id="commandInput" class="js-command-input" type="text" placeholder="Ejemplo: adb shell input keyevent 26" disabled />
+            </div>
+            <button class="btn success js-send-btn" type="button" aria-label="Enviar comando" title="Enviar comando" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M22 2 11 13" />
+                <path d="m22 2-7 20-4-9-9-4 20-7Z" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="quick-commands" aria-label="Comandos rapidos">
+            <button class="quick-btn js-quick-command" type="button" data-command="adb devices" aria-label="Listar dispositivos" title="Listar dispositivos" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="7" y="2" width="10" height="20" rx="2" />
+                <path d="M11 18h2" />
+              </svg>
+            </button>
+            <button class="quick-btn js-quick-command" type="button" data-command="adb shell getprop ro.product.model" aria-label="Ver modelo" title="Ver modelo" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2v4" />
+                <path d="M5 8h14" />
+                <rect x="5" y="6" width="14" height="14" rx="2" />
+                <path d="M9 12h6M9 16h4" />
+              </svg>
+            </button>
+            <button class="quick-btn js-quick-command" type="button" data-command="adb shell wm size" aria-label="Ver tamano de pantalla" title="Ver tamano de pantalla" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="12" rx="2" />
+                <path d="M8 21h8" />
+                <path d="M12 17v4" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="field">
+            <label for="packageFilter">Programas instalados</label>
+            <div class="packages-row">
+              <input id="packageFilter" class="js-package-filter" type="search" placeholder="Filtrar por nombre de paquete (opcional)" disabled />
+              <button class="btn secondary js-packages-btn" type="button" aria-label="Ver programas" title="Ver programas" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 7h16" />
+                  <path d="M4 12h16" />
+                  <path d="M4 17h16" />
+                  <path d="M8 4v16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="script-card">
+            <div class="script-header">
+              <div>
+                <h3 class="script-title">Ejecutar script.js</h3>
+                <p class="notice">Usa la ruta del script en este equipo, donde corre el servidor ADB local.</p>
+              </div>
+              <div class="script-actions">
+                <button class="btn success js-run-script-btn" type="button" aria-label="Ejecutar script" title="Ejecutar script" disabled>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m8 5 11 7-11 7V5Z" />
+                  </svg>
+                </button>
+                <button class="btn secondary js-stop-script-btn" type="button" aria-label="Detener script" title="Detener script" disabled>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="script-grid">
+              <div class="field">
+                <label for="scriptPreset">Scripts de esta carpeta</label>
+                <select id="scriptPreset" class="js-script-preset" disabled>
+                  <option value="">Elegir script...</option>
+                  <option value="C:\Users\elyup\Downloads\laixi_wsapi_demo (7)\laixi_wsapi_demo\Html\html\Login.js">Login.js</option>
+                  <option value="C:\Users\elyup\Downloads\laixi_wsapi_demo (7)\laixi_wsapi_demo\Html\html\0506032700.js">0506032700.js</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="scriptPath">Ruta del script AutoJs</label>
+                <input id="scriptPath" class="js-script-path" type="text" placeholder="C:\Scripts\MyScripts.js" disabled />
+              </div>
+            </div>
+          </div>
+
+          <p class="notice js-selection-help">Seleccion actual: todos los dispositivos conectados.</p>
+          <pre class="output js-output">Listo. Conecta el servidor ADB local para empezar.</pre>
+        </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="device-name-popover js-device-name-popover" role="dialog" aria-modal="false" aria-label="Editar nombre de dispositivo">
+    <p class="device-name-popover-title">Editar nombre</p>
+    <input class="js-device-name-input" type="text" maxlength="80" placeholder="Nombre del dispositivo" />
+    <div class="device-name-popover-actions">
+      <button class="mini-btn clear js-device-name-clear" type="button" aria-label="Limpiar" title="Limpiar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="m9 11 6 6" /><path d="m15 11-6 6" /><path d="M6 6l1 15h10l1-15" /></svg></button>
+      <button class="mini-btn cancel js-device-name-cancel" type="button" aria-label="Cancelar" title="Cancelar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12" /><path d="m6 6 12 12" /></svg></button>
+      <button class="mini-btn primary js-device-name-save" type="button" aria-label="Guardar" title="Guardar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg></button>
+    </div>
+  </div>
+
+  <div class="device-name-popover device-person-popover js-device-person-popover" role="dialog" aria-modal="false" aria-label="Editar cuentas del dispositivo">
+    <p class="device-name-popover-title">Cuentas del dispositivo</p>
+    <textarea class="js-device-person-input" rows="10" maxlength="1200" placeholder="Maximo 10 lineas"></textarea>
+    <div class="device-person-clone-list js-device-person-clone-list" aria-label="Cuentas por clon"></div>
+    <p class="device-person-message js-device-person-message" aria-live="polite"></p>
+    <div class="device-name-popover-actions">
+      <button class="mini-btn clear js-device-person-clear" type="button" aria-label="Limpiar" title="Limpiar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="m9 11 6 6" /><path d="m15 11-6 6" /><path d="M6 6l1 15h10l1-15" /></svg></button>
+      <button class="mini-btn cancel js-device-person-cancel" type="button" aria-label="Cancelar" title="Cancelar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12" /><path d="m6 6 12 12" /></svg></button>
+      <button class="mini-btn primary js-device-person-save" type="button" aria-label="Guardar" title="Guardar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg></button>
+    </div>
+  </div>
+
+  <div class="device-flow-menu js-device-flow-menu" role="menu" aria-label="FlowLogin del dispositivo">
+    <button class="device-flow-menu-btn js-device-flow-play" type="button" role="menuitem" style="--flow-menu-color: #14b8a6;" aria-label="Ejecutar FlowLogin en este dispositivo" title="Play FlowLogin">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
+      <span>Play</span>
+    </button>
+    <button class="device-flow-menu-btn js-device-flow-stop" type="button" role="menuitem" style="--flow-menu-color: #f43f5e;" aria-label="Detener FlowLogin en este dispositivo" title="Stop FlowLogin">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7z" /></svg>
+      <span>Stop</span>
+    </button>
+    <button class="device-flow-menu-btn js-device-flow-retry-accounts" type="button" role="menuitem" style="--flow-menu-color: #ffd166;" aria-label="Reintentar cuentas del dispositivo" title="Reintentar Cuentas">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7" /><path d="M18 3v6h-6" /><path d="M21 12a9 9 0 0 1-15 6.7" /><path d="M6 21v-6h6" /></svg>
+      <span>Reintentar Cuentas</span>
+    </button>
+    <button class="device-flow-menu-btn js-device-flow-replace-accounts" type="button" role="menuitem" style="--flow-menu-color: #a78bfa;" aria-label="Reemplazar cuentas del dispositivo" title="Reemplazar Cuentas">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11" /><path d="m15 4 3 3-3 3" /><path d="M17 17H6" /><path d="m9 14-3 3 3 3" /></svg>
+      <span>Reemplazar Cuentas</span>
+    </button>
+    <button class="device-flow-menu-btn js-device-flow-add-accounts" type="button" role="menuitem" style="--flow-menu-color: #22b86f;" aria-label="Anadir cuentas al dispositivo" title="Anadir Cuentas">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
+      <span>Anadir Cuentas</span>
+    </button>
+  </div>
+
+  <script>
+    const state = {
+      devices: [],
+      agents: [],
+      selectedDeviceId: '',
+      selectedDeviceIds: [],
+      isDraggingDeviceSelection: false,
+      dragSelectMode: true,
+      editingDevice: null,
+      editingDevicePerson: null,
+      flowMenuDeviceId: '',
+      activeAccountTab: 'total',
+      accountTraceFilter: 'all',
+      accountTraceCollapsed: false,
+      accountAssignments: {},
+      refreshingPublicIpDevices: new Set(),
+      loginStatusTimer: null,
+      loginPollingDeviceIds: '',
+      loginPollStartedAt: 0,
+      loginLastProgressAt: 0,
+      loginLastStatusSignature: '',
+      runningFlow: '',
+      busy: false
+    };
+
+    const wsapi = new Wsapi({
+      onConnectSuccess: handleConnectSuccess,
+      onConnectFail: handleConnectFail,
+      onConnectClose: handleConnectClose
+    });
+
+    const els = {
+      status: document.querySelector('.js-status'),
+      statusText: document.querySelector('.js-status-text'),
+      connectBtn: document.querySelector('.js-connect-btn'),
+      refreshBtn: document.querySelector('.js-refresh-btn'),
+      deviceCount: document.querySelector('.js-device-count'),
+      deviceList: document.querySelector('.js-device-list'),
+      deviceZoom: document.querySelector('.js-device-zoom'),
+      selectedDevicesNote: document.querySelector('.js-selected-devices-note'),
+      selectAllDevicesBtn: document.querySelector('.js-select-all-devices-btn'),
+      clearSelectedDeviceAccountsBtn: document.querySelector('.js-clear-selected-device-accounts-btn'),
+      clearDeviceSelectionBtn: document.querySelector('.js-clear-device-selection-btn'),
+      flowAgentStatus: document.querySelector('.js-flow-agent-status'),
+      flowAgentSetupBtn: document.querySelector('.js-flow-agent-setup-btn'),
+      flowAgentRefreshBtn: document.querySelector('.js-flow-agent-refresh-btn'),
+      accountInput: document.querySelector('.js-accounts-input'),
+      accountInputs: document.querySelectorAll('.js-accounts-input'),
+      accountTabs: document.querySelectorAll('.js-account-tab'),
+      accountPanels: document.querySelectorAll('.js-account-panel'),
+      accountTabCounts: document.querySelectorAll('.js-account-tab-count'),
+      accountTrace: document.querySelector('.js-account-trace'),
+      accountTraceList: document.querySelector('.js-account-trace-list'),
+      accountTraceMeta: document.querySelector('.js-account-trace-meta'),
+      accountTraceFilters: document.querySelectorAll('.js-account-trace-filter'),
+      accountTraceToggle: document.querySelector('.js-account-trace-toggle'),
+      accountCount: document.querySelector('.js-account-count'),
+      accountsMeta: document.querySelector('.js-accounts-meta'),
+      accountDelimiter: document.querySelector('.js-account-delimiter'),
+      accountSplit: document.querySelector('.js-account-split'),
+      splitAccountsBtn: document.querySelector('.js-split-accounts-btn'),
+      clearInvalidAccountsBtn: document.querySelector('.js-clear-invalid-accounts'),
+      clearDeviceAccountsBtn: document.querySelector('.js-clear-device-accounts-btn'),
+      targetLabel: document.querySelector('.js-target-label'),
+      sendBtn: document.querySelector('.js-send-btn'),
+      commandInput: document.querySelector('.js-command-input'),
+      categoryButtons: document.querySelectorAll('.js-category-btn'),
+      flowRunButtons: document.querySelectorAll('.js-flow-run-btn'),
+      quickCommands: document.querySelectorAll('.js-quick-command'),
+      packageFilter: document.querySelector('.js-package-filter'),
+      packagesBtn: document.querySelector('.js-packages-btn'),
+      scriptPreset: document.querySelector('.js-script-preset'),
+      scriptPath: document.querySelector('.js-script-path'),
+      runScriptBtn: document.querySelector('.js-run-script-btn'),
+      stopScriptBtn: document.querySelector('.js-stop-script-btn'),
+      selectionHelp: document.querySelector('.js-selection-help'),
+      deviceNamePopover: document.querySelector('.js-device-name-popover'),
+      deviceNameInput: document.querySelector('.js-device-name-input'),
+      deviceNameSave: document.querySelector('.js-device-name-save'),
+      deviceNameCancel: document.querySelector('.js-device-name-cancel'),
+      deviceNameClear: document.querySelector('.js-device-name-clear'),
+      devicePersonPopover: document.querySelector('.js-device-person-popover'),
+      devicePersonInput: document.querySelector('.js-device-person-input'),
+      devicePersonCloneList: document.querySelector('.js-device-person-clone-list'),
+      devicePersonMessage: document.querySelector('.js-device-person-message'),
+      devicePersonSave: document.querySelector('.js-device-person-save'),
+      devicePersonCancel: document.querySelector('.js-device-person-cancel'),
+      devicePersonClear: document.querySelector('.js-device-person-clear'),
+      deviceFlowMenu: document.querySelector('.js-device-flow-menu'),
+      deviceFlowPlay: document.querySelector('.js-device-flow-play'),
+      deviceFlowStop: document.querySelector('.js-device-flow-stop'),
+      deviceFlowRetryAccounts: document.querySelector('.js-device-flow-retry-accounts'),
+      deviceFlowReplaceAccounts: document.querySelector('.js-device-flow-replace-accounts'),
+      deviceFlowAddAccounts: document.querySelector('.js-device-flow-add-accounts'),
+      output: document.querySelector('.js-output')
+    };
+
+    function getDeviceId(device) {
+      if (typeof device === 'string') return device;
+      return device.deviceId || device.id || device.serial || device.udid || device.name || JSON.stringify(device);
+    }
+
+    function getDeviceName(device, index) {
+      if (typeof device === 'string') return `Dispositivo ${index + 1}`;
+      return device.name || device.customName || device.deviceName || device.model || device.brand || `Dispositivo ${index + 1}`;
+    }
+
+    function limitTextLines(value, maxLines = 10) {
+      return String(value || '')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .split('\n')
+        .slice(0, maxLines)
+        .join('\n');
+    }
+
+    function getDeviceAccountLines(device) {
+      return String(device.person || '')
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean);
+    }
+
+    function getDeviceAccountStatuses(device) {
+      const lines = getDeviceAccountLines(device);
+      const statuses = Array.isArray(device.accountStatuses) ? device.accountStatuses : [];
+      return lines.slice(0, 10).map((line, index) => {
+        const clone = index + 1;
+        const statusItem = statuses.find(item => Number(item.clone) === clone && (!item.line || item.line === line)) || {};
+        return {
+          accountId: statusItem.accountId || `${clone}-${simpleHash(line)}`,
+          clone,
+          line,
+          package: statusItem.package || '',
+          status: statusItem.status || 'pending',
+          message: statusItem.message || '',
+          attempts: statusItem.attempts || 0,
+          updatedAt: statusItem.updatedAt || ''
+        };
+      });
+    }
+
+    function getTargetDeviceIds() {
+      return state.selectedDeviceIds.length ? state.selectedDeviceIds.join(',') : 'all';
+    }
+
+    function parseDeviceIdList(deviceIds) {
+      return String(deviceIds || '')
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean);
+    }
+
+    function uniqueDeviceIds(deviceIds) {
+      return [...new Set(deviceIds.map(item => String(item || '').trim()).filter(Boolean))];
+    }
+
+    function getAgentForDevice(device) {
+      const deviceId = String(getDeviceId(device) || '').trim();
+      const bySerial = state.agents.find(agent => String(agent.serial || '').trim() === deviceId);
+      if (bySerial) return bySerial;
+      const androidId = String(device.androidId || '').trim().toLowerCase();
+      if (!androidId) return null;
+      return state.agents.find(agent => String(agent.agentId || '').trim().toLowerCase() === androidId) || null;
+    }
+
+    function versionParts(value) {
+      return String(value || '')
+        .split('.')
+        .map(part => Number.parseInt(part, 10) || 0)
+        .concat([0, 0, 0])
+        .slice(0, 3);
+    }
+
+    function isFlowAgentReady(agent) {
+      if (!agent || !agent.accessibility) return false;
+      const [major, minor] = versionParts(agent.agentVersion);
+      return major > 0 || minor >= 2;
+    }
+
+    function normalizeCountryCode(value) {
+      const code = String(value || '').trim().toLowerCase();
+      return /^[a-z]{2}$/.test(code) ? code : '';
+    }
+
+    function countryFlagUrl(countryCode) {
+      const code = normalizeCountryCode(countryCode);
+      return code ? `https://flagcdn.com/24x18/${code}.png` : '';
+    }
+
+    async function refreshDevicePublicIp(deviceId) {
+      if (!deviceId || state.refreshingPublicIpDevices.has(deviceId)) return;
+      state.refreshingPublicIpDevices.add(deviceId);
+      renderDevices();
+      try {
+        const [devices, info] = await wsapi.refreshDevicePublicIp({ serial: deviceId });
+        state.devices = devices;
+        renderDevices();
+        if (info && (info.countryCode || info.publicIp)) {
+          appendOutput('IP publica actualizada', `${shortDeviceId(deviceId)}: ${info.countryCode || 'Pais sin detectar'}${info.publicIp ? ` / ${info.publicIp}` : ''}`);
+        } else {
+          appendOutput('No se detecto IP publica', `${shortDeviceId(deviceId)} no devolvio pais/IP. Revisa internet del telefono o intenta de nuevo.`);
+        }
+      } catch (error) {
+        appendOutput('Error al actualizar IP publica', error.message);
+      } finally {
+        state.refreshingPublicIpDevices.delete(deviceId);
+        renderDevices();
+      }
+    }
+
+    function updateFlowAgentControls() {
+      const enabled = wsapi.connected && !state.busy;
+      if (els.flowAgentSetupBtn) {
+        els.flowAgentSetupBtn.disabled = !enabled || !state.devices.length;
+      }
+      if (els.flowAgentRefreshBtn) {
+        els.flowAgentRefreshBtn.disabled = !enabled;
+      }
+      if (els.flowAgentStatus) {
+        const count = state.agents.length;
+        els.flowAgentStatus.textContent = `Agent ${count}`;
+        els.flowAgentStatus.classList.toggle('has-agents', count > 0);
+        els.flowAgentStatus.title = count
+          ? `${count} FlowAgent conectado${count === 1 ? '' : 's'}`
+          : 'Sin FlowAgent conectado';
+      }
+    }
+
+    function getAccountDelimiter() {
+      return els.accountDelimiter.value.trim() || ':';
+    }
+
+    const FLOW_RUN_ICONS = {
+      play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>',
+      stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.8" /></svg>'
+    };
+
+    function setFlowRunIcon(btn, iconName) {
+      if (btn.dataset.icon === iconName) return;
+      btn.dataset.icon = iconName;
+      btn.innerHTML = FLOW_RUN_ICONS[iconName] || FLOW_RUN_ICONS.play;
+    }
+
+    function setBusy(value) {
+      state.busy = value;
+      const enabled = wsapi.connected && !value;
+      els.connectBtn.disabled = value;
+      els.refreshBtn.disabled = !enabled;
+      els.sendBtn.disabled = !enabled;
+      els.commandInput.disabled = !enabled;
+      els.packageFilter.disabled = !enabled;
+      els.packagesBtn.disabled = !enabled;
+      els.splitAccountsBtn.disabled = !enabled;
+      els.clearDeviceAccountsBtn.disabled = !enabled;
+      updateDeviceSelectionControls();
+      els.quickCommands.forEach(btn => {
+        btn.disabled = !enabled;
+      });
+      els.scriptPreset.disabled = !enabled;
+      els.scriptPath.disabled = !enabled;
+      updateFlowAgentControls();
+      updateScriptControls();
+      updateFlowRunControls();
+    }
+
+    function setStatus(online, text) {
+      els.status.classList.toggle('is-online', online);
+      els.statusText.textContent = text;
+    }
+
+    function updateScriptControls() {
+      const canRunScript =
+        wsapi.connected &&
+        !state.busy &&
+        !!els.scriptPath.value.trim();
+      els.runScriptBtn.disabled = !canRunScript;
+      els.stopScriptBtn.disabled = !canRunScript;
+    }
+
+    function getLoginScriptPath() {
+      const loginOption = [...els.scriptPreset.options].find(option => option.textContent.trim() === 'Login.js');
+      return loginOption ? loginOption.value : els.scriptPath.value.trim();
+    }
+
+    function isLoginScriptPath(filePath) {
+      return String(filePath || '').split(/[\\/]/).pop().toLowerCase() === 'login.js';
+    }
+
+    function selectLoginScript() {
+      const loginPath = getLoginScriptPath();
+      if (loginPath) {
+        els.scriptPreset.value = loginPath;
+        els.scriptPath.value = loginPath;
+      }
+      updateScriptControls();
+      return loginPath;
+    }
+
+    function updateFlowRunControls() {
+      els.flowRunButtons.forEach(btn => {
+        const flow = btn.dataset.flow;
+        const isFlowLogin = flow === 'FlowLogin';
+        const isRunning = state.runningFlow === flow;
+        btn.classList.toggle('is-running', isRunning);
+        setFlowRunIcon(btn, isRunning ? 'stop' : 'play');
+        if (isFlowLogin) {
+          btn.disabled = !wsapi.connected || state.busy || (!!state.runningFlow && !isRunning);
+          btn.setAttribute('aria-label', isRunning ? 'Detener FlowLogin' : 'Ejecutar FlowLogin');
+          btn.setAttribute('title', isRunning ? 'Detener FlowLogin' : 'Ejecutar FlowLogin');
+        } else {
+          btn.disabled = true;
+        }
+      });
+      els.categoryButtons.forEach(btn => {
+        btn.classList.toggle('is-running', state.runningFlow === btn.dataset.flow);
+      });
+    }
+
+    function setOutput(text) {
+      els.output.textContent = text || 'Sin respuesta.';
+    }
+
+    function appendOutput(title, text) {
+      const now = new Date().toLocaleTimeString('es-ES');
+      setOutput(`[${now}] ${title}\n\n${text || 'Sin respuesta.'}`);
+    }
+
+    function countAccountLines(value) {
+      return value
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean).length;
+    }
+
+    function getAccountInput(tab) {
+      return [...els.accountInputs].find(input => input.dataset.accountInput === tab) || els.accountInput;
+    }
+
+    const ACCOUNT_ATTEMPT_STATUSES = new Set(['running', 'retrying', 'success', 'already', 'error', 'review']);
+    const ACCOUNT_VALID_STATUSES = new Set(['success', 'already']);
+    const ACCOUNT_INVALID_STATUSES = new Set(['error', 'review']);
+
+    function normalizeAccountLine(line) {
+      return String(line || '').trim();
+    }
+
+    function accountLineSignature(line) {
+      return normalizeAccountLine(line);
+    }
+
+    function accountLineMatches(a, b) {
+      return accountLineSignature(a) === accountLineSignature(b);
+    }
+
+    function getAccountLines(tab) {
+      return getAccountInput(tab).value
+        .split('\n')
+        .map(normalizeAccountLine)
+        .filter(Boolean);
+    }
+
+    function setAccountLines(tab, lines) {
+      const input = getAccountInput(tab);
+      const nextValue = lines
+        .map(normalizeAccountLine)
+        .filter(Boolean)
+        .join('\n');
+      if (input.value === nextValue) return false;
+      input.value = nextValue;
+      return true;
+    }
+
+    function removeAccountLineFromTab(tab, line) {
+      const signature = accountLineSignature(line);
+      if (!signature) return false;
+      const lines = getAccountLines(tab);
+      const nextLines = lines.filter(item => !accountLineMatches(item, signature));
+      if (nextLines.length === lines.length) return false;
+      return setAccountLines(tab, nextLines);
+    }
+
+    function addAccountLineToTab(tab, line) {
+      const normalized = normalizeAccountLine(line);
+      if (!normalized) return false;
+      const lines = getAccountLines(tab);
+      if (lines.some(item => accountLineMatches(item, normalized))) return false;
+      return setAccountLines(tab, [...lines, normalized]);
+    }
+
+    function moveAccountLineToResultTab(line, targetTab) {
+      if (targetTab !== 'valid' && targetTab !== 'invalid') return false;
+      const normalized = normalizeAccountLine(line);
+      if (!normalized) return false;
+      const oppositeTab = targetTab === 'valid' ? 'invalid' : 'valid';
+      let changed = false;
+      changed = removeAccountLineFromTab('total', normalized) || changed;
+      changed = removeAccountLineFromTab(oppositeTab, normalized) || changed;
+      changed = addAccountLineToTab(targetTab, normalized) || changed;
+      return changed;
+    }
+
+    function markAccountLineAttempted(line, status) {
+      const normalized = normalizeAccountLine(line);
+      const normalizedStatus = status || 'running';
+      if (!normalized || !ACCOUNT_ATTEMPT_STATUSES.has(normalizedStatus)) return false;
+      updateAccountAssignmentStatusByLine(normalized, normalizedStatus);
+      let changed = removeAccountLineFromTab('total', normalized);
+      if (ACCOUNT_VALID_STATUSES.has(normalizedStatus)) {
+        changed = moveAccountLineToResultTab(normalized, 'valid') || changed;
+      }
+      if (ACCOUNT_INVALID_STATUSES.has(normalizedStatus)) {
+        changed = moveAccountLineToResultTab(normalized, 'invalid') || changed;
+      }
+      return changed;
+    }
+
+    function persistAccountListChanges(changed) {
+      if (!changed) return;
+      saveAccountsState();
+      updateAccountsCount();
+    }
+
+    function simpleHash(value) {
+      let hash = 0;
+      const text = String(value || '');
+      for (let i = 0; i < text.length; i += 1) {
+        hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+      }
+      return Math.abs(hash).toString(36).padStart(5, '0').slice(0, 5);
+    }
+
+    function accountKey(tab, index, line) {
+      return `${tab}:${simpleHash(line)}`;
+    }
+
+    function getAccountRecords(tab = state.activeAccountTab) {
+      return getAccountInput(tab).value
+        .split('\n')
+        .map(line => line.trim())
+        .map((line, index) => ({ tab, index, number: index + 1, line, key: accountKey(tab, index, line) }))
+        .filter(record => record.line);
+    }
+
+    function saveAccountAssignments() {
+      localStorage.setItem('flowlogin.accountAssignments', JSON.stringify(state.accountAssignments));
+    }
+
+    function loadAccountAssignments() {
+      try {
+        const data = JSON.parse(localStorage.getItem('flowlogin.accountAssignments') || '{}');
+        state.accountAssignments = data && typeof data === 'object' ? data : {};
+      } catch (_) {
+        state.accountAssignments = {};
+      }
+    }
+
+    function assignmentStatusColor(status) {
+      return {
+        free: '#9fb0cc',
+        assigned: '#4f8dff',
+        pending: '#9fb0cc',
+        running: '#4f8dff',
+        retrying: '#ffd166',
+        success: '#22b86f',
+        already: '#ff9f43',
+        error: '#d45862',
+        review: '#a78bfa',
+        replaced: '#7c8ba5'
+      }[status] || '#9fb0cc';
+    }
+
+    function assignmentStatusText(assignment) {
+      if (!assignment) return 'Disponible';
+      const status = assignment.status || 'assigned';
+      const place = assignment.deviceId ? `${shortDeviceId(assignment.deviceId)} C${assignment.clone || '?'}` : '';
+      if (status === 'success') return place ? `OK ${place}` : 'OK';
+      if (status === 'already') return place ? `Activo ${place}` : 'Activo';
+      if (status === 'error') return place ? `Error ${place}` : 'Error';
+      if (status === 'review') return place ? `Rev ${place}` : 'Rev';
+      if (status === 'running') return place ? `Run ${place}` : 'Run';
+      if (status === 'retrying') return place ? `Retry ${place}` : 'Retry';
+      if (status === 'replaced') return 'Reempl.';
+      return place || 'Asignada';
+    }
+
+    function shortDeviceId(deviceId) {
+      const text = String(deviceId || '');
+      if (text.includes(':')) return text.split(':')[0].split('.').slice(-1)[0];
+      return text.slice(-4) || 'D';
+    }
+
+    function updateAccountTraceLegacy() {
+      if (!els.accountTraceList) return;
+      const records = getAvailableAccountRecords(state.activeAccountTab);
+      if (!records.length) {
+        els.accountTraceList.innerHTML = '<div class="account-trace-row"><span class="account-trace-id">000</span><span class="account-trace-line">Sin cuentas en esta pestaña.</span><span class="account-trace-chip">Libre</span></div>';
+        return;
+      }
+
+      els.accountTraceList.innerHTML = '';
+      records.slice(0, 80).forEach(record => {
+        const assignment = getAccountAssignmentForRecord(record);
+        const status = assignment ? assignment.status || 'assigned' : 'free';
+        const row = document.createElement('div');
+        const id = document.createElement('span');
+        const line = document.createElement('span');
+        const chip = document.createElement('span');
+        row.className = 'account-trace-row';
+        id.className = 'account-trace-id';
+        id.textContent = String(record.number).padStart(3, '0');
+        line.className = 'account-trace-line';
+        line.textContent = record.line;
+        chip.className = 'account-trace-chip';
+        chip.style.setProperty('--trace-color', assignmentStatusColor(status));
+        chip.textContent = assignmentStatusText(assignment);
+        row.append(id, line, chip);
+        els.accountTraceList.appendChild(row);
+      });
+    }
+
+    function getAccountTraceRows() {
+      const rows = getAccountRecords(state.activeAccountTab).map(record => {
+        const assignment = getAccountAssignmentForRecord(record);
+        const status = assignment ? assignment.status || 'assigned' : 'free';
+        const used = isAccountAssignmentUnavailable(assignment);
+        return { record, assignment, status, used };
+      });
+      if (state.accountTraceFilter === 'free') return rows.filter(item => !item.used);
+      if (state.accountTraceFilter === 'used') return rows.filter(item => item.used);
+      return rows;
+    }
+
+    function updateAccountTraceFilters() {
+      els.accountTraceFilters.forEach(btn => {
+        const selected = btn.dataset.traceFilter === state.accountTraceFilter;
+        btn.classList.toggle('is-active', selected);
+        btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      });
+    }
+
+    function updateAccountTrace() {
+      if (!els.accountTraceList) return;
+      const allRows = getAccountRecords(state.activeAccountTab).map(record => {
+        const assignment = getAccountAssignmentForRecord(record);
+        return { record, assignment, used: isAccountAssignmentUnavailable(assignment) };
+      });
+      const rows = getAccountTraceRows();
+      const freeCount = allRows.filter(item => !item.used).length;
+      const usedCount = allRows.length - freeCount;
+      const visibleRows = rows.slice(0, 80);
+
+      updateAccountTraceFilters();
+      if (els.accountTrace) {
+        els.accountTrace.classList.toggle('is-collapsed', state.accountTraceCollapsed);
+      }
+      if (els.accountTraceToggle) {
+        els.accountTraceToggle.setAttribute('aria-label', state.accountTraceCollapsed ? 'Expandir mapa de cuentas' : 'Contraer mapa de cuentas');
+        els.accountTraceToggle.setAttribute('title', state.accountTraceCollapsed ? 'Expandir' : 'Contraer');
+      }
+      if (els.accountTraceMeta) {
+        els.accountTraceMeta.textContent = `${visibleRows.length}/${allRows.length} visibles, ${freeCount} disponibles, ${usedCount} asignadas`;
+      }
+
+      if (!rows.length) {
+        els.accountTraceList.innerHTML = '<div class="account-trace-empty">Sin cuentas para este filtro.</div>';
+        return;
+      }
+
+      els.accountTraceList.innerHTML = '';
+      visibleRows.forEach(item => {
+        const { record, assignment, status, used } = item;
+        const row = document.createElement('div');
+        const id = document.createElement('span');
+        const line = document.createElement('span');
+        const chip = document.createElement('span');
+        row.className = `account-trace-row ${used ? 'is-used' : 'is-free'}`;
+        row.style.setProperty('--trace-color', assignmentStatusColor(status));
+        row.title = `Referencia ${String(record.number).padStart(2, '0')}`;
+        if (assignment && assignment.deviceId) {
+          row.dataset.deviceId = assignment.deviceId;
+          row.addEventListener('click', () => selectTraceDevice(assignment.deviceId));
+        }
+        id.className = 'account-trace-id';
+        id.textContent = String(record.number).padStart(2, '0');
+        line.className = 'account-trace-line';
+        line.textContent = record.line;
+        chip.className = 'account-trace-chip';
+        chip.textContent = assignmentStatusText(assignment);
+        row.append(id, line, chip);
+        els.accountTraceList.appendChild(row);
+      });
+    }
+
+    function selectTraceDevice(deviceId) {
+      if (!deviceId) return;
+      state.selectedDeviceIds = [deviceId];
+      state.selectedDeviceId = deviceId;
+      renderDevices();
+      const card = [...els.deviceList.querySelectorAll('.device-card')].find(item => item.dataset.deviceId === deviceId);
+      if (card) {
+        card.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      }
+    }
+
+    function getAccountAssignmentEntryByLine(line) {
+      const signature = accountLineSignature(line);
+      if (!signature) return null;
+      const entry = Object.entries(state.accountAssignments).find(([, assignment]) => {
+        return assignment && accountLineMatches(assignment.line, signature);
+      });
+      return entry ? { key: entry[0], assignment: entry[1] } : null;
+    }
+
+    function getAccountAssignmentForRecord(record) {
+      return state.accountAssignments[record.key] || (getAccountAssignmentEntryByLine(record.line) || {}).assignment || null;
+    }
+
+    function isAccountAssignmentUnavailable(assignment) {
+      if (!assignment) return false;
+      const status = assignment.status || 'assigned';
+      if (status === 'replaced') return false;
+      return Boolean(assignment.deviceId) || status !== 'free';
+    }
+
+    function getAccountLineBlocker(line, allowedDeviceId = '', allowedClone = null) {
+      const signature = accountLineSignature(line);
+      if (!signature) return null;
+      const cloneNumber = Number(allowedClone) || 0;
+      const assignmentEntry = Object.entries(state.accountAssignments).find(([, assignment]) => {
+        if (!assignment || !accountLineMatches(assignment.line, signature)) return false;
+        if (assignment.deviceId && assignment.deviceId === allowedDeviceId) {
+          return cloneNumber > 0 && Number(assignment.clone) !== cloneNumber;
+        }
+        if (!assignment.deviceId && allowedDeviceId && cloneNumber > 0) {
+          const allowedDevice = state.devices.find(device => getDeviceId(device) === allowedDeviceId);
+          const allowedLine = allowedDevice ? getDeviceAccountLines(allowedDevice)[cloneNumber - 1] : '';
+          if (accountLineMatches(allowedLine, signature)) return false;
+        }
+        return isAccountAssignmentUnavailable(assignment);
+      });
+      if (assignmentEntry) return assignmentEntry[1];
+      for (const device of state.devices) {
+        const deviceId = getDeviceId(device);
+        if (deviceId === allowedDeviceId) continue;
+        const statusItem = getDeviceAccountStatuses(device).find(item => {
+          return item.status !== 'replaced' && accountLineMatches(item.line, signature);
+        });
+        if (statusItem) {
+          return {
+            line: statusItem.line,
+            deviceId,
+            clone: statusItem.clone,
+            status: statusItem.status || 'assigned'
+          };
+        }
+      }
+      return null;
+    }
+
+    function getReservedAccountLineSet() {
+      const reserved = new Set();
+      Object.values(state.accountAssignments).forEach(assignment => {
+        const signature = accountLineSignature(assignment && assignment.line);
+        if (signature && isAccountAssignmentUnavailable(assignment)) {
+          reserved.add(signature);
+        }
+      });
+      state.devices.forEach(device => {
+        getDeviceAccountStatuses(device).forEach(item => {
+          const signature = accountLineSignature(item.line);
+          if (signature && item.status !== 'replaced') {
+            reserved.add(signature);
+          }
+        });
+      });
+      return reserved;
+    }
+
+    function getAvailableAccountRecords(tab = state.activeAccountTab) {
+      const reserved = getReservedAccountLineSet();
+      const seen = new Set();
+      return getAccountRecords(tab).filter(record => {
+        const signature = accountLineSignature(record.line);
+        if (!signature || seen.has(signature) || reserved.has(signature)) return false;
+        seen.add(signature);
+        return true;
+      });
+    }
+
+    function assignAccountRecord(record, deviceId, clone, status = 'assigned') {
+      state.accountAssignments[record.key] = {
+        line: record.line,
+        tab: record.tab,
+        number: record.number,
+        deviceId,
+        clone,
+        status,
+        updatedAt: new Date().toISOString()
+      };
+      saveAccountAssignments();
+    }
+
+    function updateAccountAssignmentStatusByLine(line, status) {
+      const signature = accountLineSignature(line);
+      if (!signature || !status) return false;
+      let changed = false;
+      Object.entries(state.accountAssignments).forEach(([key, assignment]) => {
+        if (!assignment || !accountLineMatches(assignment.line, signature)) return;
+        if (assignment.status === status) return;
+        state.accountAssignments[key] = {
+          ...assignment,
+          status,
+          updatedAt: new Date().toISOString()
+        };
+        changed = true;
+      });
+      if (changed) saveAccountAssignments();
+      return changed;
+    }
+
+    function clearAssignmentsForDevices(deviceIds) {
+      const targets = new Set(deviceIds);
+      Object.entries(state.accountAssignments).forEach(([key, assignment]) => {
+        if (targets.has(assignment.deviceId)) {
+          const status = assignment.status || 'assigned';
+          if (ACCOUNT_ATTEMPT_STATUSES.has(status)) {
+            state.accountAssignments[key] = {
+              ...assignment,
+              deviceId: '',
+              clone: '',
+              status,
+              updatedAt: new Date().toISOString()
+            };
+          } else {
+            delete state.accountAssignments[key];
+          }
+        }
+      });
+      saveAccountAssignments();
+      updateAccountTrace();
+    }
+
+    function clearAssignmentForDeviceClone(deviceId, clone, replacementStatus = 'replaced') {
+      Object.entries(state.accountAssignments).forEach(([key, assignment]) => {
+        if (assignment.deviceId === deviceId && Number(assignment.clone) === Number(clone)) {
+          const status = assignment.status || replacementStatus;
+          if (ACCOUNT_ATTEMPT_STATUSES.has(status)) {
+            state.accountAssignments[key] = {
+              ...assignment,
+              deviceId: '',
+              clone: '',
+              status,
+              updatedAt: new Date().toISOString()
+            };
+          } else {
+            delete state.accountAssignments[key];
+          }
+        }
+      });
+      saveAccountAssignments();
+    }
+
+    function findFreeAccountRecord(tab = state.activeAccountTab) {
+      return getAvailableAccountRecords(tab)[0] || null;
+    }
+
+    function findAccountRecordByLine(line) {
+      for (const input of els.accountInputs) {
+        const record = getAccountRecords(input.dataset.accountInput).find(item => item.line === line);
+        if (record) return record;
+      }
+      return null;
+    }
+
+    function syncAssignmentsFromDevices() {
+      const allRecords = [];
+      els.accountInputs.forEach(input => {
+        allRecords.push(...getAccountRecords(input.dataset.accountInput));
+      });
+      state.devices.forEach(device => {
+        const deviceId = getDeviceId(device);
+        getDeviceAccountStatuses(device).forEach(item => {
+          const record = allRecords.find(candidate => candidate.line === item.line);
+          if (!record) return;
+          const currentEntry = state.accountAssignments[record.key]
+            ? { key: record.key, assignment: state.accountAssignments[record.key] }
+            : getAccountAssignmentEntryByLine(record.line);
+          const current = currentEntry && currentEntry.assignment;
+          if (!current || !current.deviceId || (current.deviceId === deviceId && Number(current.clone) === Number(item.clone))) {
+            if (currentEntry && currentEntry.key !== record.key) {
+              delete state.accountAssignments[currentEntry.key];
+            }
+            state.accountAssignments[record.key] = {
+              line: record.line,
+              tab: record.tab,
+              number: record.number,
+              deviceId,
+              clone: item.clone,
+              status: item.status || 'assigned',
+              updatedAt: item.updatedAt || new Date().toISOString()
+            };
+          }
+        });
+      });
+      const listsChanged = syncAccountListsFromDevices();
+      saveAccountAssignments();
+      if (!listsChanged) updateAccountTrace();
+    }
+
+    function syncAccountListsFromDevices() {
+      let changed = false;
+      state.devices.forEach(device => {
+        getDeviceAccountStatuses(device).forEach(item => {
+          changed = markAccountLineAttempted(item.line, item.status || 'pending') || changed;
+        });
+      });
+      persistAccountListChanges(changed);
+      return changed;
+    }
+
+    function markDeviceAccountsAttempted(deviceIds, status = 'running') {
+      const targets = new Set(Array.isArray(deviceIds) ? deviceIds : String(deviceIds || '').split(',').map(item => item.trim()).filter(Boolean));
+      let changed = false;
+      state.devices.forEach(device => {
+        const deviceId = getDeviceId(device);
+        if (targets.size && !targets.has(deviceId)) return;
+        getDeviceAccountLines(device).forEach(line => {
+          changed = markAccountLineAttempted(line, status) || changed;
+        });
+      });
+      persistAccountListChanges(changed);
+    }
+
+    function markCloneAccountAttempted(deviceId, clone, status = 'running') {
+      const device = state.devices.find(item => getDeviceId(item) === deviceId);
+      if (!device) return;
+      const line = getDeviceAccountLines(device)[Number(clone) - 1];
+      persistAccountListChanges(markAccountLineAttempted(line, status));
+    }
+
+    function setLocalCloneStatus(deviceId, clone, status, message = '', attempts = 0) {
+      const device = state.devices.find(item => getDeviceId(item) === deviceId);
+      if (!device) return;
+      const cloneNumber = Number(clone);
+      device.accountStatuses = getDeviceAccountStatuses(device).map(item => {
+        if (Number(item.clone) !== cloneNumber) return item;
+        return {
+          ...item,
+          status,
+          message,
+          attempts,
+          updatedAt: new Date().toISOString()
+        };
+      });
+    }
+
+    function saveAccountsState() {
+      const data = {
+        activeTab: state.activeAccountTab,
+        delimiter: getAccountDelimiter(),
+        split: els.accountSplit.value,
+        lists: {}
+      };
+      els.accountInputs.forEach(input => {
+        data.lists[input.dataset.accountInput] = input.value;
+      });
+      localStorage.setItem('flowlogin.accounts', JSON.stringify(data));
+    }
+
+    function loadAccountsState() {
+      try {
+        const data = JSON.parse(localStorage.getItem('flowlogin.accounts') || '{}');
+        els.accountInputs.forEach(input => {
+          input.value = data.lists && data.lists[input.dataset.accountInput] ? data.lists[input.dataset.accountInput] : '';
+        });
+        els.accountDelimiter.value = data.delimiter || ':';
+        els.accountSplit.value = data.split || '';
+        if (data.activeTab && getAccountInput(data.activeTab)) {
+          state.activeAccountTab = data.activeTab;
+        }
+      } catch (_) {
+        els.accountDelimiter.value = ':';
+      }
+    }
+
+    function updateAccountsCount() {
+      const counts = {};
+      els.accountInputs.forEach(input => {
+        counts[input.dataset.accountInput] = countAccountLines(input.value);
+      });
+      els.accountTabCounts.forEach(counter => {
+        counter.textContent = counts[counter.dataset.countFor] || 0;
+      });
+
+      const activeCount = counts[state.activeAccountTab] || 0;
+      const activeLabel = state.activeAccountTab === 'total'
+        ? 'Total'
+        : state.activeAccountTab === 'valid'
+          ? 'Validos'
+          : 'No validos';
+      els.accountCount.textContent = activeCount;
+      els.accountsMeta.classList.remove('is-warning');
+      els.accountsMeta.textContent = `${activeLabel}: ${activeCount} ${activeCount === 1 ? 'cuenta detectada' : 'cuentas detectadas'}.`;
+      saveAccountsState();
+      updateAccountTrace();
+    }
+
+    function setAccountTab(tab) {
+      state.activeAccountTab = tab;
+      els.accountTabs.forEach(btn => {
+        const selected = btn.dataset.accountTab === tab;
+        btn.classList.toggle('is-selected', selected);
+        btn.setAttribute('aria-selected', selected ? 'true' : 'false');
+      });
+      els.accountPanels.forEach(panel => {
+        panel.classList.toggle('is-active', panel.dataset.accountPanel === tab);
+      });
+      updateAccountsCount();
+      getAccountInput(tab).focus();
+    }
+
+    function clearInvalidAccounts() {
+      const input = getAccountInput('invalid');
+      if (!input) return;
+      input.value = '';
+      saveAccountsState();
+      updateAccountsCount();
+      els.accountsMeta.classList.remove('is-warning');
+      els.accountsMeta.textContent = 'No validos borrado y guardado.';
+      appendOutput('No validos borrado', 'La lista de cuentas no validas quedo vacia y guardada en este dashboard.');
+    }
+
+    async function splitAccountsToSelectedDevices() {
+      const selectedIds = state.selectedDeviceIds.length ? state.selectedDeviceIds : [];
+      if (!selectedIds.length) {
+        els.accountsMeta.classList.add('is-warning');
+        els.accountsMeta.textContent = 'Debes seleccionar un dispositivo o varios antes de dividir.';
+        appendOutput('Debes seleccionar un dispositivo o varios', 'Selecciona primero uno o varios dispositivos conectados para dividir y enviar las cuentas.');
+        return;
+      }
+
+      const records = getAccountRecords(state.activeAccountTab);
+      const lines = records.map(record => record.line);
+      const chunkSize = Number.parseInt(els.accountSplit.value, 10);
+      if (!lines.length) {
+        appendOutput('No hay cuentas libres para dividir', 'Pega cuentas nuevas en Total o libera cuentas pendientes antes de dividir. Las cuentas ya asignadas no se repiten.');
+        return;
+      }
+      if (!Number.isFinite(chunkSize) || chunkSize < 1) {
+        appendOutput('Valor de Dividir invalido', 'Escribe cuantas lineas debe recibir cada telefono.');
+        return;
+      }
+      if (chunkSize > 10) {
+        els.accountsMeta.classList.add('is-warning');
+        els.accountsMeta.textContent = 'Cada dispositivo permite maximo 10 cuentas. No uses un valor superior.';
+        appendOutput('Limite de cuentas por dispositivo', 'Cada dispositivo permite maximo 10 cuentas. No se puede usar un valor superior en Dividir.');
+        return;
+      }
+
+      setBusy(true);
+      try {
+        const assignments = [];
+        const partialAssignments = [];
+        const plannedChunks = selectedIds.map((serial, index) => ({
+          serial,
+          records: records.slice(index * chunkSize, (index + 1) * chunkSize)
+        }));
+        clearAssignmentsForDevices(selectedIds);
+        for (const plan of plannedChunks) {
+          const serial = plan.serial;
+          const chunkRecords = plan.records;
+          const chunkLines = chunkRecords.map(record => record.line);
+          const chunk = chunkLines.join('\n');
+          await wsapi.updateDevicePerson({ serial, person: chunk });
+          chunkRecords.forEach((record, chunkIndex) => {
+            assignAccountRecord(record, serial, chunkIndex + 1, 'assigned');
+          });
+          assignments.push(`${serial}:\n${chunk || '(sin cuentas)'}`);
+          if (chunkLines.length < chunkSize) {
+            partialAssignments.push(`${serial} recibio ${chunkLines.length} de ${chunkSize}`);
+          }
+        }
+        const remaining = Math.max(0, lines.length - selectedIds.length * chunkSize);
+        state.devices = await wsapi.getDeviceListAll();
+        renderDevices();
+        if (partialAssignments.length) {
+          els.accountsMeta.classList.add('is-warning');
+          els.accountsMeta.textContent = `No alcanzaron las cuentas: ${partialAssignments.join(', ')}.`;
+        }
+        appendOutput(
+          'Cuentas divididas entre dispositivos',
+          `${assignments.join('\n\n')}${partialAssignments.length ? `\n\nNo alcanzaron las cuentas para completar todos los bloques:\n${partialAssignments.join('\n')}` : ''}${remaining ? `\n\n${remaining} lineas quedaron sin asignar.` : ''}`
+        );
+      } catch (error) {
+        appendOutput('Error al dividir cuentas', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function clearDeviceAccounts() {
+      if (!state.devices.length) {
+        appendOutput('No hay dispositivos conectados', 'Conecta dispositivos antes de borrar cuentas.');
+        return;
+      }
+
+      const targetIds = state.selectedDeviceIds.length
+        ? state.selectedDeviceIds
+        : state.devices.map(getDeviceId);
+      const targetLabel = state.selectedDeviceIds.length
+        ? `${targetIds.length} dispositivo${targetIds.length === 1 ? '' : 's'} seleccionado${targetIds.length === 1 ? '' : 's'}`
+        : `todos los dispositivos conectados (${targetIds.length})`;
+      const confirmed = window.confirm(`¿Estas realmente seguro de querer borrar las cuentas de ${targetLabel}?`);
+      if (!confirmed) return;
+
+      setBusy(true);
+      try {
+        for (const serial of targetIds) {
+          await wsapi.updateDevicePerson({ serial, person: '' });
+        }
+        clearAssignmentsForDevices(targetIds);
+        state.devices = await wsapi.getDeviceListAll();
+        renderDevices();
+        appendOutput('Cuentas eliminadas', `Se borraron las cuentas de ${targetLabel}.`);
+      } catch (error) {
+        appendOutput('Error al borrar cuentas', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function clearSelectedDeviceAccounts() {
+      if (!state.selectedDeviceIds.length) {
+        appendOutput('Debes seleccionar un dispositivo o varios', 'Selecciona primero los dispositivos a los que quieres eliminarles las cuentas.');
+        return;
+      }
+
+      const targetIds = [...state.selectedDeviceIds];
+      const targetLabel = `${targetIds.length} dispositivo${targetIds.length === 1 ? '' : 's'} seleccionado${targetIds.length === 1 ? '' : 's'}`;
+      const confirmed = window.confirm(`Â¿Estas realmente seguro de querer borrar las cuentas de ${targetLabel}?`);
+      if (!confirmed) return;
+
+      setBusy(true);
+      try {
+        for (const serial of targetIds) {
+          await wsapi.updateDevicePerson({ serial, person: '' });
+        }
+        clearAssignmentsForDevices(targetIds);
+        state.devices = await wsapi.getDeviceListAll();
+        renderDevices();
+        appendOutput('Cuentas eliminadas', `Se borraron las cuentas de ${targetLabel}.`);
+      } catch (error) {
+        appendOutput('Error al borrar cuentas', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    function setDeviceSelected(card, badge, id, selected) {
+      if (selected && !state.selectedDeviceIds.includes(id)) {
+        state.selectedDeviceIds = [...state.selectedDeviceIds, id];
+      }
+      if (!selected && state.selectedDeviceIds.includes(id)) {
+        state.selectedDeviceIds = state.selectedDeviceIds.filter(deviceIdVal => deviceIdVal !== id);
+      }
+      state.selectedDeviceId = state.selectedDeviceIds.length === 1 ? state.selectedDeviceIds[0] : '';
+      card.classList.toggle('is-selected', state.selectedDeviceIds.includes(id));
+      badge.textContent = state.selectedDeviceIds.includes(id) ? 'Seleccionado' : 'Disponible';
+      updateTargetLabel();
+    }
+
+    function toggleDeviceSelected(card, badge, id) {
+      setDeviceSelected(card, badge, id, !state.selectedDeviceIds.includes(id));
+    }
+
+    function selectAllDevices() {
+      if (!state.devices.length) return;
+      state.selectedDeviceIds = state.devices.map(getDeviceId);
+      state.selectedDeviceId = state.selectedDeviceIds.length === 1 ? state.selectedDeviceIds[0] : '';
+      renderDevices();
+    }
+
+    function clearDeviceSelection() {
+      if (!state.selectedDeviceIds.length) return;
+      state.selectedDeviceIds = [];
+      state.selectedDeviceId = '';
+      renderDevices();
+    }
+
+    function closeDeviceNamePopover() {
+      els.deviceNamePopover.classList.remove('is-open');
+      state.editingDevice = null;
+    }
+
+    function closeDevicePersonPopover() {
+      els.devicePersonPopover.classList.remove('is-open');
+      state.editingDevicePerson = null;
+      delete els.devicePersonPopover.dataset.serial;
+      setDevicePersonMessage('');
+    }
+
+    function closeDeviceFlowMenu() {
+      els.deviceFlowMenu.classList.remove('is-open');
+      state.flowMenuDeviceId = '';
+      delete els.deviceFlowMenu.dataset.deviceId;
+    }
+
+    function setDevicePersonMessage(text, type = '') {
+      if (!els.devicePersonMessage) return;
+      els.devicePersonMessage.textContent = text || '';
+      els.devicePersonMessage.classList.toggle('is-warning', type === 'warning');
+      els.devicePersonMessage.classList.toggle('is-ok', type === 'ok');
+    }
+
+    function positionPopover(popover, anchor, width = 280, height = 190) {
+      if (!anchor || !anchor.isConnected) return false;
+      const rect = anchor.getBoundingClientRect();
+      const left = Math.min(
+        window.innerWidth - width - 12,
+        Math.max(12, rect.right - width + 10)
+      );
+      const top = Math.min(window.innerHeight - height, rect.bottom + 10);
+      popover.style.left = `${left}px`;
+      popover.style.top = `${Math.max(12, top)}px`;
+      return true;
+    }
+
+    function refreshOpenPopovers() {
+      if (els.deviceNamePopover.classList.contains('is-open')) {
+        if (!positionPopover(els.deviceNamePopover, state.editingDevice && state.editingDevice.anchor, 280, 150)) {
+          closeDeviceNamePopover();
+        }
+      }
+      if (els.devicePersonPopover.classList.contains('is-open')) {
+        if (!positionPopover(els.devicePersonPopover, state.editingDevicePerson && state.editingDevicePerson.anchor, 380, 340)) {
+          closeDevicePersonPopover();
+        }
+      }
+      if (els.deviceFlowMenu.classList.contains('is-open')) {
+        closeDeviceFlowMenu();
+      }
+    }
+
+    function openDeviceNamePopover(device, index, anchor) {
+      const serial = getDeviceId(device);
+      const currentName = getDeviceName(device, index);
+
+      closeDevicePersonPopover();
+      state.editingDevice = { serial, anchor };
+      els.deviceNameInput.value = currentName;
+      positionPopover(els.deviceNamePopover, anchor, 280, 150);
+      els.deviceNamePopover.classList.add('is-open');
+      els.deviceNameInput.focus();
+      els.deviceNameInput.select();
+    }
+
+    function openDevicePersonPopover(device, anchor) {
+      const serial = getDeviceId(device);
+
+      closeDeviceNamePopover();
+      state.editingDevicePerson = { serial, anchor };
+      els.devicePersonPopover.dataset.serial = serial;
+      els.devicePersonInput.value = limitTextLines(device.person || '', 10);
+      updateDevicePersonCloneList();
+      setDevicePersonMessage('');
+      positionPopover(els.devicePersonPopover, anchor, 380, 340);
+      els.devicePersonPopover.classList.add('is-open');
+      els.devicePersonInput.focus();
+      els.devicePersonInput.select();
+    }
+
+    function openDeviceFlowMenu(device, x, y) {
+      const deviceId = getDeviceId(device);
+      if (!deviceId) return;
+      closeDeviceNamePopover();
+      closeDevicePersonPopover();
+      state.flowMenuDeviceId = deviceId;
+      els.deviceFlowMenu.dataset.deviceId = deviceId;
+      const lines = getDeviceAccountLines(device);
+      const editableItems = getBulkEditableAccountItems(device);
+      els.deviceFlowPlay.disabled = !lines.length;
+      els.deviceFlowRetryAccounts.disabled = !editableItems.length;
+      els.deviceFlowReplaceAccounts.disabled = !editableItems.length;
+      els.deviceFlowAddAccounts.disabled = lines.length >= 10;
+      els.deviceFlowMenu.classList.add('is-open');
+      const rect = els.deviceFlowMenu.getBoundingClientRect();
+      const left = Math.min(Math.max(8, x), window.innerWidth - rect.width - 8);
+      const top = Math.min(Math.max(8, y), window.innerHeight - rect.height - 8);
+      els.deviceFlowMenu.style.left = `${left}px`;
+      els.deviceFlowMenu.style.top = `${top}px`;
+    }
+
+    function updateDevicePersonCloneList() {
+      if (!els.devicePersonCloneList) return;
+      const lines = limitTextLines(els.devicePersonInput.value, 10)
+        .split('\n')
+        .map(line => line.trim());
+      els.devicePersonCloneList.innerHTML = '';
+      for (let index = 0; index < 10; index += 1) {
+        const row = document.createElement('div');
+        const clone = document.createElement('span');
+        const value = document.createElement('span');
+        row.className = 'device-person-clone-row';
+        clone.textContent = `C${index + 1}`;
+        value.textContent = lines[index] || 'Libre';
+        row.append(clone, value);
+        els.devicePersonCloneList.appendChild(row);
+      }
+    }
+
+    async function saveDeviceName(name) {
+      if (!state.editingDevice) return;
+      const serial = state.editingDevice.serial;
+      setBusy(true);
+      try {
+        state.devices = await wsapi.updateDeviceName({
+          serial,
+          name: name.trim()
+        });
+        closeDeviceNamePopover();
+        renderDevices();
+        appendOutput('Nombre de dispositivo guardado', name.trim() ? `${serial} -> ${name.trim()}` : `Alias eliminado para ${serial}`);
+      } catch (error) {
+        appendOutput('Error al guardar nombre', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function saveDevicePerson(person) {
+      const serial = (state.editingDevicePerson && state.editingDevicePerson.serial) || els.devicePersonPopover.dataset.serial || '';
+      if (!serial) {
+        setDevicePersonMessage('No se encontro el dispositivo para guardar.', 'warning');
+        appendOutput('No se pudo guardar cuentas', 'Vuelve a abrir la ventana del dispositivo e intenta guardar otra vez.');
+        return;
+      }
+      const limitedPerson = limitTextLines(person, 10);
+      const requestedLines = limitedPerson.split('\n').map(line => line.trim()).filter(Boolean).slice(0, 10);
+      const blockedIndex = requestedLines.findIndex((line, index) => getAccountLineBlocker(line, serial, index + 1));
+      if (blockedIndex >= 0) {
+        const blockedLine = requestedLines[blockedIndex];
+        const blocker = getAccountLineBlocker(blockedLine, serial, blockedIndex + 1);
+        const blockerPlace = blocker.deviceId ? `${shortDeviceId(blocker.deviceId)} C${blocker.clone || '?'}` : 'historial';
+        setDevicePersonMessage(`Cuenta ya reservada en ${blockerPlace}.`, 'warning');
+        els.accountsMeta.classList.add('is-warning');
+        els.accountsMeta.textContent = `Cuenta ya reservada en ${blockerPlace}.`;
+        appendOutput('Cuenta ya asignada', 'Esa linea ya esta reservada por otro dispositivo/clon o ya fue probada fuera de este lugar. Guardar sin cambios sobre el mismo clon si esta permitido.');
+        return;
+      }
+      setBusy(true);
+      setDevicePersonMessage('Guardando cuentas...');
+      try {
+        state.devices = await wsapi.updateDevicePerson({
+          serial,
+          person: limitedPerson.trim()
+        });
+        clearAssignmentsForDevices([serial]);
+        requestedLines.forEach((line, index) => {
+          const record = findAccountRecordByLine(line);
+          if (record) assignAccountRecord(record, serial, index + 1, 'assigned');
+        });
+        closeDevicePersonPopover();
+        renderDevices();
+        appendOutput('Cuentas del dispositivo guardadas', limitedPerson.trim() ? `Cuentas actualizadas para ${serial}` : `Cuentas eliminadas para ${serial}`);
+      } catch (error) {
+        setDevicePersonMessage(`Error: ${error.message}`, 'warning');
+        appendOutput('Error al guardar cuentas del dispositivo', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    function statusDotClass(status) {
+      return `account-status-dot is-${status || 'pending'}`;
+    }
+
+    function statusLabel(status) {
+      return {
+        pending: 'Pendiente',
+        running: 'Ejecutando',
+        retrying: 'Reintentando',
+        success: 'Success',
+        already: 'Ya logueado',
+        error: 'Error',
+        review: 'Revision',
+        replaced: 'Reemplazada'
+      }[status] || 'Pendiente';
+    }
+
+    function getDeviceLoginSummary(statuses) {
+      const counts = statuses.reduce((acc, item) => {
+        const status = item.status || 'pending';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+      const pieces = [];
+      if (counts.success) pieces.push(`OK ${counts.success}`);
+      if (counts.error) pieces.push(`ERR ${counts.error}`);
+      if (counts.already) pieces.push(`ACT ${counts.already}`);
+      if (counts.running) pieces.push(`RUN ${counts.running}`);
+      if (counts.retrying) pieces.push(`TRY ${counts.retrying}`);
+      if (counts.review) pieces.push(`REV ${counts.review}`);
+      return pieces.join(' · ') || `${statuses.length} pendientes`;
+    }
+
+    function renderDevices() {
+      els.deviceCount.textContent = state.devices.length;
+
+      if (!state.devices.length) {
+        state.selectedDeviceId = '';
+        state.selectedDeviceIds = [];
+        els.deviceList.innerHTML = '<div class="empty">No hay dispositivos conectados.</div>';
+        updateTargetLabel();
+        updateFlowAgentControls();
+        return;
+      }
+
+      const deviceIds = state.devices.map(getDeviceId);
+      state.selectedDeviceIds = state.selectedDeviceIds.filter(id => deviceIds.includes(id));
+      state.selectedDeviceId = state.selectedDeviceIds.length === 1 ? state.selectedDeviceIds[0] : '';
+      syncAssignmentsFromDevices();
+
+      els.deviceList.innerHTML = '';
+      state.devices.forEach((device, index) => {
+        const id = getDeviceId(device);
+        const card = document.createElement('div');
+        const personBtn = document.createElement('button');
+        const editBtn = document.createElement('button');
+        const accountStatusColumn = document.createElement('div');
+        const nameRow = document.createElement('div');
+        const nameLine = document.createElement('div');
+        const name = document.createElement('span');
+        const badge = document.createElement('span');
+        const loginSummary = document.createElement('div');
+        const deviceId = document.createElement('div');
+        const isMultiSelected = state.selectedDeviceIds.includes(id);
+        const accountStatuses = getDeviceAccountStatuses(device);
+        const agent = getAgentForDevice(device);
+        const agentReady = isFlowAgentReady(agent);
+
+        card.tabIndex = 0;
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-label', `Seleccionar ${getDeviceName(device, index)}`);
+        card.dataset.deviceId = id;
+        card.className = `device-card${isMultiSelected ? ' is-selected' : ''}`;
+        personBtn.type = 'button';
+        personBtn.className = `device-action-btn device-person-btn${device.person ? ' has-data' : ''}`;
+        personBtn.setAttribute('aria-label', `Editar cuentas de ${getDeviceName(device, index)}`);
+        personBtn.setAttribute('title', 'Editar cuentas');
+        personBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>';
+        editBtn.type = 'button';
+        editBtn.className = 'device-action-btn device-edit-btn';
+        editBtn.setAttribute('aria-label', `Editar nombre de ${getDeviceName(device, index)}`);
+        editBtn.setAttribute('title', 'Editar nombre');
+        editBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9" /><path d="m16.5 3.5 4 4L8 20H4v-4L16.5 3.5Z" /></svg>';
+        accountStatusColumn.className = 'account-status-column';
+        accountStatuses.forEach((statusItem, accountIndex) => {
+          const statusRow = document.createElement('span');
+          const dot = document.createElement('span');
+          statusRow.className = 'account-status-item';
+          dot.className = statusDotClass(statusItem.status);
+          dot.style.animationDelay = `${accountIndex * 0.08}s`;
+          dot.setAttribute('title', `Clon ${statusItem.clone}: ${statusLabel(statusItem.status)}${statusItem.message ? ` - ${statusItem.message}` : ''}`);
+          statusRow.appendChild(dot);
+          if (['error', 'review'].includes(statusItem.status)) {
+            const actions = document.createElement('span');
+            const retryBtn = document.createElement('button');
+            const replaceBtn = document.createElement('button');
+            actions.className = 'account-status-actions';
+            retryBtn.type = 'button';
+            retryBtn.className = 'dot-action retry';
+            retryBtn.title = `Reintentar clon ${statusItem.clone}`;
+            retryBtn.setAttribute('aria-label', `Reintentar clon ${statusItem.clone}`);
+            retryBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7" /><path d="M18 3v6h-6" /><path d="M21 12a9 9 0 0 1-15 6.7" /><path d="M6 21v-6h6" /></svg>';
+            replaceBtn.type = 'button';
+            replaceBtn.className = 'dot-action replace';
+            replaceBtn.title = `Reemplazar cuenta del clon ${statusItem.clone}`;
+            replaceBtn.setAttribute('aria-label', `Reemplazar cuenta del clon ${statusItem.clone}`);
+            replaceBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11" /><path d="m15 4 3 3-3 3" /><path d="M17 17H6" /><path d="m9 14-3 3 3 3" /></svg>';
+            retryBtn.addEventListener('pointerdown', event => event.stopPropagation());
+            replaceBtn.addEventListener('pointerdown', event => event.stopPropagation());
+            retryBtn.addEventListener('click', event => {
+              event.preventDefault();
+              event.stopPropagation();
+              retryCloneLogin(id, statusItem.clone);
+            });
+            replaceBtn.addEventListener('click', event => {
+              event.preventDefault();
+              event.stopPropagation();
+              replaceCloneAccount(id, statusItem.clone);
+            });
+            actions.append(retryBtn, replaceBtn);
+            statusRow.appendChild(actions);
+          }
+          accountStatusColumn.appendChild(statusRow);
+        });
+        nameRow.className = 'device-name';
+        nameLine.className = 'device-name-line';
+        const flagUrl = countryFlagUrl(device.countryCode);
+        if (flagUrl) {
+          const flag = document.createElement('img');
+          const countryCode = String(device.countryCode || '').toUpperCase();
+          flag.className = 'device-country-flag';
+          flag.src = flagUrl;
+          flag.alt = countryCode;
+          flag.loading = 'lazy';
+          flag.title = `${countryCode}${device.countryName ? ` - ${device.countryName}` : ''}${device.publicIp ? ` (${device.publicIp})` : ''}`;
+          nameLine.append(flag);
+        } else {
+          const refreshCountryBtn = document.createElement('button');
+          refreshCountryBtn.type = 'button';
+          refreshCountryBtn.className = `device-country-refresh${state.refreshingPublicIpDevices.has(id) ? ' is-loading' : ''}`;
+          refreshCountryBtn.disabled = state.refreshingPublicIpDevices.has(id);
+          refreshCountryBtn.setAttribute('aria-label', 'Actualizar IP publica');
+          refreshCountryBtn.setAttribute('title', 'Actualizar IP publica');
+          refreshCountryBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7" /><path d="M18 3v6h-6" /><path d="M21 12a9 9 0 0 1-15 6.7" /><path d="M6 21v-6h6" /></svg>';
+          refreshCountryBtn.addEventListener('pointerdown', event => event.stopPropagation());
+          refreshCountryBtn.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            refreshDevicePublicIp(id);
+          });
+          nameLine.append(refreshCountryBtn);
+        }
+        name.textContent = getDeviceName(device, index);
+        badge.className = 'badge';
+        badge.classList.toggle('is-agent', agentReady && !isMultiSelected);
+        badge.classList.toggle('is-adb', !agent && !isMultiSelected);
+        badge.classList.toggle('is-warning', !!agent && !agentReady && !isMultiSelected);
+        badge.textContent = isMultiSelected ? 'Seleccionado' : (agentReady ? 'Socket' : (agent ? 'Actualizar' : 'ADB'));
+        badge.title = agentReady
+          ? `FlowAgent ${agent.agentVersion || ''} conectado con accesibilidad activa`
+          : agent
+            ? `FlowAgent ${agent.agentVersion || ''} requiere actualizar APK o activar accesibilidad`
+          : 'FlowAgent pendiente; usando ADB';
+        loginSummary.className = 'device-login-summary';
+        loginSummary.textContent = accountStatuses.length ? getDeviceLoginSummary(accountStatuses) : 'Sin cuentas';
+        deviceId.className = 'device-id';
+        deviceId.textContent = id;
+
+        nameLine.append(name);
+        nameRow.append(nameLine, badge);
+        card.append(personBtn, editBtn, accountStatusColumn, nameRow, loginSummary, deviceId);
+        personBtn.addEventListener('pointerdown', event => {
+          event.stopPropagation();
+        });
+        personBtn.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          openDevicePersonPopover(device, personBtn);
+        });
+        editBtn.addEventListener('pointerdown', event => {
+          event.stopPropagation();
+        });
+        editBtn.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          openDeviceNamePopover(device, index, editBtn);
+        });
+        card.addEventListener('pointerdown', event => {
+          event.preventDefault();
+          if (event.detail > 1) {
+            state.isDraggingDeviceSelection = false;
+            return;
+          }
+          state.isDraggingDeviceSelection = true;
+          state.dragSelectMode = !state.selectedDeviceIds.includes(id);
+          setDeviceSelected(card, badge, id, state.dragSelectMode);
+        });
+        card.addEventListener('dblclick', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          state.isDraggingDeviceSelection = false;
+          openDevicePersonPopover(device, personBtn);
+        });
+        card.addEventListener('contextmenu', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          state.isDraggingDeviceSelection = false;
+          openDeviceFlowMenu(device, event.clientX, event.clientY);
+        });
+        card.addEventListener('pointerenter', () => {
+          if (!state.isDraggingDeviceSelection) return;
+          setDeviceSelected(card, badge, id, state.dragSelectMode);
+        });
+        card.addEventListener('keydown', event => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          toggleDeviceSelected(card, badge, id);
+        });
+        els.deviceList.appendChild(card);
+      });
+
+      updateTargetLabel();
+      updateFlowAgentControls();
+    }
+
+    function stopLoginStatusPolling() {
+      if (state.loginStatusTimer) {
+        window.clearInterval(state.loginStatusTimer);
+        state.loginStatusTimer = null;
+      }
+      state.loginPollingDeviceIds = '';
+      state.loginPollStartedAt = 0;
+      state.loginLastProgressAt = 0;
+      state.loginLastStatusSignature = '';
+      state.runningFlow = '';
+      updateFlowRunControls();
+    }
+
+    function loginStatusesAreTerminal(deviceIds) {
+      const targets = new Set(String(deviceIds || '').split(',').map(item => item.trim()).filter(Boolean));
+      const devices = targets.size
+        ? state.devices.filter(device => targets.has(getDeviceId(device)))
+        : state.devices;
+      if (!devices.length) return false;
+      return devices.every(device => {
+        const statuses = getDeviceAccountStatuses(device);
+        return !statuses.length || statuses.every(item => ['success', 'error', 'already', 'review', 'replaced'].includes(item.status));
+      });
+    }
+
+    function loginStatusSignature(deviceIds) {
+      const targets = new Set(String(deviceIds || '').split(',').map(item => item.trim()).filter(Boolean));
+      const devices = targets.size
+        ? state.devices.filter(device => targets.has(getDeviceId(device)))
+        : state.devices;
+      return devices
+        .map(device => {
+          const statuses = getDeviceAccountStatuses(device)
+            .map(item => `${item.clone}:${item.status}:${item.attempts}:${item.updatedAt || ''}:${simpleHash(item.message || '')}`)
+            .join('|');
+          return `${getDeviceId(device)}=${statuses}`;
+        })
+        .join(';');
+    }
+
+    function normalizePollingDeviceIds(deviceIds) {
+      if (Array.isArray(deviceIds)) return uniqueDeviceIds(deviceIds);
+      const raw = String(deviceIds || '').trim();
+      if (!raw || raw === 'all') return state.devices.map(getDeviceId);
+      return uniqueDeviceIds(parseDeviceIdList(raw));
+    }
+
+    function removeLoginPollingDevices(deviceIds) {
+      const targets = new Set(normalizePollingDeviceIds(deviceIds));
+      const nextIds = parseDeviceIdList(state.loginPollingDeviceIds).filter(id => !targets.has(id));
+      if (!nextIds.length) {
+        stopLoginStatusPolling();
+        return;
+      }
+      state.loginPollingDeviceIds = uniqueDeviceIds(nextIds).join(',');
+      state.loginLastStatusSignature = loginStatusSignature(state.loginPollingDeviceIds);
+      state.loginLastProgressAt = Date.now();
+      state.runningFlow = 'FlowLogin';
+      updateFlowRunControls();
+    }
+
+    function startLoginStatusPolling(deviceIds, merge = false) {
+      const currentIds = merge ? parseDeviceIdList(state.loginPollingDeviceIds) : [];
+      const nextIds = uniqueDeviceIds([...currentIds, ...normalizePollingDeviceIds(deviceIds)]);
+      if (!nextIds.length) return;
+      if (state.loginStatusTimer) {
+        window.clearInterval(state.loginStatusTimer);
+        state.loginStatusTimer = null;
+      }
+      state.loginPollingDeviceIds = nextIds.join(',');
+      state.loginPollStartedAt = Date.now();
+      state.loginLastProgressAt = Date.now();
+      state.loginLastStatusSignature = loginStatusSignature(state.loginPollingDeviceIds);
+      state.runningFlow = 'FlowLogin';
+      updateFlowRunControls();
+      const poll = async () => {
+        try {
+          const [devices] = await wsapi.refreshLoginStatus({ deviceIds: state.loginPollingDeviceIds });
+          state.devices = devices;
+          renderDevices();
+          const signature = loginStatusSignature(state.loginPollingDeviceIds);
+          if (signature !== state.loginLastStatusSignature) {
+            state.loginLastStatusSignature = signature;
+            state.loginLastProgressAt = Date.now();
+          }
+          if (loginStatusesAreTerminal(state.loginPollingDeviceIds)) {
+            stopLoginStatusPolling();
+          } else if (Date.now() - state.loginLastProgressAt > 240000) {
+            appendOutput('FlowLogin sin progreso', 'No hubo cambios recientes en los estados durante varios minutos. Revisa que FlowAgent siga conectado y que el clon este respondiendo.');
+            stopLoginStatusPolling();
+          }
+        } catch (error) {
+          if (Date.now() - state.loginLastProgressAt > 240000) {
+            appendOutput('No se pudo actualizar estado de login', error.message);
+            stopLoginStatusPolling();
+          }
+        }
+      };
+      poll();
+      state.loginStatusTimer = window.setInterval(poll, 1200);
+    }
+
+    async function retryCloneLogin(deviceId, clone) {
+      if (!els.scriptPath.value.trim()) {
+        appendOutput('Falta script Login.js', 'Elige Login.js en el selector de scripts antes de reintentar un clon.');
+        return;
+      }
+      setBusy(true);
+      try {
+        const agentsReady = await ensureFlowAgentsForDevices([deviceId]);
+        if (!agentsReady) return;
+        setLocalCloneStatus(deviceId, clone, 'running', 'Reintento desde cero', 0);
+        markCloneAccountAttempted(deviceId, clone, 'running');
+        renderDevices();
+        const [devices, result] = await wsapi.executeAutoJs({
+          deviceIds: deviceId,
+          filePath: els.scriptPath.value,
+          clone,
+          delimiter: getAccountDelimiter()
+        });
+        state.devices = devices;
+        markCloneAccountAttempted(deviceId, clone, 'running');
+        renderDevices();
+        startLoginStatusPolling(deviceId, true);
+        appendOutput(`Reintento enviado al clon ${clone}`, result);
+      } catch (error) {
+        setLocalCloneStatus(deviceId, clone, 'review', error.message, 0);
+        renderDevices();
+        appendOutput('Error al reintentar clon', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function replaceCloneAccount(deviceId, clone) {
+      const device = state.devices.find(item => getDeviceId(item) === deviceId);
+      if (!device) return;
+      const record = findFreeAccountRecord('total') || findFreeAccountRecord();
+      if (!record) {
+        els.accountsMeta.classList.add('is-warning');
+        els.accountsMeta.textContent = 'No hay cuentas libres en Total para reemplazar.';
+        appendOutput('Sin cuentas libres', 'Agrega mas cuentas nuevas en Total o libera alguna cuenta pendiente antes de reemplazar.');
+        return;
+      }
+
+      const lines = getDeviceAccountLines(device);
+      while (lines.length < clone) lines.push('');
+      clearAssignmentForDeviceClone(deviceId, clone);
+      lines[clone - 1] = record.line;
+
+      setBusy(true);
+      try {
+        state.devices = await wsapi.updateDevicePerson({
+          serial: deviceId,
+          person: lines.slice(0, 10).join('\n')
+        });
+        assignAccountRecord(record, deviceId, clone, 'assigned');
+        let rerunMessage = '';
+        if (els.scriptPath.value.trim()) {
+          const agentsReady = await ensureFlowAgentsForDevices([deviceId]);
+          if (!agentsReady) return;
+          setLocalCloneStatus(deviceId, clone, 'running', 'Cuenta nueva desde cero', 0);
+          markCloneAccountAttempted(deviceId, clone, 'running');
+          renderDevices();
+          const [devices, result] = await wsapi.executeAutoJs({
+            deviceIds: deviceId,
+            filePath: els.scriptPath.value,
+            clone,
+            delimiter: getAccountDelimiter()
+          });
+          state.devices = devices;
+          markCloneAccountAttempted(deviceId, clone, 'running');
+          startLoginStatusPolling(deviceId, true);
+          rerunMessage = `\n\nReintento automatico enviado:\n${result}`;
+        }
+        renderDevices();
+        appendOutput('Cuenta reemplazada', `${shortDeviceId(deviceId)} C${clone} recibio la cuenta #${String(record.number).padStart(3, '0')}.${rerunMessage}`);
+      } catch (error) {
+        appendOutput('Error al reemplazar cuenta', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    const BULK_PROTECTED_STATUSES = new Set(['success', 'already']);
+
+    function getBulkEditableAccountItems(device) {
+      return getDeviceAccountStatuses(device).filter(item => {
+        return item.line && !BULK_PROTECTED_STATUSES.has(item.status || 'pending');
+      });
+    }
+
+    async function runDeviceClones(deviceId, clones, messageTitle, messagePrefix = '') {
+      const cloneList = uniqueDeviceIds(clones.map(clone => String(Number(clone) || '')).filter(Boolean)).map(Number);
+      if (!cloneList.length) return '';
+      const loginPath = selectLoginScript();
+      if (!loginPath) {
+        appendOutput('Falta Login.js', 'No se encontro Login.js en el selector de scripts.');
+        return '';
+      }
+      await ensureFlowAgentsForDevices([deviceId]);
+      const readyIds = getReadyFlowAgentDeviceIds([deviceId]);
+      if (!readyIds.length) {
+        appendOutput('FlowLogin no se pudo iniciar', `${shortDeviceId(deviceId)} no quedo listo con FlowAgent.`);
+        return '';
+      }
+      cloneList.forEach(clone => {
+        setLocalCloneStatus(deviceId, clone, 'running', messagePrefix || 'Accion masiva', 0);
+        markCloneAccountAttempted(deviceId, clone, 'running');
+      });
+      renderDevices();
+      const [devices, result] = await wsapi.executeAutoJs({
+        deviceIds: deviceId,
+        filePath: loginPath,
+        clones: cloneList,
+        delimiter: getAccountDelimiter()
+      });
+      state.devices = devices;
+      cloneList.forEach(clone => markCloneAccountAttempted(deviceId, clone, 'running'));
+      renderDevices();
+      startLoginStatusPolling(deviceId, true);
+      appendOutput(messageTitle, `${shortDeviceId(deviceId)} C${cloneList.join(', C')}\n\n${result}`);
+      return result;
+    }
+
+    async function retryDeviceAccounts(deviceId) {
+      closeDeviceFlowMenu();
+      if (state.busy) return;
+      const device = getDeviceById(deviceId);
+      if (!device) return;
+      const items = getBulkEditableAccountItems(device);
+      if (!items.length) {
+        appendOutput('Sin cuentas para reintentar', `${shortDeviceId(deviceId)} solo tiene cuentas funcionando o no tiene cuentas asignadas.`);
+        return;
+      }
+      setBusy(true);
+      try {
+        await runDeviceClones(deviceId, items.map(item => item.clone), 'Reintento masivo enviado', 'Reintento masivo');
+      } catch (error) {
+        appendOutput('Error al reintentar cuentas', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function replaceDeviceAccounts(deviceId) {
+      closeDeviceFlowMenu();
+      if (state.busy) return;
+      const device = getDeviceById(deviceId);
+      if (!device) return;
+      const items = getBulkEditableAccountItems(device);
+      if (!items.length) {
+        appendOutput('Sin cuentas para reemplazar', `${shortDeviceId(deviceId)} solo tiene cuentas funcionando o no tiene cuentas asignadas.`);
+        return;
+      }
+      const freeRecords = getAvailableAccountRecords('total').slice(0, items.length);
+      if (freeRecords.length < items.length) {
+        appendOutput('Cuentas libres insuficientes', `Se necesitan ${items.length} cuentas libres en Total y solo hay ${freeRecords.length}.`);
+        return;
+      }
+
+      setBusy(true);
+      try {
+        const lines = getDeviceAccountLines(device);
+        items.forEach((item, index) => {
+          const clone = Number(item.clone);
+          const record = freeRecords[index];
+          while (lines.length < clone) lines.push('');
+          clearAssignmentForDeviceClone(deviceId, clone);
+          lines[clone - 1] = record.line;
+        });
+        state.devices = await wsapi.updateDevicePerson({
+          serial: deviceId,
+          person: lines.slice(0, 10).join('\n')
+        });
+        items.forEach((item, index) => {
+          assignAccountRecord(freeRecords[index], deviceId, item.clone, 'assigned');
+        });
+        await runDeviceClones(deviceId, items.map(item => item.clone), 'Reemplazo masivo enviado', 'Cuenta reemplazada');
+      } catch (error) {
+        appendOutput('Error al reemplazar cuentas', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function addDeviceAccounts(deviceId) {
+      closeDeviceFlowMenu();
+      if (state.busy) return;
+      const device = getDeviceById(deviceId);
+      if (!device) return;
+      const lines = getDeviceAccountLines(device);
+      const freeSlots = Math.max(0, 10 - lines.length);
+      if (!freeSlots) {
+        appendOutput('Dispositivo completo', `${shortDeviceId(deviceId)} ya tiene 10 cuentas.`);
+        return;
+      }
+      const freeRecords = getAvailableAccountRecords('total').slice(0, freeSlots);
+      if (!freeRecords.length) {
+        appendOutput('Sin cuentas libres', 'Agrega cuentas nuevas en Total antes de anadir al dispositivo.');
+        return;
+      }
+
+      setBusy(true);
+      try {
+        const addedClones = [];
+        const startClone = lines.length + 1;
+        freeRecords.forEach((record, index) => {
+          const clone = startClone + index;
+          lines.push(record.line);
+          addedClones.push(clone);
+        });
+        state.devices = await wsapi.updateDevicePerson({
+          serial: deviceId,
+          person: lines.slice(0, 10).join('\n')
+        });
+        freeRecords.forEach((record, index) => {
+          assignAccountRecord(record, deviceId, lines.length - freeRecords.length + index + 1, 'assigned');
+        });
+        await runDeviceClones(deviceId, addedClones, 'Cuentas anadidas y enviadas', 'Cuenta anadida');
+      } catch (error) {
+        appendOutput('Error al anadir cuentas', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    function updateTargetLabel() {
+      const count = state.selectedDeviceIds.length;
+      if (els.selectedDevicesNote) {
+        els.selectedDevicesNote.textContent = count === 1 ? '1 seleccionado' : `${count} seleccionados`;
+      }
+      if (count === 1) {
+        if (els.targetLabel) els.targetLabel.textContent = 'Uno';
+        els.selectionHelp.textContent = `Seleccion actual: ${state.selectedDeviceIds[0]}.`;
+      } else if (count > 1) {
+        if (els.targetLabel) els.targetLabel.textContent = `${count}`;
+        els.selectionHelp.textContent = `Seleccion multiple: ${state.selectedDeviceIds.join(', ')}.`;
+      } else {
+        if (els.targetLabel) els.targetLabel.textContent = 'Todos';
+        els.selectionHelp.textContent = 'Seleccion actual: todos los dispositivos conectados. Haz clic o arrastra para elegir uno o varios.';
+      }
+      updateDeviceSelectionControls();
+      updateScriptControls();
+    }
+
+    function updateDeviceSelectionControls() {
+      const enabled = wsapi.connected && !state.busy;
+      if (els.selectAllDevicesBtn) {
+        els.selectAllDevicesBtn.disabled = !enabled || !state.devices.length || state.selectedDeviceIds.length === state.devices.length;
+      }
+      if (els.clearSelectedDeviceAccountsBtn) {
+        els.clearSelectedDeviceAccountsBtn.disabled = !enabled || !state.selectedDeviceIds.length;
+      }
+      if (els.clearDeviceSelectionBtn) {
+        els.clearDeviceSelectionBtn.disabled = !enabled || !state.selectedDeviceIds.length;
+      }
+    }
+
+    function updateDeviceZoom() {
+      els.deviceList.style.setProperty('--device-tile-size', `${els.deviceZoom.value}px`);
+    }
+
+    async function refreshDevices(showMessage = true) {
+      setBusy(true);
+      try {
+        state.devices = await wsapi.getDeviceListAll();
+        state.agents = await wsapi.getAgents();
+        renderDevices();
+        if (showMessage) appendOutput('Dispositivos actualizados', JSON.stringify(state.devices, null, 2));
+      } catch (error) {
+        appendOutput('Error al actualizar dispositivos', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function refreshAgents(showMessage = true) {
+      if (!wsapi.connected) return;
+      setBusy(true);
+      try {
+        state.agents = await wsapi.getAgents();
+        renderDevices();
+        if (showMessage) {
+          appendOutput('FlowAgent actualizado', JSON.stringify(state.agents, null, 2));
+        }
+      } catch (error) {
+        appendOutput('Error al actualizar FlowAgent', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    function wait(ms) {
+      return new Promise(resolve => window.setTimeout(resolve, ms));
+    }
+
+    function getDeviceById(deviceId) {
+      return state.devices.find(device => getDeviceId(device) === deviceId) || null;
+    }
+
+    function getDevicesWithoutReadyAgent(deviceIds) {
+      return deviceIds
+        .map(getDeviceById)
+        .filter(Boolean)
+        .filter(device => !isFlowAgentReady(getAgentForDevice(device)));
+    }
+
+    function getReadyFlowAgentDeviceIds(deviceIds) {
+      return deviceIds.filter(deviceId => {
+        const device = getDeviceById(deviceId);
+        return device && isFlowAgentReady(getAgentForDevice(device));
+      });
+    }
+
+    async function waitForReadyFlowAgents(deviceIds, timeoutMs = 8500) {
+      const startedAt = Date.now();
+      while (Date.now() - startedAt < timeoutMs) {
+        try {
+          state.agents = await wsapi.getAgents();
+          renderDevices();
+          if (!getDevicesWithoutReadyAgent(deviceIds).length) return true;
+        } catch (_) {}
+        await wait(1100);
+      }
+      return !getDevicesWithoutReadyAgent(deviceIds).length;
+    }
+
+    async function ensureFlowAgentsForDevices(deviceIds) {
+      try {
+        state.agents = await wsapi.getAgents();
+        renderDevices();
+      } catch (_) {}
+
+      let missing = getDevicesWithoutReadyAgent(deviceIds);
+      if (!missing.length) return true;
+
+      const missingIds = missing.map(getDeviceId);
+      appendOutput(
+        'Preparando FlowAgent automaticamente',
+        `Reconectando socket y creando ADB reverse para:\n${missingIds.join('\n')}\n\nSolo se instala/actualiza la APK si falta o esta vieja.`
+      );
+
+      const [devices, result, agents] = await wsapi.setupFlowAgent({
+        deviceIds: missingIds.join(','),
+        install: 'auto',
+        launch: true
+      });
+      state.devices = devices;
+      state.agents = agents;
+      renderDevices();
+
+      const ready = await waitForReadyFlowAgents(deviceIds);
+      if (ready) return true;
+
+      missing = getDevicesWithoutReadyAgent(deviceIds);
+      appendOutput(
+        'FlowAgent requiere atencion',
+        `${result}\n\nNo quedaron listos:\n${missing.map(getDeviceId).join('\n')}\n\nRevisa que el telefono siga conectado por ADB/WiFi y que Accesibilidad de FlowAgent este activa.`
+      );
+      return false;
+    }
+
+    async function setupFlowAgent() {
+      if (!state.devices.length) {
+        appendOutput('No hay dispositivos conectados', 'Conecta dispositivos antes de preparar FlowAgent.');
+        return;
+      }
+      const deviceIds = getTargetDeviceIds();
+      const targetText = deviceIds === 'all' ? 'todos los dispositivos' : deviceIds;
+
+      setBusy(true);
+      try {
+        const [devices, result, agents] = await wsapi.setupFlowAgent({
+          deviceIds,
+          install: true,
+          launch: true
+        });
+        state.devices = devices;
+        state.agents = agents;
+        renderDevices();
+        appendOutput('FlowAgent preparado', `Destino: ${targetText}\n\n${result}`);
+        window.setTimeout(() => refreshAgents(false), 1600);
+      } catch (error) {
+        appendOutput('Error al preparar FlowAgent', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function runAdbCommand(command) {
+      const deviceIds = getTargetDeviceIds();
+      if (!deviceIds) {
+        appendOutput('Falta seleccionar dispositivo', 'Selecciona al menos un dispositivo o cambia el destino a todos.');
+        return;
+      }
+
+      setBusy(true);
+      try {
+        const [devices, result] = await wsapi.sendAdbCommand({ deviceIds, command });
+        state.devices = devices;
+        renderDevices();
+        appendOutput(`Comando enviado a ${deviceIds === 'all' ? 'todos' : deviceIds}`, result);
+      } catch (error) {
+        appendOutput('Error al ejecutar comando', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function executeSelectedScript() {
+      if (!state.selectedDeviceIds.length) {
+        appendOutput('Debes seleccionar un dispositivo o varios', 'Selecciona primero los telefonos donde quieres ejecutar el login.');
+        return;
+      }
+      const deviceIds = state.selectedDeviceIds.join(',');
+
+      setBusy(true);
+      try {
+        let runnableIds = [...state.selectedDeviceIds];
+        let skippedNotReady = [];
+        if (isLoginScriptPath(els.scriptPath.value)) {
+          await ensureFlowAgentsForDevices(state.selectedDeviceIds);
+          runnableIds = getReadyFlowAgentDeviceIds(state.selectedDeviceIds);
+          skippedNotReady = state.selectedDeviceIds.filter(id => !runnableIds.includes(id));
+          if (!runnableIds.length) {
+            appendOutput('FlowLogin no se pudo iniciar', `Ningun dispositivo seleccionado quedo listo con FlowAgent.\n\nNo listos:\n${skippedNotReady.join('\n') || '(sin detalle)'}`);
+            return;
+          }
+        }
+        const runnableDeviceIds = runnableIds.join(',');
+        const [devices, result] = await wsapi.executeAutoJs({
+          deviceIds: runnableDeviceIds,
+          filePath: els.scriptPath.value,
+          delimiter: getAccountDelimiter()
+        });
+        state.devices = devices;
+        if (isLoginScriptPath(els.scriptPath.value)) {
+          markDeviceAccountsAttempted(runnableIds, 'running');
+        }
+        renderDevices();
+        startLoginStatusPolling(runnableDeviceIds);
+        appendOutput(
+          `AutoJs ejecutado en ${runnableDeviceIds === 'all' ? 'todos' : runnableDeviceIds}`,
+          `${skippedNotReady.length ? `Omitidos sin FlowAgent listo:\n${skippedNotReady.join('\n')}\n\n` : ''}${result}`
+        );
+      } catch (error) {
+        appendOutput('Error al ejecutar script', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function executeFlowLogin() {
+      if (state.runningFlow) return;
+      if (!state.devices.length) {
+        appendOutput('No hay dispositivos conectados', 'Conecta dispositivos antes de ejecutar FlowLogin.');
+        return;
+      }
+
+      const loginPath = selectLoginScript();
+      if (!loginPath) {
+        appendOutput('Falta Login.js', 'No se encontro Login.js en el selector de scripts.');
+        return;
+      }
+
+      const baseDevices = state.selectedDeviceIds.length
+        ? state.devices.filter(device => state.selectedDeviceIds.includes(getDeviceId(device)))
+        : state.devices;
+      const targetDevices = baseDevices.filter(device => getDeviceAccountLines(device).length);
+      if (!targetDevices.length) {
+        appendOutput('No hay cuentas asignadas', 'FlowLogin necesita al menos un telefono con cuentas asignadas antes de ejecutar.');
+        state.runningFlow = '';
+        updateFlowRunControls();
+        return;
+      }
+      const targetIds = targetDevices.map(getDeviceId);
+      const skipped = baseDevices.length - targetDevices.length;
+
+      setBusy(true);
+      try {
+        await ensureFlowAgentsForDevices(targetIds);
+        const readyTargetIds = getReadyFlowAgentDeviceIds(targetIds);
+        const skippedNotReady = targetIds.filter(id => !readyTargetIds.includes(id));
+        if (!readyTargetIds.length) {
+          appendOutput(
+            'FlowLogin no se pudo iniciar',
+            `Ningun dispositivo objetivo quedo listo con FlowAgent.\n\nNo listos:\n${skippedNotReady.join('\n') || '(sin detalle)'}`
+          );
+          return;
+        }
+
+        const deviceIds = readyTargetIds.join(',');
+        const targetLabel = state.selectedDeviceIds.length
+          ? `${readyTargetIds.length} dispositivo${readyTargetIds.length === 1 ? '' : 's'} seleccionado${readyTargetIds.length === 1 ? '' : 's'}`
+          : `dispositivos con cuentas (${readyTargetIds.length})`;
+
+        state.runningFlow = 'FlowLogin';
+        updateFlowRunControls();
+        const [devices, result] = await wsapi.executeAutoJs({
+          deviceIds,
+          filePath: loginPath,
+          delimiter: getAccountDelimiter()
+        });
+        state.devices = devices;
+        markDeviceAccountsAttempted(readyTargetIds, 'running');
+        renderDevices();
+        startLoginStatusPolling(deviceIds);
+        appendOutput(
+          'FlowLogin ejecutado',
+          `Destino: ${targetLabel}${skipped > 0 ? `\nOmitidos sin cuentas: ${skipped}` : ''}${skippedNotReady.length ? `\nOmitidos sin FlowAgent listo:\n${skippedNotReady.join('\n')}` : ''}\n\n${result}`
+        );
+      } catch (error) {
+        stopLoginStatusPolling();
+        appendOutput('Error al ejecutar FlowLogin', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function executeFlowLoginForDevice(deviceId) {
+      closeDeviceFlowMenu();
+      if (state.busy) return;
+      const device = getDeviceById(deviceId);
+      if (!device) {
+        appendOutput('Dispositivo no encontrado', 'Actualiza la lista de dispositivos e intenta de nuevo.');
+        return;
+      }
+      if (!getDeviceAccountLines(device).length) {
+        appendOutput('No hay cuentas asignadas', `${shortDeviceId(deviceId)} no tiene cuentas guardadas para FlowLogin.`);
+        return;
+      }
+      const loginPath = selectLoginScript();
+      if (!loginPath) {
+        appendOutput('Falta Login.js', 'No se encontro Login.js en el selector de scripts.');
+        return;
+      }
+
+      setBusy(true);
+      try {
+        await ensureFlowAgentsForDevices([deviceId]);
+        const readyIds = getReadyFlowAgentDeviceIds([deviceId]);
+        if (!readyIds.length) {
+          appendOutput('FlowLogin no se pudo iniciar', `${shortDeviceId(deviceId)} no quedo listo con FlowAgent.`);
+          return;
+        }
+        const [devices, result] = await wsapi.executeAutoJs({
+          deviceIds: deviceId,
+          filePath: loginPath,
+          delimiter: getAccountDelimiter()
+        });
+        state.devices = devices;
+        markDeviceAccountsAttempted([deviceId], 'running');
+        renderDevices();
+        startLoginStatusPolling(deviceId, true);
+        appendOutput('FlowLogin iniciado en dispositivo', `${shortDeviceId(deviceId)}\n\n${result}`);
+      } catch (error) {
+        appendOutput('Error al iniciar FlowLogin del dispositivo', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function stopFlowLoginForDevice(deviceId) {
+      closeDeviceFlowMenu();
+      if (state.busy) return;
+      const loginPath = selectLoginScript();
+
+      setBusy(true);
+      try {
+        const [devices, result] = await wsapi.stopAutoJs({
+          deviceIds: deviceId,
+          filePath: loginPath || els.scriptPath.value
+        });
+        state.devices = devices;
+        renderDevices();
+        removeLoginPollingDevices([deviceId]);
+        appendOutput('FlowLogin detenido en dispositivo', `${shortDeviceId(deviceId)}\n\n${result}`);
+      } catch (error) {
+        appendOutput('Error al detener FlowLogin del dispositivo', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function stopFlowLogin() {
+      if (state.runningFlow !== 'FlowLogin') return;
+      const loginPath = selectLoginScript();
+      const deviceIds = state.loginPollingDeviceIds || getTargetDeviceIds();
+
+      setBusy(true);
+      try {
+        const [devices, result] = await wsapi.stopAutoJs({
+          deviceIds,
+          filePath: loginPath || els.scriptPath.value
+        });
+        state.devices = devices;
+        renderDevices();
+        stopLoginStatusPolling();
+        appendOutput('FlowLogin detenido', result);
+      } catch (error) {
+        appendOutput('Error al detener FlowLogin', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function stopSelectedScript() {
+      const deviceIds = getTargetDeviceIds();
+      if (!deviceIds) {
+        appendOutput('Falta seleccionar dispositivo', 'Selecciona al menos un dispositivo o cambia el destino a todos.');
+        return;
+      }
+
+      setBusy(true);
+      try {
+        const [devices, result] = await wsapi.stopAutoJs({
+          deviceIds,
+          filePath: els.scriptPath.value
+        });
+        state.devices = devices;
+        renderDevices();
+        stopLoginStatusPolling();
+        appendOutput(`AutoJs detenido en ${deviceIds === 'all' ? 'todos' : deviceIds}`, result);
+      } catch (error) {
+        appendOutput('Error al detener script', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    function handleConnectSuccess(deviceList) {
+      state.devices = deviceList;
+      setStatus(true, `Conectado a ${wsapi.CONNECT_IP}`);
+      els.connectBtn.setAttribute('aria-label', 'Reconectar');
+      els.connectBtn.setAttribute('title', 'Reconectar');
+      renderDevices();
+      setBusy(false);
+      appendOutput('Conexion establecida', `Dispositivos detectados: ${deviceList.length}`);
+      wsapi.getAgents()
+        .then(agents => {
+          state.agents = agents;
+          renderDevices();
+        })
+        .catch(() => {
+          state.agents = [];
+          updateFlowAgentControls();
+        });
+      
+      // Obtener automáticamente la MAC de los dispositivos conectados
+      if (deviceList.length > 0) {
+        deviceList.forEach(async (device) => {
+          try {
+            const serial = device.serial || device.id || '';
+            if (serial) {
+              const mac = await wsapi.getDeviceMac({ serial });
+              if (mac) {
+                console.log(`MAC de ${serial}: ${mac}`);
+                // La MAC se guarda automáticamente en la lista de dispositivos
+              }
+            }
+          } catch (error) {
+            console.error(`Error obteniendo MAC de ${serial}:`, error);
+          }
+        });
+      }
+    }
+
+    function handleConnectFail() {
+      state.agents = [];
+      setStatus(false, 'Sin conexion');
+      setBusy(false);
+      appendOutput('No se pudo conectar', `Verifica que el servidor ADB local este activo en ${wsapi.CONNECT_IP}.`);
+    }
+
+    function handleConnectClose() {
+      state.agents = [];
+      setStatus(false, 'Conexion cerrada');
+      stopLoginStatusPolling();
+      setBusy(false);
+      appendOutput('Conexion cerrada', 'El WebSocket se desconecto.');
+    }
+
+    els.connectBtn.addEventListener('click', () => {
+      setBusy(true);
+      setStatus(false, 'Conectando...');
+      setOutput('Conectando con el servidor ADB local...');
+      wsapi.connectWs();
+    });
+
+    els.refreshBtn.addEventListener('click', () => refreshDevices(true));
+    els.flowAgentSetupBtn.addEventListener('click', setupFlowAgent);
+    els.flowAgentRefreshBtn.addEventListener('click', () => refreshAgents(true));
+    els.deviceZoom.addEventListener('input', updateDeviceZoom);
+    els.selectAllDevicesBtn.addEventListener('click', selectAllDevices);
+    els.clearSelectedDeviceAccountsBtn.addEventListener('click', clearSelectedDeviceAccounts);
+    els.clearDeviceSelectionBtn.addEventListener('click', clearDeviceSelection);
+    updateDeviceZoom();
+    const defaultLoginScript = getLoginScriptPath();
+    if (defaultLoginScript && !els.scriptPath.value.trim()) {
+      els.scriptPreset.value = defaultLoginScript;
+      els.scriptPath.value = defaultLoginScript;
+    }
+    updateFlowRunControls();
+    els.accountInputs.forEach(input => {
+      input.addEventListener('input', updateAccountsCount);
+    });
+    els.accountDelimiter.addEventListener('input', saveAccountsState);
+    els.accountSplit.addEventListener('input', saveAccountsState);
+    els.splitAccountsBtn.addEventListener('click', splitAccountsToSelectedDevices);
+    els.clearDeviceAccountsBtn.addEventListener('click', clearDeviceAccounts);
+    els.accountTabs.forEach(btn => {
+      btn.addEventListener('click', () => setAccountTab(btn.dataset.accountTab));
+    });
+    els.clearInvalidAccountsBtn.addEventListener('click', clearInvalidAccounts);
+    [els.deviceFlowPlay, els.deviceFlowStop, els.deviceFlowRetryAccounts, els.deviceFlowReplaceAccounts, els.deviceFlowAddAccounts].forEach(btn => {
+      btn.addEventListener('pointerdown', event => {
+        event.stopPropagation();
+      });
+    });
+    els.deviceFlowPlay.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
+      if (deviceId) executeFlowLoginForDevice(deviceId);
+    });
+    els.deviceFlowStop.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
+      if (deviceId) stopFlowLoginForDevice(deviceId);
+    });
+    els.deviceFlowRetryAccounts.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
+      if (deviceId) retryDeviceAccounts(deviceId);
+    });
+    els.deviceFlowReplaceAccounts.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
+      if (deviceId) replaceDeviceAccounts(deviceId);
+    });
+    els.deviceFlowAddAccounts.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
+      if (deviceId) addDeviceAccounts(deviceId);
+    });
+    els.accountTraceFilters.forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.accountTraceFilter = btn.dataset.traceFilter || 'all';
+        updateAccountTrace();
+      });
+    });
+    els.accountTraceToggle.addEventListener('click', () => {
+      state.accountTraceCollapsed = !state.accountTraceCollapsed;
+      updateAccountTrace();
+    });
+    loadAccountAssignments();
+    loadAccountsState();
+    setAccountTab(state.activeAccountTab);
+
+    els.deviceNameSave.addEventListener('click', () => {
+      saveDeviceName(els.deviceNameInput.value);
+    });
+
+    els.deviceNameCancel.addEventListener('click', closeDeviceNamePopover);
+
+    els.deviceNameClear.addEventListener('click', () => {
+      saveDeviceName('');
+    });
+
+    els.deviceNameInput.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        saveDeviceName(els.deviceNameInput.value);
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeDeviceNamePopover();
+      }
+    });
+
+    [els.devicePersonSave, els.devicePersonCancel, els.devicePersonClear].forEach(btn => {
+      btn.addEventListener('pointerdown', event => {
+        event.stopPropagation();
+      });
+    });
+
+    els.devicePersonSave.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      saveDevicePerson(els.devicePersonInput.value);
+    });
+
+    els.devicePersonCancel.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      closeDevicePersonPopover();
+    });
+
+    els.devicePersonClear.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      saveDevicePerson('');
+    });
+
+    els.devicePersonInput.addEventListener('input', () => {
+      const limitedValue = limitTextLines(els.devicePersonInput.value, 10);
+      if (limitedValue !== els.devicePersonInput.value) {
+        els.devicePersonInput.value = limitedValue;
+      }
+      updateDevicePersonCloneList();
+    });
+
+    els.devicePersonInput.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeDevicePersonPopover();
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        event.preventDefault();
+        saveDevicePerson(els.devicePersonInput.value);
+      }
+    });
+
+    document.addEventListener('pointerdown', event => {
+      if (els.deviceNamePopover.classList.contains('is-open')) {
+        if (!els.deviceNamePopover.contains(event.target) && !event.target.closest('.device-edit-btn')) {
+          closeDeviceNamePopover();
+        }
+      }
+      if (els.devicePersonPopover.classList.contains('is-open')) {
+        if (!els.devicePersonPopover.contains(event.target) && !event.target.closest('.device-person-btn')) {
+          closeDevicePersonPopover();
+        }
+      }
+      if (els.deviceFlowMenu.classList.contains('is-open')) {
+        if (!els.deviceFlowMenu.contains(event.target)) {
+          closeDeviceFlowMenu();
+        }
+      }
+    });
+    window.addEventListener('resize', refreshOpenPopovers);
+    window.addEventListener('scroll', refreshOpenPopovers, true);
+
+    els.sendBtn.addEventListener('click', () => {
+      runAdbCommand(els.commandInput.value);
+    });
+
+    els.categoryButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        els.categoryButtons.forEach(categoryBtn => {
+          const selected = categoryBtn === btn;
+          categoryBtn.classList.toggle('is-selected', selected);
+          categoryBtn.setAttribute('aria-pressed', selected ? 'true' : 'false');
+        });
+      });
+    });
+
+    els.flowRunButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.flow === 'FlowLogin') {
+          if (state.runningFlow === 'FlowLogin') {
+            stopFlowLogin();
+          } else {
+            executeFlowLogin();
+          }
+        }
+      });
+    });
+
+    els.quickCommands.forEach(btn => {
+      btn.addEventListener('click', () => {
+        els.commandInput.value = btn.dataset.command;
+        runAdbCommand(btn.dataset.command);
+      });
+    });
+
+    els.scriptPreset.addEventListener('change', () => {
+      if (els.scriptPreset.value) {
+        els.scriptPath.value = els.scriptPreset.value;
+      }
+      updateScriptControls();
+    });
+
+    els.scriptPath.addEventListener('input', () => {
+      if (els.scriptPath.value !== els.scriptPreset.value) {
+        els.scriptPreset.value = '';
+      }
+      updateScriptControls();
+    });
+    window.addEventListener('pointerup', () => {
+      state.isDraggingDeviceSelection = false;
+    });
+    window.addEventListener('pointercancel', () => {
+      state.isDraggingDeviceSelection = false;
+    });
+    els.runScriptBtn.addEventListener('click', executeSelectedScript);
+    els.stopScriptBtn.addEventListener('click', stopSelectedScript);
+
+    els.packagesBtn.addEventListener('click', async () => {
+      const deviceIds = getTargetDeviceIds();
+      if (!deviceIds) {
+        appendOutput('Falta seleccionar dispositivo', 'Selecciona al menos un dispositivo o cambia el destino a todos.');
+        return;
+      }
+
+      setBusy(true);
+      try {
+        const [devices, result] = await wsapi.listPackages({ deviceIds });
+        const keyword = els.packageFilter.value.trim().toLowerCase();
+        const filteredResult = keyword
+          ? result.split('\n').filter(line => line.toLowerCase().includes(keyword)).join('\n')
+          : result;
+        state.devices = devices;
+        renderDevices();
+        appendOutput('Programas instalados', filteredResult || 'No se encontraron paquetes con ese filtro.');
+      } catch (error) {
+        appendOutput('Error al consultar programas', error.message);
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    async function validateLicense() {
+      const email = document.getElementById('licenseDeviceEmail').value.trim();
+      const key = document.getElementById('licenseKey').value.trim();
+      const msgEl = document.getElementById('licenseMessage');
+      const btnEl = document.getElementById('licenseSubmitBtn');
+
+      if (!email || !key) {
+        msgEl.style.display = 'block';
+        msgEl.style.background = '#ff5f72';
+        msgEl.style.color = '#fff';
+        msgEl.textContent = 'Por favor completa los campos requeridos.';
+        return;
+      }
+
+      btnEl.disabled = true;
+      btnEl.textContent = 'Validando...';
+
+      try {
+        // Obtener automáticamente la MAC del dispositivo
+        let macAddress = '';
+        try {
+          if (state.devices && state.devices.length > 0) {
+            // Obtener la MAC del primer dispositivo conectado
+            const firstDevice = state.devices[0];
+            const serial = firstDevice.serial || firstDevice.id || '';
+            if (serial) {
+              macAddress = await wsapi.getDeviceMac({ serial });
+            }
+          }
+        } catch (macError) {
+          console.warn('No se pudo obtener la MAC automáticamente:', macError);
+          macAddress = '';
+        }
+
+        const response = await fetch('http://127.0.0.1:8765/validate-license', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            device_email: email,
+            license_key: key,
+            device_hostname: 'web-browser',
+            device_os: navigator.userAgent,
+            device_mac: macAddress,
+          })
+        });
+
+        const data = await response.json();
+
+        msgEl.style.display = 'block';
+
+        if (data.error) {
+          msgEl.style.background = '#ff5f72';
+          msgEl.style.color = '#fff';
+          msgEl.textContent = `Error: ${data.error}`;
+          btnEl.disabled = false;
+          btnEl.textContent = 'Validar';
+          return;
+        }
+
+        if (data.device_status === 'approved') {
+          msgEl.style.background = '#3ddc97';
+          msgEl.style.color = '#000';
+          msgEl.textContent = `✓ Dispositivo aprobado. ${data.message}`;
+          setTimeout(() => {
+            document.getElementById('licenseLoginModal').style.display = 'none';
+            setStatus(true, 'Conectado');
+            setOutput('Dispositivo validado correctamente.');
+          }, 1500);
+        } else if (data.device_status === 'pending') {
+          msgEl.style.background = '#f7c948';
+          msgEl.style.color = '#000';
+          msgEl.textContent = `⏳ Pendiente de aprobación. ${data.message}`;
+        } else if (data.device_status === 'blocked') {
+          msgEl.style.background = '#ff5f72';
+          msgEl.style.color = '#fff';
+          msgEl.textContent = `✗ Dispositivo bloqueado. ${data.message}`;
+        } else {
+          msgEl.style.background = '#3ddc97';
+          msgEl.style.color = '#000';
+          msgEl.textContent = `✓ ${data.message}`;
+        }
+      } catch (error) {
+        msgEl.style.display = 'block';
+        msgEl.style.background = '#ff5f72';
+        msgEl.style.color = '#fff';
+        msgEl.textContent = `Error: ${error.message}`;
+      } finally {
+        btnEl.disabled = false;
+        btnEl.textContent = 'Validar';
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setBusy(true);
+      setStatus(false, 'Conectando...');
+      setOutput('Cargando dispositivos desde el servidor ADB local...');
+      wsapi.connectWs();
+    });
+  </script>
+</body>
+
+</html>
