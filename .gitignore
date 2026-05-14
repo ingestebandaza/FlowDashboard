@@ -7,13 +7,25 @@ __pycache__/
 *.dist-info/
 env/
 venv/
+.venv/
 *.log
 
 # PyInstaller
 build/
+build_fixed/
 dist/
 *.spec
+!launcher.spec
 
-# Archivos de configuración local (no subir)
+# Paquetes generados para releases
+release_packages/
+
+# Configuracion local y secretos
 .supabase_config.json
 .env
+update_config.json
+device_registrations.json
+.android/
+.flowlogin_payloads/
+
+
