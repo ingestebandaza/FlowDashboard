@@ -78,7 +78,7 @@ if "%SHA256%"=="" (
 )
 
 echo [7/7] Actualizando update.json...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$manifest=[ordered]@{version='%VERSION%'; package_url='%PACKAGE_URL%'; sha256='%SHA256%'}; $json=ConvertTo-Json -InputObject $manifest; Set-Content -LiteralPath '%APP_DIR%\update.json' -Value $json -Encoding UTF8"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$manifest=[ordered]@{version='%VERSION%'; package_url='%PACKAGE_URL%'; sha256='%SHA256%'}; $json=ConvertTo-Json -InputObject $manifest; [System.IO.File]::WriteAllText('%APP_DIR%\update.json', $json + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))"
 
 echo.
 echo Listo.

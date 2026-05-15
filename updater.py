@@ -28,7 +28,7 @@ def load_config(app_dir):
     config_path = Path(app_dir) / CONFIG_FILE
     config = {}
     if config_path.exists():
-        with config_path.open("r", encoding="utf-8") as fh:
+        with config_path.open("r", encoding="utf-8-sig") as fh:
             config = json.load(fh)
     manifest_url = os.getenv("FLOWDASHBOARD_UPDATE_MANIFEST_URL", config.get("manifest_url", DEFAULT_MANIFEST_URL))
     return {"manifest_url": manifest_url.strip()}
@@ -36,7 +36,7 @@ def load_config(app_dir):
 
 def fetch_json(url):
     with urllib.request.urlopen(url, timeout=15) as response:
-        return json.loads(response.read().decode("utf-8"))
+        return json.loads(response.read().decode("utf-8-sig"))
 
 
 def download_file(url, destination):

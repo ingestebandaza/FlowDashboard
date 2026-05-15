@@ -454,3 +454,4 @@ Actualizacion automatica:
 - Desde `1.0.13`, `flow_agent_apk/build/flowagent-debug.apk` queda incluido en `launcher.spec` y dentro del EXE, para que `Instalar FlowAgent` funcione en PCs de clientes sin depender de una carpeta externa.
 - `local_adb_server.py` tambien busca FlowAgent APK junto al proyecto padre como fallback y expone `flowAgentApkExists` en `/health` y `/client-info` para diagnostico.
 - En `Dispositivos Conectados` se agrego un boton compacto con icono de bandera para actualizar pais/IP de todos los dispositivos. Al conectar dispositivos, el dashboard intenta llenar automaticamente las banderitas faltantes en segundo plano.
+- Desde `1.0.14`, `updater.py` lee `update_config.json` y `update.json` remoto con `utf-8-sig`, para tolerar BOM. `CrearActualizacion.bat` escribe `update.json` en UTF-8 sin BOM para que las versiones anteriores tambien puedan leer el manifest.
