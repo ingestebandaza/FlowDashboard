@@ -431,3 +431,9 @@ Actualizacion automatica:
 - `local_adb_server.py` sirve archivos estaticos empaquetados (`wsapi_demo.html`, `wsapi.js`, `logo.png`) desde `/wsapi_demo.html`, `/wsapi.js` y `/logo.png`.
 - `SERVER_FEATURES` incluye `static_dashboard`.
 - `launcher.py` exige `static_dashboard` al reutilizar un servidor existente. Si detecta un servidor viejo en `127.0.0.1:8765`, cierra el proceso que escucha ese puerto y arranca el servidor de la build nueva.
+- `SERVER_FEATURES` incluye `client_info`, `license_remember` y `adb_path_probe`.
+- Desde `1.0.5`, `launcher.py` ejecuta `run_update_check()` antes de reutilizar un servidor existente y exige todas las features `static_dashboard`, `client_info`, `license_remember` y `adb_path_probe`. Esto evita quedarse atrapado reutilizando un servidor `1.0.3` que no tiene `/client-info`.
+- `/client-info` devuelve nombre de PC, usuario Windows, hash local estable, version y ruta ADB. El dashboard envia esos datos al validar licencia.
+- `wsapi_demo.html` recuerda email/licencia aprobados en `localStorage` y los revalida al abrir. Si Supabase devuelve bloqueo/error, borra la licencia guardada y deja el modal.
+- `supabase_license_rpc.sql` ahora registra/actualiza `app_devices` ademas de `app_device_registrations`, para que `license_admin.html` muestre PCs usadas como `1/1`, permita bloquearlas y registre logs con `decision`, `pc_name`, `device_hash`, `app_version`, etc.
+- La busqueda de ADB prueba rutas habituales de Android SDK (`LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe`, etc.) porque al abrir un EXE con doble clic puede no heredar el mismo PATH que una terminal.

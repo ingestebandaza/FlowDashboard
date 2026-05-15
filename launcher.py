@@ -12,7 +12,7 @@ from app_meta import APP_NAME, APP_VERSION
 
 SERVER_PORT = 8765
 HTML_FILE = "wsapi_demo.html"
-REQUIRED_SERVER_FEATURE = "static_dashboard"
+REQUIRED_SERVER_FEATURES = {"static_dashboard", "client_info", "license_remember", "adb_path_probe"}
 
 
 def app_dir():
@@ -76,8 +76,8 @@ def server_is_current():
     health = get_server_health()
     if not isinstance(health, dict):
         return False
-    features = health.get("features") or []
-    return REQUIRED_SERVER_FEATURE in features
+    features = set(health.get("features") or [])
+    return REQUIRED_SERVER_FEATURES.issubset(features)
 
 
 def run_hidden(args):
@@ -114,6 +114,8 @@ def stop_server_on_port():
 
 
 if __name__ == "__main__":
+    run_update_check()
+
     if server_is_current():
         open_browser_when_ready()
         sys.exit(0)
@@ -122,6 +124,5 @@ if __name__ == "__main__":
         stop_server_on_port()
         time.sleep(1)
 
-    run_update_check()
     threading.Thread(target=open_browser_when_ready, daemon=True).start()
     run_server()

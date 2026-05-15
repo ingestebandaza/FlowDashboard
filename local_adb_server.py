@@ -3,6 +3,8 @@ import hashlib
 import json
 import mimetypes
 import os
+import getpass
+import platform
 import re
 import shlex
 import shutil
@@ -29,8 +31,34 @@ PORT = 8765
 AGENT_HOST = "0.0.0.0"
 AGENT_PORT = 8766
 SERVER_VERSION = "2026-05-12-device-public-ip-refresh"
-SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard"]
-ADB = shutil.which("adb") or r"C:\adb\adb.exe"
+SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe"]
+
+
+def find_adb():
+    candidates = [
+        os.getenv("FLOWDASHBOARD_ADB", ""),
+        str(BASE_DIR / "platform-tools" / "adb.exe"),
+        str(RESOURCE_DIR / "platform-tools" / "adb.exe"),
+        shutil.which("adb") or "",
+        r"C:\adb\adb.exe",
+    ]
+    local_app_data = os.getenv("LOCALAPPDATA", "")
+    program_files = os.getenv("ProgramFiles", "")
+    program_files_x86 = os.getenv("ProgramFiles(x86)", "")
+    user_profile = os.getenv("USERPROFILE", "")
+    candidates.extend([
+        str(Path(local_app_data) / "Android" / "Sdk" / "platform-tools" / "adb.exe") if local_app_data else "",
+        str(Path(program_files) / "Android" / "android-sdk" / "platform-tools" / "adb.exe") if program_files else "",
+        str(Path(program_files_x86) / "Android" / "android-sdk" / "platform-tools" / "adb.exe") if program_files_x86 else "",
+        str(Path(user_profile) / "AppData" / "Local" / "Android" / "Sdk" / "platform-tools" / "adb.exe") if user_profile else "",
+    ])
+    for candidate in candidates:
+        if candidate and Path(candidate).exists():
+            return candidate
+    return shutil.which("adb") or r"C:\adb\adb.exe"
+
+
+ADB = find_adb()
 ANDROID_HOME_DIR = Path(ADB_HOME_OVERRIDE).expanduser() if ADB_HOME_OVERRIDE else None
 if ANDROID_HOME_DIR:
     ANDROID_HOME_DIR.mkdir(exist_ok=True)
@@ -162,6 +190,9 @@ def validate_license_with_supabase_rpc(device_email, license_key, device_info=No
         "p_device_os": device_info.get("os", ""),
         "p_ip_public": device_info.get("ip", ""),
         "p_country_code": device_info.get("country", ""),
+        "p_device_hash": device_info.get("device_hash", ""),
+        "p_windows_user": device_info.get("windows_user", ""),
+        "p_app_version": APP_VERSION,
     }
     return supabase_request("/rpc/validate_flowdashboard_license", method="POST", data=payload)
 
@@ -1206,6 +1237,30 @@ def get_device_mac_address(serial):
         return ""
     except Exception:
         return ""
+
+
+def get_client_info():
+    hostname = socket.gethostname()
+    try:
+        windows_user = getpass.getuser()
+    except Exception:
+        windows_user = os.getenv("USERNAME", "")
+    raw_hash = "|".join([
+        hostname,
+        windows_user,
+        platform.platform(),
+        str(uuid.getnode()),
+    ])
+    device_hash = hashlib.sha256(raw_hash.encode("utf-8", errors="ignore")).hexdigest()
+    return {
+        "hostname": hostname,
+        "windowsUser": windows_user,
+        "deviceHash": device_hash,
+        "os": platform.platform(),
+        "appVersion": APP_VERSION,
+        "adb": ADB,
+        "adbExists": bool(ADB and Path(ADB).exists()),
+    }
 
 
 def get_installed_package_version(serial, package_name):
@@ -2593,6 +2648,8 @@ class Handler(BaseHTTPRequestHandler):
             path = urlparse(self.path).path
             if path in {"/", "/health"}:
                 self._json({"ok": True, "adb": ADB, "version": SERVER_VERSION, "appVersion": APP_VERSION, "features": SERVER_FEATURES})
+            elif path == "/client-info":
+                self._json(get_client_info())
             elif path == "/devices":
                 self._json({"devices": list_devices()})
             elif path == "/device-names":
@@ -2669,6 +2726,8 @@ class Handler(BaseHTTPRequestHandler):
                         "os": body.get("device_os", ""),
                         "ip": body.get("ip_public", ""),
                         "country": body.get("country_code", ""),
+                        "device_hash": body.get("device_hash", ""),
+                        "windows_user": body.get("windows_user", ""),
                     }
                 )
                 self._json(result)

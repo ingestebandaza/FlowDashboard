@@ -4971,7 +4971,34 @@
       }
     });
 
-    async function validateLicense() {
+    const LICENSE_STORAGE_KEY = 'flowdashboard.license';
+
+    function loadSavedLicense() {
+      try {
+        return JSON.parse(localStorage.getItem(LICENSE_STORAGE_KEY) || 'null');
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function saveLicense(email, key) {
+      localStorage.setItem(LICENSE_STORAGE_KEY, JSON.stringify({ email, key }));
+    }
+
+    function clearSavedLicense() {
+      localStorage.removeItem(LICENSE_STORAGE_KEY);
+    }
+
+    async function getClientInfo() {
+      try {
+        const response = await fetch('http://127.0.0.1:8765/client-info');
+        return await response.json();
+      } catch (error) {
+        return {};
+      }
+    }
+
+    async function validateLicense(options = {}) {
       const email = document.getElementById('licenseDeviceEmail').value.trim();
       const key = document.getElementById('licenseKey').value.trim();
       const msgEl = document.getElementById('licenseMessage');
@@ -4986,9 +5013,10 @@
       }
 
       btnEl.disabled = true;
-      btnEl.textContent = 'Validando...';
+      btnEl.textContent = options.auto ? 'Validando guardada...' : 'Validando...';
 
       try {
+        const clientInfo = await getClientInfo();
         // Obtener automáticamente la MAC del dispositivo
         let macAddress = '';
         try {
@@ -5011,8 +5039,10 @@
           body: JSON.stringify({
             device_email: email,
             license_key: key,
-            device_hostname: 'web-browser',
-            device_os: navigator.userAgent,
+            device_hostname: clientInfo.hostname || 'web-browser',
+            windows_user: clientInfo.windowsUser || '',
+            device_hash: clientInfo.deviceHash || '',
+            device_os: clientInfo.os || navigator.userAgent,
             device_mac: macAddress,
           })
         });
@@ -5022,6 +5052,7 @@
         msgEl.style.display = 'block';
 
         if (data.error || data.status === 'error') {
+          clearSavedLicense();
           msgEl.style.background = '#ff5f72';
           msgEl.style.color = '#fff';
           msgEl.textContent = `Error: ${data.error || data.message || 'No se pudo validar la licencia.'}`;
@@ -5031,6 +5062,7 @@
         }
 
         if (data.device_status === 'approved') {
+          saveLicense(email, key);
           msgEl.style.background = '#3ddc97';
           msgEl.style.color = '#000';
           msgEl.textContent = `✓ Dispositivo aprobado. ${data.message}`;
@@ -5038,12 +5070,14 @@
             document.getElementById('licenseLoginModal').style.display = 'none';
             setStatus(true, 'Conectado');
             setOutput('Dispositivo validado correctamente.');
+            refreshDevices(false);
           }, 1500);
         } else if (data.device_status === 'pending') {
           msgEl.style.background = '#f7c948';
           msgEl.style.color = '#000';
           msgEl.textContent = `⏳ Pendiente de aprobación. ${data.message}`;
         } else if (data.device_status === 'blocked') {
+          clearSavedLicense();
           msgEl.style.background = '#ff5f72';
           msgEl.style.color = '#fff';
           msgEl.textContent = `✗ Dispositivo bloqueado. ${data.message}`;
@@ -5069,6 +5103,12 @@
       setOutput('Cargando dispositivos desde el servidor ADB local...');
       refreshAppVersion();
       wsapi.connectWs();
+      const savedLicense = loadSavedLicense();
+      if (savedLicense?.email && savedLicense?.key) {
+        document.getElementById('licenseDeviceEmail').value = savedLicense.email;
+        document.getElementById('licenseKey').value = savedLicense.key;
+        setTimeout(() => validateLicense({ auto: true }), 700);
+      }
     });
   </script>
 </body>
