@@ -16,6 +16,9 @@ alter table public.app_devices
   add column if not exists created_at timestamptz default now(),
   add column if not exists last_seen_at timestamptz default now();
 
+alter table public.app_devices
+  alter column ip type text using ip::text;
+
 alter table public.app_access_logs
   add column if not exists license_key text,
   add column if not exists device_email text,
@@ -30,6 +33,9 @@ alter table public.app_access_logs
   add column if not exists country text,
   add column if not exists app_version text,
   add column if not exists message text;
+
+alter table public.app_access_logs
+  alter column ip type text using ip::text;
 
 alter table public.app_device_registrations
   add column if not exists license_key text,
