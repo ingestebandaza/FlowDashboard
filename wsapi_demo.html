@@ -261,6 +261,8 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
     }
 
     .panel-title-stack {
@@ -665,21 +667,65 @@
     }
 
     .zoom-control input {
-      width: 160px;
+      width: 150px;
       accent-color: #22b86f;
+    }
+
+    .device-toolbar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .device-tool-group {
+      --tool-color: #45caff;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid color-mix(in srgb, var(--tool-color) 26%, rgba(79, 141, 255, 0.12));
+      border-radius: 14px;
+      background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--tool-color) 10%, transparent), transparent 70%),
+        rgba(7, 16, 31, 0.34);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .device-tool-group.selection {
+      --tool-color: #22b86f;
+    }
+
+    .device-tool-group.data {
+      --tool-color: #45caff;
+    }
+
+    .device-tool-group.layout {
+      --tool-color: #a78bfa;
+    }
+
+    .device-tool-group-label {
+      padding: 0 4px 0 5px;
+      color: color-mix(in srgb, var(--tool-color) 62%, #eaf2ff);
+      font-size: 0.62rem;
+      font-weight: 900;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
 
     .device-selection-controls {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
     }
 
     .device-select-btn {
       display: inline-grid;
       place-items: center;
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
       border: 1px solid rgba(79, 141, 255, 0.2);
       border-radius: 10px;
       color: #eaf2ff;
@@ -712,6 +758,14 @@
       opacity: 0.46;
     }
 
+    .device-select-btn[aria-pressed="true"] {
+      border-color: color-mix(in srgb, var(--select-color, #22b86f) 72%, transparent);
+      background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--select-color, #22b86f) 28%, transparent), transparent 70%),
+        linear-gradient(145deg, rgba(22, 34, 54, 0.98), rgba(12, 18, 29, 0.98));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--select-color, #22b86f) 22%, transparent);
+    }
+
     .device-select-btn.select-all {
       --select-color: #22b86f;
     }
@@ -730,16 +784,185 @@
       color: #dff7ff;
     }
 
+    .device-select-btn.view-toggle {
+      --select-color: #a78bfa;
+      color: #e9ddff;
+    }
+
+    .device-select-btn.category-add {
+      --select-color: #22b86f;
+      color: #d7ffe7;
+    }
+
     .device-list {
       --device-tile-size: 132px;
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(var(--device-tile-size), 1fr));
       gap: 10px;
-      min-height: 150px;
-      max-height: 430px;
+      height: var(--device-list-height, 430px);
+      min-height: 170px;
+      max-height: min(78vh, 900px);
       overflow: auto;
       padding-right: 4px;
+      resize: vertical;
       user-select: none;
+      scrollbar-color: rgba(69, 202, 255, 0.45) rgba(7, 16, 31, 0.38);
+    }
+
+    .device-list.is-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .device-list.has-categories:not(.is-list) {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .device-category-section {
+      display: contents;
+    }
+
+    .device-list.has-categories:not(.is-list) .device-category-section {
+      display: grid;
+      grid-template-columns: minmax(132px, 180px) minmax(0, 1fr);
+      align-items: stretch;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .device-list.is-list .device-category-section,
+    .device-list.has-categories .device-category-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .device-category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 32px;
+      padding: 0 2px;
+    }
+
+    .device-list.has-categories:not(.is-list) .device-category-header {
+      align-items: flex-start;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+      min-height: 72px;
+      padding: 12px;
+      border: 1px solid color-mix(in srgb, var(--category-color, #45caff) 26%, rgba(79, 141, 255, 0.12));
+      border-radius: 12px;
+      background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--category-color, #45caff) 14%, transparent), transparent 75%),
+        rgba(7, 16, 31, 0.36);
+    }
+
+    .device-category-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      color: #eaf2ff;
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .device-category-title::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--category-color, #45caff);
+      box-shadow: 0 0 12px color-mix(in srgb, var(--category-color, #45caff) 58%, transparent);
+    }
+
+    .device-category-count {
+      flex: 0 0 auto;
+      color: #8fa2b7;
+      font-size: 0.68rem;
+      font-weight: 800;
+    }
+
+    .device-category-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    .device-category-delete {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border: 1px solid rgba(255, 92, 122, 0.24);
+      border-radius: 8px;
+      color: #ff9aad;
+      background: rgba(255, 92, 122, 0.08);
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .device-category-delete:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 92, 122, 0.52);
+      background: rgba(255, 92, 122, 0.16);
+    }
+
+    .device-category-delete svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .device-category-dropzone {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(var(--device-tile-size), 1fr));
+      gap: 10px;
+      min-height: 44px;
+      padding: 8px;
+      border: 1px dashed rgba(79, 141, 255, 0.18);
+      border-radius: 12px;
+      background: rgba(7, 16, 31, 0.2);
+      transition: border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .device-list.has-categories:not(.is-list) .device-category-dropzone {
+      min-width: 0;
+    }
+
+    .device-list.is-list .device-category-dropzone {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .device-category-dropzone.is-drag-over {
+      border-color: color-mix(in srgb, var(--category-color, #45caff) 68%, transparent);
+      background: color-mix(in srgb, var(--category-color, #45caff) 11%, rgba(7, 16, 31, 0.42));
+    }
+
+    .device-category-empty {
+      grid-column: 1 / -1;
+      display: grid;
+      place-items: center;
+      min-height: 44px;
+      color: #71849d;
+      font-size: 0.72rem;
+      font-weight: 800;
+      border-radius: 10px;
+      background: rgba(147, 167, 190, 0.06);
     }
 
     .device-card {
@@ -759,6 +982,51 @@
       cursor: pointer;
       touch-action: none;
       transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease, background 0.16s ease;
+    }
+
+    .device-card.is-dragging {
+      opacity: 0.56;
+      transform: scale(0.98);
+    }
+
+    .device-list.is-list .device-card {
+      aspect-ratio: auto;
+      min-height: clamp(46px, calc(var(--device-tile-size) * 0.42), 104px);
+      display: grid;
+      grid-template-columns: minmax(150px, 1.1fr) minmax(82px, 0.42fr) minmax(120px, 0.9fr) auto;
+      align-items: center;
+      gap: clamp(6px, calc(var(--device-tile-size) * 0.06), 16px);
+      padding: clamp(7px, calc(var(--device-tile-size) * 0.055), 13px) 72px clamp(7px, calc(var(--device-tile-size) * 0.055), 13px) 12px;
+    }
+
+    .device-list.is-list .device-action-btn {
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .device-list.is-list .device-action-btn:hover {
+      transform: translateY(calc(-50% - 1px));
+    }
+
+    .device-list.is-list .account-status-column {
+      position: static;
+      flex-direction: row;
+      justify-content: flex-end;
+      gap: clamp(4px, calc(var(--device-tile-size) * 0.03), 8px);
+      max-height: none;
+      min-width: clamp(70px, calc(var(--device-tile-size) * 0.65), 150px);
+      order: 5;
+    }
+
+    .device-list.is-list .account-status-actions {
+      right: auto;
+      bottom: calc(100% + 4px);
+    }
+
+    .device-list.is-list .account-status-dot {
+      width: clamp(6px, calc(var(--device-tile-size) * 0.055), 12px);
+      height: clamp(6px, calc(var(--device-tile-size) * 0.055), 12px);
+      flex-basis: clamp(6px, calc(var(--device-tile-size) * 0.055), 12px);
     }
 
     .device-action-btn {
@@ -994,6 +1262,55 @@
       line-height: 1;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .device-flow-add-panel {
+      display: none;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 6px;
+      min-width: 154px;
+      padding: 6px;
+      border: 1px solid rgba(34, 184, 111, 0.24);
+      border-radius: 10px;
+      background: rgba(34, 184, 111, 0.08);
+    }
+
+    .device-flow-add-panel.is-open {
+      display: grid;
+    }
+
+    .device-flow-add-input {
+      min-width: 0;
+      height: 28px;
+      padding: 0 8px;
+      border: 1px solid rgba(147, 167, 190, 0.22);
+      border-radius: 8px;
+      color: #edf3fb;
+      background: rgba(8, 15, 28, 0.94);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .device-flow-add-confirm {
+      display: inline-grid;
+      place-items: center;
+      width: 30px;
+      height: 28px;
+      border: 1px solid rgba(34, 184, 111, 0.44);
+      border-radius: 8px;
+      color: #d7ffe7;
+      background: rgba(34, 184, 111, 0.18);
+      cursor: pointer;
+    }
+
+    .device-flow-add-confirm svg {
+      width: 15px;
+      height: 15px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .device-login-summary {
@@ -1290,6 +1607,42 @@
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       line-clamp: 3;
+    }
+
+    .device-list.is-list .device-name,
+    .device-list.is-list .device-login-summary,
+    .device-list.is-list .device-id {
+      min-width: 0;
+      margin: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .device-list.is-list .device-id {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      word-break: normal;
+    }
+
+    .device-list.is-list .device-name {
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .device-list.is-list .device-name-line {
+      flex: 1 1 auto;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .device-list.is-list .device-name-line span:last-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .badge {
@@ -2000,6 +2353,41 @@
         flex-direction: column;
       }
 
+      .panel-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .panel-header-actions,
+      .device-toolbar {
+        justify-content: flex-start;
+        width: 100%;
+      }
+
+      .zoom-control input {
+        width: min(150px, 42vw);
+      }
+
+      .device-list.is-list .device-card {
+        grid-template-columns: minmax(110px, 1fr) minmax(62px, 0.36fr) minmax(82px, 0.7fr) auto;
+        gap: 6px;
+        padding-right: 66px;
+      }
+
+      .device-list.is-list .account-status-column {
+        grid-column: auto;
+        grid-row: auto;
+      }
+
+      .device-list.is-list .device-login-summary,
+      .device-list.is-list .device-id {
+        grid-column: auto;
+      }
+
+      .device-list.has-categories:not(.is-list) .device-category-section {
+        grid-template-columns: 1fr;
+      }
+
       .quick-commands {
         grid-template-columns: 1fr;
       }
@@ -2237,46 +2625,75 @@
             </span>
             </h2>
             <div class="panel-header-actions">
-              <div class="device-selection-controls" aria-label="Seleccion de dispositivos">
-                <button class="device-select-btn select-all js-select-all-devices-btn" type="button" title="Seleccionar todos" aria-label="Seleccionar todos los dispositivos">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="3" y="5" width="7" height="7" rx="1.5" />
-                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                    <rect x="14" y="5" width="7" height="7" rx="1.5" />
-                    <path d="m14 17 2.2 2.2L21 14.5" />
-                  </svg>
-                </button>
-                <button class="device-select-btn clear-selected-accounts js-clear-selected-device-accounts-btn" type="button" title="Eliminar cuentas seleccionadas" aria-label="Eliminar cuentas de los dispositivos seleccionados">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M7 3h7l4 4v11a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Z" />
-                    <path d="M14 3v5h5" />
-                    <path d="M8 11h5" />
-                    <path d="M8 15h4" />
-                    <path d="M15 14l5 5" />
-                    <path d="M20 14l-5 5" />
-                  </svg>
-                </button>
-                <button class="device-select-btn clear-selection js-clear-device-selection-btn" type="button" title="Deseleccionar todos" aria-label="Deseleccionar todos los dispositivos">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="3" y="5" width="7" height="7" rx="1.5" />
-                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                    <rect x="14" y="5" width="7" height="7" rx="1.5" />
-                    <path d="m15 16 5 5" />
-                    <path d="m20 16-5 5" />
-                  </svg>
-                </button>
-                <button class="device-select-btn refresh-country js-refresh-country-btn" type="button" title="Actualizar pais de dispositivos" aria-label="Actualizar pais de los dispositivos">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M4 21V5" />
-                    <path d="M5 5c3-2 5 2 8 0s5-1 7 1v10c-2-2-4-3-7-1s-5-2-8 0" />
-                    <path d="M17 4v4h4" />
-                    <path d="M21 4a6 6 0 0 0-6 6" />
-                  </svg>
-                </button>
+              <div class="device-toolbar" aria-label="Herramientas de dispositivos">
+                <div class="device-tool-group selection">
+                  <span class="device-tool-group-label">Seleccion</span>
+                  <div class="device-selection-controls" aria-label="Seleccion de dispositivos">
+                    <button class="device-select-btn select-all js-select-all-devices-btn" type="button" title="Seleccionar todos" aria-label="Seleccionar todos los dispositivos">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="4" y="4" width="6" height="6" rx="1.4" />
+                        <rect x="4" y="14" width="6" height="6" rx="1.4" />
+                        <rect x="14" y="4" width="6" height="6" rx="1.4" />
+                        <rect x="14" y="14" width="6" height="6" rx="1.4" />
+                        <path d="m15.2 16.8 1.6 1.6 3.3-4" />
+                      </svg>
+                    </button>
+                    <button class="device-select-btn clear-selection js-clear-device-selection-btn" type="button" title="Deseleccionar todos" aria-label="Deseleccionar todos los dispositivos">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="4" y="4" width="6" height="6" rx="1.4" />
+                        <rect x="4" y="14" width="6" height="6" rx="1.4" />
+                        <rect x="14" y="4" width="6" height="6" rx="1.4" />
+                        <path d="m15 15 5 5" />
+                        <path d="m20 15-5 5" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="device-tool-group data">
+                  <span class="device-tool-group-label">Datos</span>
+                  <div class="device-selection-controls" aria-label="Datos de dispositivos">
+                    <button class="device-select-btn clear-selected-accounts js-clear-selected-device-accounts-btn" type="button" title="Eliminar cuentas seleccionadas" aria-label="Eliminar cuentas de los dispositivos seleccionados">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M7 3h7l4 4v11a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Z" />
+                        <path d="M14 3v5h5" />
+                        <path d="M8 12h5" />
+                        <path d="M15 15l5 5" />
+                        <path d="M20 15l-5 5" />
+                      </svg>
+                    </button>
+                    <button class="device-select-btn refresh-country js-refresh-country-btn" type="button" title="Actualizar pais de dispositivos" aria-label="Actualizar pais de los dispositivos">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 21V5" />
+                        <path d="M5 5c3-2 5 2 8 0s5-1 7 1v10c-2-2-4-3-7-1s-5-2-8 0" />
+                        <path d="M17 4v4h4" />
+                        <path d="M21 4a6 6 0 0 0-6 6" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="device-tool-group layout">
+                  <span class="device-tool-group-label">Vista</span>
+                  <div class="device-selection-controls" aria-label="Vista y categorias">
+                    <button class="device-select-btn view-toggle js-device-view-toggle-btn" type="button" title="Cambiar vista" aria-label="Cambiar vista de dispositivos" aria-pressed="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 6h16" />
+                        <path d="M4 12h16" />
+                        <path d="M4 18h16" />
+                      </svg>
+                    </button>
+                    <button class="device-select-btn category-add js-device-category-add-btn" type="button" title="Crear categoria" aria-label="Crear categoria de dispositivos">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 5v14" />
+                        <path d="M5 12h14" />
+                        <path d="M4 6h5l2 2h9v10a2 2 0 0 1-2 2H4Z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
               <label class="zoom-control" for="deviceZoom">
                 Zoom
-                <input id="deviceZoom" class="js-device-zoom" type="range" min="84" max="220" value="132" />
+                <input id="deviceZoom" class="js-device-zoom" type="range" min="72" max="260" value="132" />
               </label>
             </div>
           </div>
@@ -2435,6 +2852,15 @@
     </div>
   </div>
 
+  <div class="device-name-popover js-device-category-popover" role="dialog" aria-modal="false" aria-label="Crear categoria de dispositivos">
+    <p class="device-name-popover-title">Nueva categoria</p>
+    <input class="js-device-category-input" type="text" maxlength="80" placeholder="Dispositivos Luis" />
+    <div class="device-name-popover-actions">
+      <button class="mini-btn cancel js-device-category-cancel" type="button" aria-label="Cancelar" title="Cancelar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12" /><path d="m6 6 12 12" /></svg></button>
+      <button class="mini-btn primary js-device-category-save" type="button" aria-label="Guardar" title="Guardar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg></button>
+    </div>
+  </div>
+
   <div class="device-flow-menu js-device-flow-menu" role="menu" aria-label="FlowLogin del dispositivo">
     <button class="device-flow-menu-btn js-device-flow-play" type="button" role="menuitem" style="--flow-menu-color: #14b8a6;" aria-label="Ejecutar FlowLogin en este dispositivo" title="Play FlowLogin">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
@@ -2456,6 +2882,16 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
       <span>Anadir Cuentas</span>
     </button>
+    <div class="device-flow-add-panel js-device-flow-add-panel" aria-label="Cantidad de cuentas para anadir">
+      <input class="device-flow-add-input js-device-flow-add-count" type="number" min="1" max="10" value="1" aria-label="Numero de cuentas" />
+      <button class="device-flow-add-confirm js-device-flow-add-confirm" type="button" aria-label="Confirmar anadir cuentas" title="Confirmar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+      </button>
+    </div>
+    <button class="device-flow-menu-btn js-device-flow-clear-accounts" type="button" role="menuitem" style="--flow-menu-color: #ff5c7a;" aria-label="Eliminar cuentas del dispositivo" title="Eliminar Cuentas">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M6 6l1 15h10l1-15" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
+      <span>Eliminar Cuentas</span>
+    </button>
   </div>
 
   <script>
@@ -2469,6 +2905,9 @@
       editingDevice: null,
       editingDevicePerson: null,
       flowMenuDeviceId: '',
+      deviceViewMode: localStorage.getItem('flowdashboard.deviceViewMode') || 'grid',
+      deviceGroups: { groups: [], assignments: {} },
+      draggingDeviceIds: [],
       activeAccountTab: 'total',
       accountTraceFilter: 'all',
       accountTraceCollapsed: false,
@@ -2503,6 +2942,12 @@
       clearSelectedDeviceAccountsBtn: document.querySelector('.js-clear-selected-device-accounts-btn'),
       clearDeviceSelectionBtn: document.querySelector('.js-clear-device-selection-btn'),
       refreshCountryBtn: document.querySelector('.js-refresh-country-btn'),
+      deviceViewToggleBtn: document.querySelector('.js-device-view-toggle-btn'),
+      deviceCategoryAddBtn: document.querySelector('.js-device-category-add-btn'),
+      deviceCategoryPopover: document.querySelector('.js-device-category-popover'),
+      deviceCategoryInput: document.querySelector('.js-device-category-input'),
+      deviceCategoryCancel: document.querySelector('.js-device-category-cancel'),
+      deviceCategorySave: document.querySelector('.js-device-category-save'),
       flowAgentStatus: document.querySelector('.js-flow-agent-status'),
       flowAgentSetupBtn: document.querySelector('.js-flow-agent-setup-btn'),
       flowAgentRefreshBtn: document.querySelector('.js-flow-agent-refresh-btn'),
@@ -2554,6 +2999,10 @@
       deviceFlowRetryAccounts: document.querySelector('.js-device-flow-retry-accounts'),
       deviceFlowReplaceAccounts: document.querySelector('.js-device-flow-replace-accounts'),
       deviceFlowAddAccounts: document.querySelector('.js-device-flow-add-accounts'),
+      deviceFlowAddPanel: document.querySelector('.js-device-flow-add-panel'),
+      deviceFlowAddCount: document.querySelector('.js-device-flow-add-count'),
+      deviceFlowAddConfirm: document.querySelector('.js-device-flow-add-confirm'),
+      deviceFlowClearAccounts: document.querySelector('.js-device-flow-clear-accounts'),
       appVersion: document.querySelector('.js-app-version'),
       output: document.querySelector('.js-output')
     };
@@ -3287,6 +3736,23 @@
       return getAvailableAccountRecords(tab)[0] || null;
     }
 
+    function getAvailableAccountRecordsForDeviceAdd(deviceId) {
+      const usedInConnectedDevices = new Set();
+      state.devices.forEach(device => {
+        getDeviceAccountLines(device).forEach(line => {
+          const signature = accountLineSignature(line);
+          if (signature) usedInConnectedDevices.add(signature);
+        });
+      });
+      const seen = new Set();
+      return getAccountRecords('total').filter(record => {
+        const signature = accountLineSignature(record.line);
+        if (!signature || seen.has(signature) || usedInConnectedDevices.has(signature)) return false;
+        seen.add(signature);
+        return true;
+      });
+    }
+
     function findAccountRecordByLine(line) {
       for (const input of els.accountInputs) {
         const record = getAccountRecords(input.dataset.accountInput).find(item => item.line === line);
@@ -3610,6 +4076,50 @@
       renderDevices();
     }
 
+    function toggleDeviceViewMode() {
+      state.deviceViewMode = state.deviceViewMode === 'list' ? 'grid' : 'list';
+      localStorage.setItem('flowdashboard.deviceViewMode', state.deviceViewMode);
+      updateDeviceViewButton();
+      renderDevices();
+    }
+
+    function updateDeviceViewButton() {
+      if (!els.deviceViewToggleBtn) return;
+      const isList = state.deviceViewMode === 'list';
+      els.deviceViewToggleBtn.title = isList ? 'Vista de cuadros' : 'Vista de filas';
+      els.deviceViewToggleBtn.setAttribute('aria-label', els.deviceViewToggleBtn.title);
+      els.deviceViewToggleBtn.setAttribute('aria-pressed', isList ? 'true' : 'false');
+      els.deviceViewToggleBtn.innerHTML = isList
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1.4" /><rect x="14" y="4" width="6" height="6" rx="1.4" /><rect x="4" y="14" width="6" height="6" rx="1.4" /><rect x="14" y="14" width="6" height="6" rx="1.4" /></svg>'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /></svg>';
+    }
+
+    function openDeviceCategoryPopover() {
+      closeDeviceNamePopover();
+      closeDevicePersonPopover();
+      closeDeviceFlowMenu();
+      els.deviceCategoryInput.value = '';
+      els.deviceCategoryPopover.classList.add('is-open');
+      positionPopover(els.deviceCategoryPopover, els.deviceCategoryAddBtn, 280, 145);
+      els.deviceCategoryInput.focus();
+    }
+
+    function closeDeviceCategoryPopover() {
+      els.deviceCategoryPopover.classList.remove('is-open');
+      els.deviceCategoryInput.value = '';
+    }
+
+    async function saveNewDeviceCategory() {
+      const name = els.deviceCategoryInput.value.trim();
+      if (!name) return;
+      const id = `cat_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+      state.deviceGroups.groups = [...state.deviceGroups.groups, { id, name: name.slice(0, 80) }];
+      await saveDeviceGroups();
+      closeDeviceCategoryPopover();
+      renderDevices();
+      appendOutput('Categoria creada', name);
+    }
+
     function closeDeviceNamePopover() {
       els.deviceNamePopover.classList.remove('is-open');
       state.editingDevice = null;
@@ -3624,6 +4134,7 @@
 
     function closeDeviceFlowMenu() {
       els.deviceFlowMenu.classList.remove('is-open');
+      els.deviceFlowAddPanel.classList.remove('is-open');
       state.flowMenuDeviceId = '';
       delete els.deviceFlowMenu.dataset.deviceId;
     }
@@ -3659,6 +4170,11 @@
           closeDevicePersonPopover();
         }
       }
+      if (els.deviceCategoryPopover.classList.contains('is-open')) {
+        if (!positionPopover(els.deviceCategoryPopover, els.deviceCategoryAddBtn, 280, 145)) {
+          closeDeviceCategoryPopover();
+        }
+      }
       if (els.deviceFlowMenu.classList.contains('is-open')) {
         closeDeviceFlowMenu();
       }
@@ -3669,6 +4185,7 @@
       const currentName = getDeviceName(device, index);
 
       closeDevicePersonPopover();
+      closeDeviceCategoryPopover();
       state.editingDevice = { serial, anchor };
       els.deviceNameInput.value = currentName;
       positionPopover(els.deviceNamePopover, anchor, 280, 150);
@@ -3681,6 +4198,7 @@
       const serial = getDeviceId(device);
 
       closeDeviceNamePopover();
+      closeDeviceCategoryPopover();
       state.editingDevicePerson = { serial, anchor };
       els.devicePersonPopover.dataset.serial = serial;
       els.devicePersonInput.value = limitTextLines(device.person || '', 10);
@@ -3701,10 +4219,18 @@
       els.deviceFlowMenu.dataset.deviceId = deviceId;
       const lines = getDeviceAccountLines(device);
       const editableItems = getBulkEditableAccountItems(device);
+      const freeSlots = Math.max(0, 10 - lines.length);
+      const freeAccounts = getAvailableAccountRecordsForDeviceAdd(deviceId).length;
+      const addMax = Math.min(freeSlots, freeAccounts);
       els.deviceFlowPlay.disabled = !lines.length;
       els.deviceFlowRetryAccounts.disabled = !editableItems.length;
       els.deviceFlowReplaceAccounts.disabled = !editableItems.length;
-      els.deviceFlowAddAccounts.disabled = lines.length >= 10;
+      els.deviceFlowAddAccounts.disabled = freeSlots <= 0;
+      els.deviceFlowClearAccounts.disabled = !lines.length;
+      els.deviceFlowAddPanel.classList.remove('is-open');
+      els.deviceFlowAddCount.max = String(Math.max(1, addMax || freeSlots));
+      els.deviceFlowAddCount.value = '1';
+      els.deviceFlowAddCount.placeholder = addMax > 0 ? `1-${addMax}` : `1-${freeSlots}`;
       els.deviceFlowMenu.classList.add('is-open');
       const rect = els.deviceFlowMenu.getBoundingClientRect();
       const left = Math.min(Math.max(8, x), window.innerWidth - rect.width - 8);
@@ -3826,6 +4352,133 @@
       return pieces.join(' · ') || `${statuses.length} pendientes`;
     }
 
+    function normalizeDeviceGroups(groupsData) {
+      const groups = Array.isArray(groupsData?.groups) ? groupsData.groups : [];
+      const assignments = groupsData?.assignments && typeof groupsData.assignments === 'object' ? groupsData.assignments : {};
+      return {
+        groups: groups
+          .map(group => ({ id: String(group.id || '').trim(), name: String(group.name || '').trim() }))
+          .filter(group => group.id && group.name),
+        assignments: { ...assignments }
+      };
+    }
+
+    function categoryColor(index) {
+      return ['#45caff', '#22b86f', '#ffd166', '#a78bfa', '#ff7aa2', '#14b8a6'][index % 6];
+    }
+
+    function getDeviceCategoryId(deviceId) {
+      return state.deviceGroups.assignments[deviceId] || '';
+    }
+
+    function buildDeviceCategorySections() {
+      const sections = [];
+      const groupedIds = new Set();
+      state.deviceGroups.groups.forEach((group, index) => {
+        const devices = state.devices.filter(device => getDeviceCategoryId(getDeviceId(device)) === group.id);
+        devices.forEach(device => groupedIds.add(getDeviceId(device)));
+        sections.push({ id: group.id, name: group.name, color: categoryColor(index), devices });
+      });
+      const ungrouped = state.devices.filter(device => !groupedIds.has(getDeviceId(device)));
+      sections.push({ id: '', name: 'Sin categoria', color: '#607086', devices: ungrouped });
+      return sections;
+    }
+
+    async function saveDeviceGroups() {
+      state.deviceGroups = normalizeDeviceGroups(await wsapi.saveDeviceGroups(state.deviceGroups));
+    }
+
+    async function assignDevicesToCategory(deviceIds, categoryId) {
+      const validIds = new Set(state.deviceGroups.groups.map(group => group.id));
+      const targetCategory = validIds.has(categoryId) ? categoryId : '';
+      deviceIds.forEach(deviceId => {
+        if (targetCategory) {
+          state.deviceGroups.assignments[deviceId] = targetCategory;
+        } else {
+          delete state.deviceGroups.assignments[deviceId];
+        }
+      });
+      await saveDeviceGroups();
+      renderDevices();
+      const categoryName = targetCategory
+        ? state.deviceGroups.groups.find(group => group.id === targetCategory)?.name || 'categoria'
+        : 'Sin categoria';
+      appendOutput('Dispositivos organizados', `${deviceIds.length} movido${deviceIds.length === 1 ? '' : 's'} a ${categoryName}.`);
+    }
+
+    async function deleteDeviceCategory(categoryId) {
+      const group = state.deviceGroups.groups.find(item => item.id === categoryId);
+      if (!group) return;
+      const assignedCount = Object.values(state.deviceGroups.assignments).filter(id => id === categoryId).length;
+      const ok = window.confirm(`Eliminar categoria "${group.name}"? ${assignedCount} dispositivo${assignedCount === 1 ? '' : 's'} volveran a Sin categoria.`);
+      if (!ok) return;
+      state.deviceGroups.groups = state.deviceGroups.groups.filter(item => item.id !== categoryId);
+      Object.keys(state.deviceGroups.assignments).forEach(deviceId => {
+        if (state.deviceGroups.assignments[deviceId] === categoryId) {
+          delete state.deviceGroups.assignments[deviceId];
+        }
+      });
+      await saveDeviceGroups();
+      renderDevices();
+      appendOutput('Categoria eliminada', group.name);
+    }
+
+    function createCategorySection(section) {
+      const wrapper = document.createElement('section');
+      const header = document.createElement('div');
+      const title = document.createElement('div');
+      const count = document.createElement('span');
+      const actions = document.createElement('div');
+      const dropzone = document.createElement('div');
+      wrapper.className = 'device-category-section';
+      wrapper.style.setProperty('--category-color', section.color);
+      header.className = 'device-category-header';
+      title.className = 'device-category-title';
+      title.textContent = section.name;
+      count.className = 'device-category-count';
+      count.textContent = `${section.devices.length}`;
+      actions.className = 'device-category-actions';
+      actions.appendChild(count);
+      if (section.id) {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'device-category-delete';
+        deleteBtn.title = 'Eliminar categoria';
+        deleteBtn.setAttribute('aria-label', `Eliminar categoria ${section.name}`);
+        deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M6 7l1 14h10l1-14" /><path d="M9 7V4h6v3" /></svg>';
+        deleteBtn.addEventListener('pointerdown', event => event.stopPropagation());
+        deleteBtn.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          deleteDeviceCategory(section.id);
+        });
+        actions.appendChild(deleteBtn);
+      }
+      dropzone.className = 'device-category-dropzone';
+      dropzone.dataset.categoryId = section.id;
+      dropzone.addEventListener('dragover', event => {
+        event.preventDefault();
+        dropzone.classList.add('is-drag-over');
+      });
+      dropzone.addEventListener('dragleave', () => dropzone.classList.remove('is-drag-over'));
+      dropzone.addEventListener('drop', event => {
+        event.preventDefault();
+        dropzone.classList.remove('is-drag-over');
+        const raw = event.dataTransfer.getData('application/json') || event.dataTransfer.getData('text/plain');
+        let deviceIds = [];
+        try {
+          deviceIds = JSON.parse(raw);
+        } catch (_) {
+          deviceIds = raw ? [raw] : [];
+        }
+        deviceIds = Array.isArray(deviceIds) ? deviceIds.filter(Boolean) : [];
+        if (deviceIds.length) assignDevicesToCategory(deviceIds, section.id);
+      });
+      header.append(title, actions);
+      wrapper.append(header, dropzone);
+      return { wrapper, dropzone };
+    }
+
     function renderDevices() {
       els.deviceCount.textContent = state.devices.length;
 
@@ -3844,8 +4497,27 @@
       syncAssignmentsFromDevices();
 
       els.deviceList.innerHTML = '';
+      els.deviceList.classList.toggle('is-list', state.deviceViewMode === 'list');
+      els.deviceList.classList.toggle('has-categories', state.deviceGroups.groups.length > 0);
+      const hasCategories = state.deviceGroups.groups.length > 0;
+      const sections = hasCategories ? buildDeviceCategorySections() : [];
+      const dropzones = new Map();
+      sections.forEach(section => {
+        if (!section.devices.length && !section.id) return;
+        const { wrapper, dropzone } = createCategorySection(section);
+        dropzones.set(section.id, dropzone);
+        els.deviceList.appendChild(wrapper);
+        if (!section.devices.length) {
+          const empty = document.createElement('div');
+          empty.className = 'device-category-empty';
+          empty.textContent = 'Arrastra dispositivos aqui';
+          dropzone.appendChild(empty);
+        }
+      });
+
       state.devices.forEach((device, index) => {
         const id = getDeviceId(device);
+        const targetDropzone = dropzones.get(getDeviceCategoryId(id)) || dropzones.get('');
         const card = document.createElement('div');
         const personBtn = document.createElement('button');
         const editBtn = document.createElement('button');
@@ -3865,6 +4537,7 @@
         card.setAttribute('role', 'button');
         card.setAttribute('aria-label', `Seleccionar ${getDeviceName(device, index)}`);
         card.dataset.deviceId = id;
+        card.draggable = true;
         card.className = `device-card${isMultiSelected ? ' is-selected' : ''}`;
         personBtn.type = 'button';
         personBtn.className = `device-action-btn device-person-btn${device.person ? ' has-data' : ''}`;
@@ -3981,7 +4654,7 @@
           openDeviceNamePopover(device, index, editBtn);
         });
         card.addEventListener('pointerdown', event => {
-          event.preventDefault();
+          if (event.pointerType === 'mouse' && event.button !== 0) return;
           if (event.detail > 1) {
             state.isDraggingDeviceSelection = false;
             return;
@@ -4011,7 +4684,20 @@
           event.preventDefault();
           toggleDeviceSelected(card, badge, id);
         });
-        els.deviceList.appendChild(card);
+        card.addEventListener('dragstart', event => {
+          const ids = state.selectedDeviceIds.includes(id) ? [...state.selectedDeviceIds] : [id];
+          state.draggingDeviceIds = ids;
+          card.classList.add('is-dragging');
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('application/json', JSON.stringify(ids));
+          event.dataTransfer.setData('text/plain', id);
+        });
+        card.addEventListener('dragend', () => {
+          state.draggingDeviceIds = [];
+          card.classList.remove('is-dragging');
+          els.deviceList.querySelectorAll('.is-drag-over').forEach(item => item.classList.remove('is-drag-over'));
+        });
+        (targetDropzone || els.deviceList).appendChild(card);
       });
 
       updateTargetLabel();
@@ -4304,7 +4990,31 @@
       }
     }
 
-    async function addDeviceAccounts(deviceId) {
+    function openAddDeviceAccountsPanel(deviceId) {
+      const device = getDeviceById(deviceId);
+      if (!device) return;
+      const lines = getDeviceAccountLines(device);
+      const freeSlots = Math.max(0, 10 - lines.length);
+      const freeAccounts = getAvailableAccountRecordsForDeviceAdd(deviceId).length;
+      const maxCount = Math.min(freeSlots, freeAccounts);
+      if (maxCount <= 0) {
+        appendOutput(
+          freeSlots <= 0 ? 'Dispositivo completo' : 'Sin cuentas libres',
+          freeSlots <= 0
+            ? `${shortDeviceId(deviceId)} ya tiene 10 cuentas.`
+            : 'Agrega cuentas nuevas en Total antes de anadir al dispositivo.'
+        );
+        return;
+      }
+      els.deviceFlowAddCount.max = String(maxCount);
+      els.deviceFlowAddCount.value = String(Math.min(Number(els.deviceFlowAddCount.value) || 1, maxCount));
+      els.deviceFlowAddCount.placeholder = `1-${maxCount}`;
+      els.deviceFlowAddPanel.classList.add('is-open');
+      els.deviceFlowAddCount.focus();
+      els.deviceFlowAddCount.select();
+    }
+
+    async function addDeviceAccounts(deviceId, requestedCount) {
       closeDeviceFlowMenu();
       if (state.busy) return;
       const device = getDeviceById(deviceId);
@@ -4315,9 +5025,14 @@
         appendOutput('Dispositivo completo', `${shortDeviceId(deviceId)} ya tiene 10 cuentas.`);
         return;
       }
-      const freeRecords = getAvailableAccountRecords('total').slice(0, freeSlots);
+      const freeRecords = getAvailableAccountRecordsForDeviceAdd(deviceId).slice(0, freeSlots);
       if (!freeRecords.length) {
         appendOutput('Sin cuentas libres', 'Agrega cuentas nuevas en Total antes de anadir al dispositivo.');
+        return;
+      }
+      const count = Math.max(1, Math.min(Number(requestedCount) || 1, freeSlots, freeRecords.length));
+      if (Number(requestedCount) > count) {
+        appendOutput('No alcanzan espacios o cuentas', `Solo se pueden anadir ${count} cuenta${count === 1 ? '' : 's'} ahora mismo.`);
         return;
       }
 
@@ -4325,7 +5040,7 @@
       try {
         const addedClones = [];
         const startClone = lines.length + 1;
-        freeRecords.forEach((record, index) => {
+        freeRecords.slice(0, count).forEach((record, index) => {
           const clone = startClone + index;
           lines.push(record.line);
           addedClones.push(clone);
@@ -4334,12 +5049,42 @@
           serial: deviceId,
           person: lines.slice(0, 10).join('\n')
         });
-        freeRecords.forEach((record, index) => {
-          assignAccountRecord(record, deviceId, lines.length - freeRecords.length + index + 1, 'assigned');
+        freeRecords.slice(0, count).forEach((record, index) => {
+          assignAccountRecord(record, deviceId, startClone + index, 'assigned');
         });
-        await runDeviceClones(deviceId, addedClones, 'Cuentas anadidas y enviadas', 'Cuenta anadida');
+        state.devices = await wsapi.getDeviceListAll();
+        renderDevices();
+        updateAccountTrace();
+        appendOutput('Cuentas anadidas', `${shortDeviceId(deviceId)} recibio ${addedClones.length} cuenta${addedClones.length === 1 ? '' : 's'} nueva${addedClones.length === 1 ? '' : 's'} en C${addedClones.join(', C')}.`);
       } catch (error) {
         appendOutput('Error al anadir cuentas', error.message);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function clearDeviceAccountsFromMenu(deviceId) {
+      closeDeviceFlowMenu();
+      if (state.busy) return;
+      const device = getDeviceById(deviceId);
+      if (!device) return;
+      const lines = getDeviceAccountLines(device);
+      if (!lines.length) {
+        appendOutput('Sin cuentas guardadas', `${shortDeviceId(deviceId)} no tiene cuentas para eliminar.`);
+        return;
+      }
+      const confirmed = window.confirm(`Eliminar las cuentas guardadas en ${shortDeviceId(deviceId)}? Las cuentas del menu izquierdo no se borraran.`);
+      if (!confirmed) return;
+
+      setBusy(true);
+      try {
+        await wsapi.updateDevicePerson({ serial: deviceId, person: '' });
+        clearAssignmentsForDevices([deviceId]);
+        state.devices = await wsapi.getDeviceListAll();
+        renderDevices();
+        appendOutput('Cuentas eliminadas del dispositivo', `${shortDeviceId(deviceId)} quedo sin cuentas. Las listas del menu izquierdo se conservaron.`);
+      } catch (error) {
+        appendOutput('Error al eliminar cuentas del dispositivo', error.message);
       } finally {
         setBusy(false);
       }
@@ -4378,17 +5123,63 @@
       if (els.refreshCountryBtn) {
         els.refreshCountryBtn.disabled = !enabled || !state.devices.length || state.refreshingCountries;
       }
+      if (els.deviceViewToggleBtn) {
+        els.deviceViewToggleBtn.disabled = !enabled || !state.devices.length;
+      }
+      if (els.deviceCategoryAddBtn) {
+        els.deviceCategoryAddBtn.disabled = !enabled;
+      }
     }
 
     function updateDeviceZoom() {
-      els.deviceList.style.setProperty('--device-tile-size', `${els.deviceZoom.value}px`);
+      const value = Math.max(Number(els.deviceZoom.min) || 72, Math.min(Number(els.deviceZoom.max) || 260, Number(els.deviceZoom.value) || 132));
+      els.deviceZoom.value = String(value);
+      els.deviceList.style.setProperty('--device-tile-size', `${value}px`);
+      localStorage.setItem('flowdashboard.deviceZoom', String(value));
+    }
+
+    function initDeviceZoom() {
+      const savedZoom = Number(localStorage.getItem('flowdashboard.deviceZoom'));
+      const min = Number(els.deviceZoom.min) || 72;
+      const max = Number(els.deviceZoom.max) || 260;
+      if (Number.isFinite(savedZoom) && savedZoom >= min && savedZoom <= max) {
+        els.deviceZoom.value = String(savedZoom);
+      }
+      updateDeviceZoom();
+    }
+
+    function initDeviceListResize() {
+      const savedHeight = Number(localStorage.getItem('flowdashboard.deviceListHeight'));
+      if (Number.isFinite(savedHeight) && savedHeight >= 170) {
+        els.deviceList.style.setProperty('--device-list-height', `${Math.min(savedHeight, 900)}px`);
+      }
+      if (!('ResizeObserver' in window)) return;
+      let resizeFrame = 0;
+      const observer = new ResizeObserver(entries => {
+        const entry = entries[0];
+        if (!entry) return;
+        window.cancelAnimationFrame(resizeFrame);
+        resizeFrame = window.requestAnimationFrame(() => {
+          const height = Math.round(entry.contentRect.height);
+          if (height >= 170) {
+            localStorage.setItem('flowdashboard.deviceListHeight', String(Math.min(height, 900)));
+          }
+        });
+      });
+      observer.observe(els.deviceList);
     }
 
     async function refreshDevices(showMessage = true) {
       setBusy(true);
       try {
-        state.devices = await wsapi.getDeviceListAll();
-        state.agents = await wsapi.getAgents();
+        const [devices, agents, groups] = await Promise.all([
+          wsapi.getDeviceListAll(),
+          wsapi.getAgents(),
+          wsapi.getDeviceGroups()
+        ]);
+        state.devices = devices;
+        state.agents = agents;
+        state.deviceGroups = normalizeDeviceGroups(groups);
         renderDevices();
         if (showMessage) appendOutput('Dispositivos actualizados', JSON.stringify(state.devices, null, 2));
       } catch (error) {
@@ -4760,6 +5551,12 @@
       renderDevices();
       setBusy(false);
       appendOutput('Conexion establecida', `Dispositivos detectados: ${deviceList.length}`);
+      wsapi.getDeviceGroups()
+        .then(groups => {
+          state.deviceGroups = normalizeDeviceGroups(groups);
+          renderDevices();
+        })
+        .catch(() => {});
       wsapi.getAgents()
         .then(agents => {
           state.agents = agents;
@@ -4819,11 +5616,20 @@
     els.flowAgentSetupBtn.addEventListener('click', setupFlowAgent);
     els.flowAgentRefreshBtn.addEventListener('click', () => refreshAgents(true));
     els.refreshCountryBtn.addEventListener('click', () => refreshDeviceCountries(true, false));
+    els.deviceViewToggleBtn.addEventListener('click', toggleDeviceViewMode);
+    els.deviceCategoryAddBtn.addEventListener('click', openDeviceCategoryPopover);
+    els.deviceCategoryCancel.addEventListener('click', closeDeviceCategoryPopover);
+    els.deviceCategorySave.addEventListener('click', saveNewDeviceCategory);
+    els.deviceCategoryInput.addEventListener('keydown', event => {
+      if (event.key === 'Enter') saveNewDeviceCategory();
+      if (event.key === 'Escape') closeDeviceCategoryPopover();
+    });
     els.deviceZoom.addEventListener('input', updateDeviceZoom);
     els.selectAllDevicesBtn.addEventListener('click', selectAllDevices);
     els.clearSelectedDeviceAccountsBtn.addEventListener('click', clearSelectedDeviceAccounts);
     els.clearDeviceSelectionBtn.addEventListener('click', clearDeviceSelection);
-    updateDeviceZoom();
+    initDeviceZoom();
+    initDeviceListResize();
     const defaultLoginScript = getLoginScriptPath();
     if (defaultLoginScript && !els.scriptPath.value.trim()) {
       els.scriptPreset.value = defaultLoginScript;
@@ -4841,7 +5647,7 @@
       btn.addEventListener('click', () => setAccountTab(btn.dataset.accountTab));
     });
     els.clearInvalidAccountsBtn.addEventListener('click', clearInvalidAccounts);
-    [els.deviceFlowPlay, els.deviceFlowStop, els.deviceFlowRetryAccounts, els.deviceFlowReplaceAccounts, els.deviceFlowAddAccounts].forEach(btn => {
+    [els.deviceFlowPlay, els.deviceFlowStop, els.deviceFlowRetryAccounts, els.deviceFlowReplaceAccounts, els.deviceFlowAddAccounts, els.deviceFlowAddPanel, els.deviceFlowAddCount, els.deviceFlowAddConfirm, els.deviceFlowClearAccounts].forEach(btn => {
       btn.addEventListener('pointerdown', event => {
         event.stopPropagation();
       });
@@ -4874,7 +5680,32 @@
       event.preventDefault();
       event.stopPropagation();
       const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
-      if (deviceId) addDeviceAccounts(deviceId);
+      if (deviceId) openAddDeviceAccountsPanel(deviceId);
+    });
+    els.deviceFlowAddConfirm.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
+      if (deviceId) addDeviceAccounts(deviceId, Number(els.deviceFlowAddCount.value) || 1);
+    });
+    els.deviceFlowAddCount.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        event.stopPropagation();
+        const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
+        if (deviceId) addDeviceAccounts(deviceId, Number(els.deviceFlowAddCount.value) || 1);
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        els.deviceFlowAddPanel.classList.remove('is-open');
+      }
+    });
+    els.deviceFlowClearAccounts.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
+      if (deviceId) clearDeviceAccountsFromMenu(deviceId);
     });
     els.accountTraceFilters.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -5257,6 +6088,7 @@
       setStatus(false, 'Conectando...');
       setOutput('Cargando dispositivos desde el servidor ADB local...');
       refreshAppVersion();
+      updateDeviceViewButton();
       wsapi.connectWs();
       const savedLicense = loadSavedLicense();
       if (savedLicense?.email && savedLicense?.key) {

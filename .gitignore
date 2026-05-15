@@ -28,6 +28,6 @@ release_packages/
 .env
 update_config.json
 device_registrations.json
+device_groups.json
 .android/
 .flowlogin_payloads/
-

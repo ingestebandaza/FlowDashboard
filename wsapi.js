@@ -66,6 +66,22 @@ class Wsapi {
     return Array.isArray(data.devices) ? data.devices : [];
   }
 
+  async getDeviceGroups() {
+    const data = await this._request('/device-groups');
+    return {
+      groups: Array.isArray(data.groups) ? data.groups : [],
+      assignments: data.assignments && typeof data.assignments === 'object' ? data.assignments : {}
+    };
+  }
+
+  async saveDeviceGroups(groupsPayload = {}) {
+    const data = await this._post('/device-groups', groupsPayload);
+    return {
+      groups: Array.isArray(data.groups) ? data.groups : [],
+      assignments: data.assignments && typeof data.assignments === 'object' ? data.assignments : {}
+    };
+  }
+
   async sendWsApi(wsapiVal = '') {
     const run = async () => {
       if (!this.connected) {

@@ -31,7 +31,7 @@ PORT = 8765
 AGENT_HOST = "0.0.0.0"
 AGENT_PORT = 8766
 SERVER_VERSION = "2026-05-12-device-public-ip-refresh"
-SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics", "visual_update_check", "bundled_flowagent_apk"]
+SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics", "visual_update_check", "bundled_flowagent_apk", "device_categories"]
 
 
 def unique_paths(values):
@@ -134,6 +134,7 @@ AUTOJS_PACKAGES = [
     "com.stardust.commoncommonxmly1",
 ]
 DEVICE_NAMES_FILE = BASE_DIR / "device_names.json"
+DEVICE_GROUPS_FILE = BASE_DIR / "device_groups.json"
 FLOWLOGIN_PAYLOAD_DIR = BASE_DIR / ".flowlogin_payloads"
 FLOWLOGIN_PAYLOAD_DIR.mkdir(exist_ok=True)
 def find_flow_agent_apk():
@@ -628,6 +629,49 @@ def load_device_names():
 def save_device_names(names):
     with DEVICE_NAMES_FILE.open("w", encoding="utf-8") as fh:
         json.dump(names, fh, ensure_ascii=False, indent=2, sort_keys=True)
+
+
+def normalize_device_groups(data):
+    if not isinstance(data, dict):
+        return {"groups": [], "assignments": {}}
+    groups = []
+    seen = set()
+    for item in data.get("groups", []):
+        if not isinstance(item, dict):
+            continue
+        group_id = str(item.get("id", "") or "").strip()
+        name = str(item.get("name", "") or "").strip()
+        if not group_id or not name or group_id in seen:
+            continue
+        seen.add(group_id)
+        groups.append({"id": group_id[:80], "name": name[:80]})
+    valid_ids = {item["id"] for item in groups}
+    assignments = {}
+    raw_assignments = data.get("assignments", {})
+    if isinstance(raw_assignments, dict):
+        for serial, group_id in raw_assignments.items():
+            serial = str(serial or "").strip()
+            group_id = str(group_id or "").strip()
+            if serial and group_id in valid_ids:
+                assignments[serial] = group_id
+    return {"groups": groups, "assignments": assignments}
+
+
+def load_device_groups():
+    if not DEVICE_GROUPS_FILE.exists():
+        return {"groups": [], "assignments": {}}
+    try:
+        with DEVICE_GROUPS_FILE.open("r", encoding="utf-8") as fh:
+            return normalize_device_groups(json.load(fh))
+    except Exception:
+        return {"groups": [], "assignments": {}}
+
+
+def save_device_groups(data):
+    normalized = normalize_device_groups(data)
+    with DEVICE_GROUPS_FILE.open("w", encoding="utf-8") as fh:
+        json.dump(normalized, fh, ensure_ascii=False, indent=2, sort_keys=True)
+    return normalized
 
 
 def set_device_name(serial, name):
@@ -2983,6 +3027,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"devices": list_devices()})
             elif path == "/device-names":
                 self._json({"names": load_device_names()})
+            elif path == "/device-groups":
+                self._json(load_device_groups())
             elif path == "/agents":
                 self._json({"agents": list_agents()})
             elif path == "/device-mac":
@@ -3035,6 +3081,8 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/device-person":
                 set_device_person(body.get("serial", ""), body.get("person", ""))
                 self._json({"devices": list_devices(), "names": load_device_names()})
+            elif path == "/device-groups":
+                self._json(save_device_groups(body))
             elif path == "/device-mac":
                 serial = body.get("serial", "")
                 mac = get_device_mac_address(serial)
