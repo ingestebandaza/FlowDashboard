@@ -20,7 +20,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import urlopen, Request
 
-from app_meta import APP_VERSION
+from app_meta import APP_NAME, APP_VERSION
 
 BASE_DIR = Path(os.getenv("FLOWDASHBOARD_BASE_DIR", Path(__file__).resolve().parent))
 RESOURCE_DIR = Path(os.getenv("FLOWDASHBOARD_RESOURCE_DIR", str(BASE_DIR)))
@@ -31,7 +31,7 @@ PORT = 8765
 AGENT_HOST = "0.0.0.0"
 AGENT_PORT = 8766
 SERVER_VERSION = "2026-05-12-device-public-ip-refresh"
-SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics"]
+SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics", "visual_update_check"]
 
 
 def unique_paths(values):
@@ -174,6 +174,15 @@ PUBLIC_IP_CACHE_TTL = 600
 DEVICE_MAC_CACHE = {}
 DEVICE_MAC_LOCK = threading.Lock()
 LAST_ADB_DEVICES_OUTPUT = ""
+UPDATE_LOCK = threading.Lock()
+UPDATE_STATUS = {
+    "state": "idle",
+    "currentVersion": APP_VERSION,
+    "latestVersion": "",
+    "message": "",
+    "error": "",
+    "restartRequired": False,
+}
 UI_DUMP_REMOTE = "/sdcard/window.xml"
 NODE_BOUNDS_RE = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
 STATIC_FILES = {
@@ -240,6 +249,95 @@ def supabase_request(endpoint, method="GET", data=None):
         print(f"Error en Supabase request: {error_msg}")
         LAST_SUPABASE_ERROR = error_msg
         return None
+
+
+def get_update_status():
+    with UPDATE_LOCK:
+        return dict(UPDATE_STATUS)
+
+
+def set_update_status(**values):
+    with UPDATE_LOCK:
+        UPDATE_STATUS.update(values)
+        UPDATE_STATUS["currentVersion"] = APP_VERSION
+        return dict(UPDATE_STATUS)
+
+
+def delayed_update_exit():
+    time.sleep(4)
+    os._exit(0)
+
+
+def run_visual_update_check():
+    try:
+        import updater
+
+        set_update_status(
+            state="checking",
+            latestVersion="",
+            message="Buscando actualizaciones...",
+            error="",
+            restartRequired=False,
+        )
+        config = updater.load_config(BASE_DIR)
+        manifest_url = config.get("manifest_url", "")
+        if not manifest_url:
+            set_update_status(state="no_update", message="No hay URL de actualizaciones configurada.")
+            return
+
+        manifest = updater.fetch_json(manifest_url)
+        latest_version = str(manifest.get("version") or manifest.get("tag_name") or "").lstrip("v")
+        package_url = manifest.get("package_url") or manifest.get("url") or ""
+        if not latest_version or not package_url:
+            set_update_status(state="error", message="Manifest de actualizacion invalido.", error="Manifest invalido")
+            return
+        if updater.version_tuple(latest_version) <= updater.version_tuple(APP_VERSION):
+            set_update_status(
+                state="no_update",
+                latestVersion=latest_version,
+                message=f"Ya tienes la version {APP_VERSION}.",
+            )
+            return
+
+        set_update_status(
+            state="downloading",
+            latestVersion=latest_version,
+            message=f"Se encontro la version {latest_version}. Descargando actualizacion...",
+        )
+        result = updater.check_for_updates(APP_VERSION, BASE_DIR, app_name=APP_NAME)
+        if result.get("restart_required"):
+            set_update_status(
+                state="installing",
+                latestVersion=str(result.get("version") or latest_version),
+                message="Actualizacion descargada. Reiniciando para instalar...",
+                restartRequired=True,
+            )
+            threading.Thread(target=delayed_update_exit, daemon=True).start()
+            return
+        set_update_status(
+            state="no_update",
+            latestVersion=str(result.get("version") or latest_version),
+            message="No hay actualizaciones pendientes.",
+        )
+    except Exception as exc:
+        set_update_status(state="error", message="No se pudo descargar la actualizacion.", error=str(exc))
+
+
+def start_visual_update_check():
+    with UPDATE_LOCK:
+        if UPDATE_STATUS.get("state") in {"checking", "downloading", "installing"}:
+            return dict(UPDATE_STATUS)
+        UPDATE_STATUS.update({
+            "state": "checking",
+            "currentVersion": APP_VERSION,
+            "latestVersion": "",
+            "message": "Buscando actualizaciones...",
+            "error": "",
+            "restartRequired": False,
+        })
+        status = dict(UPDATE_STATUS)
+    threading.Thread(target=run_visual_update_check, daemon=True).start()
+    return status
 
 
 def validate_license_with_supabase_rpc(device_email, license_key, device_info=None):
@@ -2866,6 +2964,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(get_client_info())
             elif path == "/adb-diagnostics":
                 self._json(get_adb_diagnostics())
+            elif path == "/update-status":
+                self._json(get_update_status())
             elif path == "/devices":
                 self._json({"devices": list_devices()})
             elif path == "/device-names":
@@ -2950,6 +3050,8 @@ class Handler(BaseHTTPRequestHandler):
                     }
                 )
                 self._json(result)
+            elif path == "/update-check":
+                self._json(start_visual_update_check())
             else:
                 self._json({"error": "Ruta no encontrada."}, 404)
         except Exception as exc:
