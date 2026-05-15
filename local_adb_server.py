@@ -1127,7 +1127,7 @@ def ui_error_marker(serial, timeout=3):
 
 
 def has_logged_in_markers(serial, timeout=3):
-    return ui_has_marker(serial, r"^(Home|Search|Your Library|Library)$", timeout=timeout)
+    return ui_has_marker(serial, r"^(Home|Search|Your Library|Library|Inicio|Buscar|Tu biblioteca|Biblioteca)$", timeout=timeout)
 
 
 def confirm_logged_in(serial):
@@ -1247,14 +1247,20 @@ def click_submit(serial, pass_field=None):
     return True
 
 
-def confirm_flowlogin_outcome(serial, package_name):
-    for index in range(4):
+def confirm_flowlogin_outcome(serial, package_name, wait_seconds=24):
+    deadline = time.time() + wait_seconds
+    checks = 0
+    while time.time() < deadline:
         if confirm_logged_in(serial):
             return {"status": "success", "message": "Login confirmado", "retry": False}
-        error = ui_error_marker(serial, timeout=2)
+        error = ui_error_marker(serial, timeout=1.5)
         if error:
+            time.sleep(3)
+            if confirm_logged_in(serial):
+                return {"status": "success", "message": "Login confirmado despues de cargar inicio", "retry": False}
             return {"status": "error", "message": f"Error visible: {error[:80]}", "retry": False}
-        if current_package(serial) != package_name and index > 1:
+        checks += 1
+        if current_package(serial) != package_name and checks > 3:
             return {"status": "review", "message": "El clon salio de pantalla", "retry": True}
         time.sleep(2.5)
     return {"status": "review", "message": "Sin confirmacion segura", "retry": True}
@@ -2685,7 +2691,7 @@ def agent_error_marker(agent, timeout=3):
 
 
 def agent_has_logged_in_markers(agent, timeout=3):
-    return agent_ui_has_marker(agent, r"^(Home|Search|Your Library|Library)$", timeout=timeout)
+    return agent_ui_has_marker(agent, r"^(Home|Search|Your Library|Library|Inicio|Buscar|Tu biblioteca|Biblioteca)$", timeout=timeout)
 
 
 def agent_confirm_logged_in(agent):
@@ -2873,14 +2879,24 @@ def agent_click_submit(agent, pass_field=None):
     return False
 
 
-def confirm_flowlogin_agent_outcome(agent, package_name):
-    for index in range(4):
+def confirm_flowlogin_agent_outcome(agent, package_name, wait_seconds=28):
+    deadline = time.time() + wait_seconds
+    checks = 0
+    last_error = ""
+    while time.time() < deadline:
         if agent_confirm_logged_in(agent):
             return {"status": "success", "message": "Login confirmado por FlowAgent", "retry": False}
-        error = agent_error_marker(agent, timeout=2)
+        error = agent_error_marker(agent, timeout=1.5)
         if error:
-            return {"status": "error", "message": f"Error visible: {error[:80]}", "retry": False}
-        if agent_current_package(agent) != package_name and index > 1:
+            last_error = error
+            time.sleep(3)
+            if agent_confirm_logged_in(agent):
+                return {"status": "success", "message": "Login confirmado por FlowAgent despues de cargar inicio", "retry": False}
+            if time.time() + 8 >= deadline:
+                return {"status": "error", "message": f"Error visible: {last_error[:80]}", "retry": False}
+            continue
+        checks += 1
+        if agent_current_package(agent) != package_name and checks > 3:
             return {"status": "review", "message": "El clon salio de pantalla", "retry": True}
         time.sleep(2.5)
     return {"status": "review", "message": "Sin confirmacion segura", "retry": True}
