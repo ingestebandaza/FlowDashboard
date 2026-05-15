@@ -31,7 +31,7 @@ PORT = 8765
 AGENT_HOST = "0.0.0.0"
 AGENT_PORT = 8766
 SERVER_VERSION = "2026-05-12-device-public-ip-refresh"
-SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe"]
+SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info"]
 
 
 def unique_paths(values):
@@ -257,6 +257,9 @@ def validate_license_with_supabase_rpc(device_email, license_key, device_info=No
         "p_device_hash": device_info.get("device_hash", ""),
         "p_windows_user": device_info.get("windows_user", ""),
         "p_app_version": APP_VERSION,
+        "p_local_ip": device_info.get("local_ip", ""),
+        "p_mac_address": device_info.get("mac_address", ""),
+        "p_country_name": device_info.get("country_name", ""),
     }
     return supabase_request("/rpc/validate_flowdashboard_license", method="POST", data=payload)
 
@@ -1304,6 +1307,60 @@ def get_device_mac_address(serial):
         return ""
 
 
+def get_pc_local_ip():
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.settimeout(2)
+            sock.connect(("8.8.8.8", 80))
+            return sock.getsockname()[0]
+    except Exception:
+        try:
+            return socket.gethostbyname(socket.gethostname())
+        except Exception:
+            return ""
+
+
+def format_mac_from_node(node):
+    try:
+        value = int(node)
+    except Exception:
+        return ""
+    if not value or value == 0xFFFFFFFFFFFF:
+        return ""
+    return ":".join(f"{(value >> shift) & 0xff:02X}" for shift in range(40, -1, -8))
+
+
+def get_pc_mac_address():
+    return format_mac_from_node(uuid.getnode())
+
+
+def get_pc_public_ip_info():
+    providers = [
+        ("https://ipwho.is/", ("ip", "country_code", "country")),
+        ("https://ipapi.co/json/", ("ip", "country_code", "country_name")),
+        ("https://api.ipify.org?format=json", ("ip", "", "")),
+    ]
+    for url, keys in providers:
+        try:
+            request = Request(url, headers={"User-Agent": f"FlowDashboard/{APP_VERSION}"})
+            with urlopen(request, timeout=5) as response:
+                data = json.loads(response.read().decode("utf-8", errors="ignore"))
+            if data.get("success") is False:
+                continue
+            ip_key, country_code_key, country_name_key = keys
+            public_ip = str(data.get(ip_key, "")).strip()
+            if not public_ip:
+                continue
+            return {
+                "publicIp": public_ip,
+                "countryCode": str(data.get(country_code_key, "")).strip().upper() if country_code_key else "",
+                "countryName": str(data.get(country_name_key, "")).strip() if country_name_key else "",
+            }
+        except Exception:
+            continue
+    return {"publicIp": "", "countryCode": "", "countryName": ""}
+
+
 def get_client_info():
     hostname = socket.gethostname()
     try:
@@ -1317,6 +1374,7 @@ def get_client_info():
         str(uuid.getnode()),
     ])
     device_hash = hashlib.sha256(raw_hash.encode("utf-8", errors="ignore")).hexdigest()
+    public_info = get_pc_public_ip_info()
     return {
         "hostname": hostname,
         "windowsUser": windows_user,
@@ -1326,6 +1384,11 @@ def get_client_info():
         "adb": ADB,
         "adbExists": bool(ADB and Path(ADB).exists()),
         "adbCandidates": [str(path) for path in candidate_adb_paths()[:12]],
+        "localIp": get_pc_local_ip(),
+        "publicIp": public_info.get("publicIp", ""),
+        "countryCode": public_info.get("countryCode", ""),
+        "countryName": public_info.get("countryName", ""),
+        "macAddress": get_pc_mac_address(),
     }
 
 
@@ -2794,6 +2857,9 @@ class Handler(BaseHTTPRequestHandler):
                         "country": body.get("country_code", ""),
                         "device_hash": body.get("device_hash", ""),
                         "windows_user": body.get("windows_user", ""),
+                        "local_ip": body.get("local_ip", ""),
+                        "mac_address": body.get("mac_address", "") or body.get("device_mac", ""),
+                        "country_name": body.get("country_name", ""),
                     }
                 )
                 self._json(result)

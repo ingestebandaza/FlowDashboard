@@ -12,7 +12,7 @@ from app_meta import APP_NAME, APP_VERSION
 
 SERVER_PORT = 8765
 HTML_FILE = "wsapi_demo.html"
-REQUIRED_SERVER_FEATURES = {"static_dashboard", "client_info", "license_remember", "adb_path_probe"}
+REQUIRED_SERVER_FEATURES = {"static_dashboard", "client_info", "license_remember", "adb_path_probe", "client_network_info"}
 
 
 def app_dir():
@@ -75,6 +75,8 @@ def get_server_health():
 def server_is_current():
     health = get_server_health()
     if not isinstance(health, dict):
+        return False
+    if str(health.get("appVersion") or "") != APP_VERSION:
         return False
     features = set(health.get("features") or [])
     return REQUIRED_SERVER_FEATURES.issubset(features)

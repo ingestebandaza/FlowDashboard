@@ -441,3 +441,8 @@ Actualizacion automatica:
 - Desde `1.0.7`, la busqueda de ADB es automatica en multiples ubicaciones: `PATH`, `FLOWDASHBOARD_ADB`, `ANDROID_HOME`, `ANDROID_SDK_ROOT`, carpeta de la app, `platform-tools` junto al EXE, rutas Android SDK comunes, `%USERPROFILE%\adb.exe`, `%USERPROFILE%\Downloads\platform-tools\adb.exe`, `%USERPROFILE%\Desktop\platform-tools\adb.exe` y una busqueda limitada con `rglob` dentro de la carpeta de usuario/local app data. `/client-info` incluye `adbCandidates` para diagnostico.
 - Los errores de Supabase guardan el detalle de la ultima respuesta fallida y lo muestran en la validacion para diagnosticar RPC/SQL sin consola.
 - `supabase_license_rpc.sql` convierte `app_devices.ip` y `app_access_logs.ip` a `text` si existian como `inet`, porque la app envia IP como texto opcional y Supabase fallaba con `column "ip" is of type inet but expression is of type text`.
+- Desde `1.0.9`, `launcher.py` exige que `/health.appVersion` coincida exactamente con `APP_VERSION`; si hay un servidor viejo escuchando en `127.0.0.1:8765`, lo cierra y arranca el servidor incluido en la build nueva.
+- `/client-info` ahora incluye IP local del PC, IP publica, codigo/nombre de pais, MAC del PC, ruta ADB y candidatos ADB probados.
+- `wsapi_demo.html` envia a la validacion de licencia `ip_public`, `local_ip`, `country_code`, `country_name` y `mac_address` para que el panel admin tenga datos de la PC cliente.
+- `supabase_license_rpc.sql` agrega y rellena `local_ip`, `mac_address` y `country_name` en `app_devices`, `app_access_logs` y `app_device_registrations`.
+- `license_admin.html` muestra IP publica, IP local, MAC, pais y version en dispositivos e intentos de acceso.

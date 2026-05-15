@@ -677,7 +677,7 @@
         <table>
           <thead>
             <tr>
-              <th>Cliente</th><th>Licencia</th><th>PC</th><th>Usuario</th><th>Hash</th><th>IP</th><th>Pais</th><th>Version</th><th>Estado</th><th>Ultimo acceso</th><th>Acciones</th>
+              <th>Cliente</th><th>Licencia</th><th>PC</th><th>Usuario</th><th>Hash</th><th>IP publica</th><th>IP local</th><th>MAC</th><th>Pais</th><th>Version</th><th>Estado</th><th>Ultimo acceso</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -689,7 +689,9 @@
                 <td>${escapeHtml(item.windows_user)}</td>
                 <td class="mono" title="${escapeHtml(item.device_hash)}">${escapeHtml(shortHash(item.device_hash))}</td>
                 <td>${escapeHtml(item.ip)}</td>
-                <td>${escapeHtml(item.country)}</td>
+                <td>${escapeHtml(item.local_ip)}</td>
+                <td class="mono">${escapeHtml(item.mac_address)}</td>
+                <td>${escapeHtml(item.country_name || item.country)}</td>
                 <td>${escapeHtml(item.app_version)}</td>
                 <td>${statusBadge(item.status)}</td>
                 <td>${escapeHtml(dateTime(item.last_seen_at))}</td>
@@ -700,7 +702,7 @@
                     <button class="danger" type="button" data-action="device-status" data-id="${item.id}" data-status="blocked">Bloquear</button>
                   </div>
                 </td>
-              </tr>`).join('') || '<tr><td colspan="11" class="muted">No hay dispositivos.</td></tr>'}
+              </tr>`).join('') || '<tr><td colspan="13" class="muted">No hay dispositivos.</td></tr>'}
           </tbody>
         </table>`;
     }
@@ -712,7 +714,7 @@
         <table>
           <thead>
             <tr>
-              <th>Fecha</th><th>Decision</th><th>Licencia</th><th>PC</th><th>Hash</th><th>IP</th><th>Pais</th><th>Version</th><th>Mensaje</th>
+              <th>Fecha</th><th>Decision</th><th>Licencia</th><th>PC</th><th>Hash</th><th>IP publica</th><th>IP local</th><th>MAC</th><th>Pais</th><th>Version</th><th>Mensaje</th>
             </tr>
           </thead>
           <tbody>
@@ -724,10 +726,12 @@
                 <td>${escapeHtml(item.pc_name)}</td>
                 <td class="mono" title="${escapeHtml(item.device_hash)}">${escapeHtml(shortHash(item.device_hash))}</td>
                 <td>${escapeHtml(item.ip)}</td>
-                <td>${escapeHtml(item.country)}</td>
+                <td>${escapeHtml(item.local_ip)}</td>
+                <td class="mono">${escapeHtml(item.mac_address)}</td>
+                <td>${escapeHtml(item.country_name || item.country)}</td>
                 <td>${escapeHtml(item.app_version)}</td>
                 <td>${escapeHtml(item.message)}</td>
-              </tr>`).join('') || '<tr><td colspan="9" class="muted">No hay intentos registrados.</td></tr>'}
+              </tr>`).join('') || '<tr><td colspan="11" class="muted">No hay intentos registrados.</td></tr>'}
           </tbody>
         </table>`;
     }

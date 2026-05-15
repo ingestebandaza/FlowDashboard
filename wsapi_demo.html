@@ -5043,7 +5043,12 @@
             windows_user: clientInfo.windowsUser || '',
             device_hash: clientInfo.deviceHash || '',
             device_os: clientInfo.os || navigator.userAgent,
-            device_mac: macAddress,
+            ip_public: clientInfo.publicIp || '',
+            country_code: clientInfo.countryCode || '',
+            country_name: clientInfo.countryName || '',
+            local_ip: clientInfo.localIp || '',
+            mac_address: clientInfo.macAddress || macAddress || '',
+            device_mac: clientInfo.macAddress || macAddress || '',
           })
         });
 
