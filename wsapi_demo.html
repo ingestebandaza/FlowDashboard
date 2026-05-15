@@ -2926,6 +2926,7 @@
       deviceViewMode: localStorage.getItem('flowdashboard.deviceViewMode') || 'grid',
       deviceGroups: { groups: [], assignments: {} },
       draggingDeviceIds: [],
+      deviceActionIds: new Set(),
       activeAccountTab: 'total',
       accountTraceFilter: 'all',
       accountTraceCollapsed: false,
@@ -4169,6 +4170,20 @@
       return parseDeviceIdList(state.loginPollingDeviceIds).includes(deviceId);
     }
 
+    function isDeviceActionBusy(deviceId) {
+      return state.deviceActionIds.has(deviceId);
+    }
+
+    function setDeviceActionBusy(deviceId, busy) {
+      if (!deviceId) return;
+      if (busy) {
+        state.deviceActionIds.add(deviceId);
+      } else {
+        state.deviceActionIds.delete(deviceId);
+      }
+      renderDevices();
+    }
+
     function setDevicePersonMessage(text, type = '') {
       if (!els.devicePersonMessage) return;
       els.devicePersonMessage.textContent = text || '';
@@ -4253,12 +4268,13 @@
       const freeSlots = Math.max(0, 10 - lines.length);
       const freeAccounts = getAvailableAccountRecordsForDeviceAdd(deviceId).length;
       const addMax = Math.min(freeSlots, freeAccounts);
-      els.deviceFlowPlay.disabled = !pendingItems.length || isDeviceLoginRunning(deviceId);
+      const actionBusy = isDeviceActionBusy(deviceId);
+      els.deviceFlowPlay.disabled = actionBusy || !pendingItems.length || isDeviceLoginRunning(deviceId);
       els.deviceFlowStop.disabled = !isDeviceLoginRunning(deviceId);
-      els.deviceFlowRetryAccounts.disabled = !editableItems.length;
-      els.deviceFlowReplaceAccounts.disabled = !editableItems.length;
-      els.deviceFlowAddAccounts.disabled = freeSlots <= 0;
-      els.deviceFlowClearAccounts.disabled = !lines.length;
+      els.deviceFlowRetryAccounts.disabled = actionBusy || !editableItems.length;
+      els.deviceFlowReplaceAccounts.disabled = actionBusy || !editableItems.length;
+      els.deviceFlowAddAccounts.disabled = actionBusy || freeSlots <= 0;
+      els.deviceFlowClearAccounts.disabled = actionBusy || !lines.length;
       els.deviceFlowAddPanel.classList.remove('is-open');
       els.deviceFlowAddCount.max = String(Math.max(1, addMax || freeSlots));
       els.deviceFlowAddCount.value = '1';
@@ -4984,7 +5000,7 @@
 
     async function retryDeviceAccounts(deviceId) {
       closeDeviceFlowMenu();
-      if (state.busy) return;
+      if (isDeviceActionBusy(deviceId) || isDeviceLoginRunning(deviceId)) return;
       const device = getDeviceById(deviceId);
       if (!device) return;
       const items = getBulkEditableAccountItems(device);
@@ -4992,19 +5008,19 @@
         appendOutput('Sin cuentas para reintentar', `${shortDeviceId(deviceId)} solo tiene cuentas funcionando o no tiene cuentas asignadas.`);
         return;
       }
-      setBusy(true);
+      setDeviceActionBusy(deviceId, true);
       try {
         await runDeviceClones(deviceId, items.map(item => item.clone), 'Reintento masivo enviado', 'Reintento masivo');
       } catch (error) {
         appendOutput('Error al reintentar cuentas', error.message);
       } finally {
-        setBusy(false);
+        setDeviceActionBusy(deviceId, false);
       }
     }
 
     async function replaceDeviceAccounts(deviceId) {
       closeDeviceFlowMenu();
-      if (state.busy) return;
+      if (isDeviceActionBusy(deviceId) || isDeviceLoginRunning(deviceId)) return;
       const device = getDeviceById(deviceId);
       if (!device) return;
       const items = getBulkEditableAccountItems(device);
@@ -5018,7 +5034,7 @@
         return;
       }
 
-      setBusy(true);
+      setDeviceActionBusy(deviceId, true);
       try {
         const lines = getDeviceAccountLines(device);
         items.forEach((item, index) => {
@@ -5039,7 +5055,7 @@
       } catch (error) {
         appendOutput('Error al reemplazar cuentas', error.message);
       } finally {
-        setBusy(false);
+        setDeviceActionBusy(deviceId, false);
       }
     }
 
@@ -5069,7 +5085,7 @@
 
     async function addDeviceAccounts(deviceId, requestedCount) {
       closeDeviceFlowMenu();
-      if (state.busy) return;
+      if (isDeviceActionBusy(deviceId) || isDeviceLoginRunning(deviceId)) return;
       const device = getDeviceById(deviceId);
       if (!device) return;
       const lines = getDeviceAccountLines(device);
@@ -5089,7 +5105,7 @@
         return;
       }
 
-      setBusy(true);
+      setDeviceActionBusy(deviceId, true);
       try {
         const addedClones = [];
         const startClone = lines.length + 1;
@@ -5112,13 +5128,13 @@
       } catch (error) {
         appendOutput('Error al anadir cuentas', error.message);
       } finally {
-        setBusy(false);
+        setDeviceActionBusy(deviceId, false);
       }
     }
 
     async function clearDeviceAccountsFromMenu(deviceId) {
       closeDeviceFlowMenu();
-      if (state.busy) return;
+      if (isDeviceActionBusy(deviceId) || isDeviceLoginRunning(deviceId)) return;
       const device = getDeviceById(deviceId);
       if (!device) return;
       const lines = getDeviceAccountLines(device);
@@ -5129,7 +5145,7 @@
       const confirmed = window.confirm(`Eliminar las cuentas guardadas en ${shortDeviceId(deviceId)}? Las cuentas del menu izquierdo no se borraran.`);
       if (!confirmed) return;
 
-      setBusy(true);
+      setDeviceActionBusy(deviceId, true);
       try {
         await wsapi.updateDevicePerson({ serial: deviceId, person: '' });
         clearAssignmentsForDevices([deviceId]);
@@ -5139,7 +5155,7 @@
       } catch (error) {
         appendOutput('Error al eliminar cuentas del dispositivo', error.message);
       } finally {
-        setBusy(false);
+        setDeviceActionBusy(deviceId, false);
       }
     }
 
@@ -5487,7 +5503,7 @@
 
     async function executeFlowLoginForDevice(deviceId) {
       closeDeviceFlowMenu();
-      if (state.busy) return;
+      if (isDeviceActionBusy(deviceId) || isDeviceLoginRunning(deviceId)) return;
       const device = getDeviceById(deviceId);
       if (!device) {
         appendOutput('Dispositivo no encontrado', 'Actualiza la lista de dispositivos e intenta de nuevo.');
@@ -5503,7 +5519,7 @@
         return;
       }
 
-      setBusy(true);
+      setDeviceActionBusy(deviceId, true);
       try {
         await runDeviceClones(
           deviceId,
@@ -5514,16 +5530,15 @@
       } catch (error) {
         appendOutput('Error al iniciar FlowLogin del dispositivo', error.message);
       } finally {
-        setBusy(false);
+        setDeviceActionBusy(deviceId, false);
       }
     }
 
     async function stopFlowLoginForDevice(deviceId) {
       closeDeviceFlowMenu();
-      if (state.busy) return;
       const loginPath = selectLoginScript();
 
-      setBusy(true);
+      setDeviceActionBusy(deviceId, true);
       try {
         const [devices, result] = await wsapi.stopAutoJs({
           deviceIds: deviceId,
@@ -5536,7 +5551,7 @@
       } catch (error) {
         appendOutput('Error al detener FlowLogin del dispositivo', error.message);
       } finally {
-        setBusy(false);
+        setDeviceActionBusy(deviceId, false);
       }
     }
 
