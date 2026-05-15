@@ -427,3 +427,5 @@ Actualizacion automatica:
 - Se restauro helper `account_lines()` en `local_adb_server.py`; sin este helper `/devices` fallaba con 500 al cargar perfiles guardados.
 - `run_process()` ahora ejecuta subprocess/ADB con `CREATE_NO_WINDOW` en Windows para evitar muchas ventanas de consola fugaces al abrir el EXE y cargar dispositivos.
 - `wsapi_demo.html` muestra la version del programa debajo del logotipo; usa `v1.0.0` como fallback y actualiza desde `/health.appVersion`.
+- `launcher.py` abre el dashboard por `http://127.0.0.1:8765/wsapi_demo.html`, no por `file://.../_MEI...`; esto evita pantalla `ERR_FILE_NOT_FOUND` tras actualizaciones PyInstaller.
+- `local_adb_server.py` sirve archivos estaticos empaquetados (`wsapi_demo.html`, `wsapi.js`, `logo.png`) desde `/wsapi_demo.html`, `/wsapi.js` y `/logo.png`.

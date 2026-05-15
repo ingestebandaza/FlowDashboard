@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import hashlib
 import json
+import mimetypes
 import os
 import re
 import shlex
@@ -84,6 +85,11 @@ PUBLIC_IP_LOCK = threading.Lock()
 PUBLIC_IP_CACHE_TTL = 600
 UI_DUMP_REMOTE = "/sdcard/window.xml"
 NODE_BOUNDS_RE = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
+STATIC_FILES = {
+    "/wsapi_demo.html": "wsapi_demo.html",
+    "/wsapi.js": "wsapi.js",
+    "/logo.png": "logo.png",
+}
 
 # Cargar configuración de Supabase desde archivo o variables de entorno
 SUPABASE_CONFIG_FILE = BASE_DIR / ".supabase_config.json"
@@ -2550,6 +2556,28 @@ class Handler(BaseHTTPRequestHandler):
         self._headers(status)
         self.wfile.write(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
 
+    def _file(self, path):
+        file_name = STATIC_FILES.get(path)
+        if not file_name:
+            self._json({"error": "Ruta no encontrada."}, 404)
+            return
+
+        file_path = RESOURCE_DIR / file_name
+        if not file_path.exists():
+            file_path = BASE_DIR / file_name
+        if not file_path.exists() or not file_path.is_file():
+            self._json({"error": f"Archivo no encontrado: {file_name}"}, 404)
+            return
+
+        content_type = mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        with file_path.open("rb") as fh:
+            self.wfile.write(fh.read())
+
     def _body(self):
         length = int(self.headers.get("content-length", "0") or "0")
         if not length:
@@ -2575,6 +2603,8 @@ class Handler(BaseHTTPRequestHandler):
                 serial = self._body().get("serial", "")
                 mac = get_device_mac_address(serial)
                 self._json({"serial": serial, "macAddress": mac})
+            elif path in STATIC_FILES:
+                self._file(path)
             else:
                 self._json({"error": "Ruta no encontrada."}, 404)
         except Exception as exc:

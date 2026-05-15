@@ -58,8 +58,7 @@ def open_browser_when_ready():
         except Exception:
             time.sleep(0.5)
 
-    html_path = resource_path(HTML_FILE)
-    webbrowser.open_new_tab(html_path.as_uri())
+    webbrowser.open_new_tab(f"http://127.0.0.1:{SERVER_PORT}/{HTML_FILE}")
 
 
 def server_is_ready():
