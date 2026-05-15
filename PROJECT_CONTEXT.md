@@ -27,6 +27,15 @@ El objetivo de arquitectura actual es `socket-first hybrid`:
 - `flow_agent_apk/build/flowagent-debug.apk`: APK compilada actual que instala el dashboard.
 - `license_admin.html`: panel local privado para administrar licencias, dispositivos aprobados/bloqueados e intentos de acceso desde Supabase.
 - `supabase_admin_policies.sql`: SQL de politicas RLS y tabla `app_admins` para permitir CRUD administrativo solo a emails autorizados en Supabase Auth.
+- `app_meta.py`: version comercial visible para launcher/updater (`APP_VERSION`).
+- `launcher.py`: entrada empaquetable. Arranca el servidor local dentro del mismo proceso, abre `wsapi_demo.html` y comprueba actualizaciones si existe `update_config.json`.
+- `updater.py`: base de actualizacion automatica por manifest JSON remoto y paquete ZIP.
+- `update_config.example.json`: plantilla local para configurar URL del manifest de actualizaciones sin subir configuracion privada.
+- `supabase_license_rpc.sql`: SQL para validacion comercial gratis sin Edge Function. Crea RPC `validate_flowdashboard_license` con `SECURITY DEFINER`, ejecutable con anon key.
+- `Crearexe.bat`: lanzador de build para crear `dist/FlowDashboard.exe` sin comandos manuales. Cierra el EXE abierto, instala PyInstaller si falta, compila con `launcher.spec` y copia configuraciones locales necesarias a `dist`.
+- `CrearActualizacion.bat`: crea un paquete ZIP versionado para GitHub Releases, calcula SHA256 y actualiza `update.json`.
+- `update.json`: manifest publico de actualizaciones. Debe estar publicado en GitHub y apuntar al ZIP subido en Releases.
+- `update_config.json`: configuracion local ignorada por git; en la build de cliente apunta a `https://raw.githubusercontent.com/ingestebandaza/FlowDashboard/main/update.json`.
 
 ## Servidor Local
 
@@ -64,6 +73,7 @@ device_public_ip_refresh
 Endpoints importantes:
 
 - `GET /health`: version, features y ruta ADB.
+  - Incluye `appVersion` desde `app_meta.py`.
 - `GET /devices`: lista dispositivos ADB, ahora incluye `androidId` cuando se puede leer.
 - `GET /agents`: lista FlowAgent APKs conectadas por socket.
 - `POST /adb`: ejecuta comandos ADB.
@@ -326,8 +336,65 @@ Flujo de validacion actual (2026-05-14):
 Reglas de seguridad:
 
 - No poner `service_role`, contrasena de base de datos ni secretos en archivos del proyecto cliente
+- La anon key de Supabase puede ir en el cliente, siempre que las tablas esten protegidas por RLS y la validacion se haga por RPC controlada.
 - El panel admin es para uso privado del propietario; no se distribuye a clientes
 - La app comercial debe validar licencia contra Supabase antes de habilitar funciones de FlowLogin
+- Desde 2026-05-14, `local_adb_server.py` no permite modo local por defecto si falta Supabase. Solo se activa con `FLOWDASHBOARD_ALLOW_LOCAL_LICENSE=1`.
+
+Flujo gratuito sin Edge Function:
+
+1. Ejecutar `supabase_license_rpc.sql` en Supabase SQL Editor.
+2. Configurar `.supabase_config.json` con `SUPABASE_URL` y la anon key publica, no service_role.
+3. `validate_device_license()` llama `validate_license_with_supabase_rpc()`.
+4. La RPC valida `app_licenses`, crea/actualiza `app_device_registrations` y escribe `app_access_logs`.
+5. Si la RPC no existe o falla, el EXE muestra error claro y no entra en modo local salvo que `FLOWDASHBOARD_ALLOW_LOCAL_LICENSE=1`.
+6. El SQL tambien agrega columnas faltantes en `app_access_logs` y `app_device_registrations` (`device_email`, `timestamp`, `last_seen_at`, etc.) para migrar proyectos que aun tengan el esquema viejo.
+
+## Empaquetado y Actualizaciones
+
+Agregado el 2026-05-14 como base para distribucion comercial.
+
+Modelo recomendado:
+
+- Distribuir una carpeta/ZIP de app con `FlowDashboard.exe` como lanzador principal, no depender de que el cliente tenga Python.
+- Mantener los datos del cliente fuera del bundle temporal de PyInstaller:
+  - `device_names.json`
+  - `.flowlogin_payloads/`
+  - `.android/`
+  - `.supabase_config.json` si se usa en una instalacion privada
+- Para clientes finales, no incluir `service_role` dentro del EXE ni en archivos distribuidos. La opcion gratis actual usa anon key publica + RPC `validate_flowdashboard_license`; una Edge Function/API propia sigue siendo una mejora futura si se quiere mas control.
+- `launcher.py` establece:
+  - `FLOWDASHBOARD_BASE_DIR`: carpeta persistente junto al EXE.
+  - `FLOWDASHBOARD_RESOURCE_DIR`: carpeta temporal/bundled donde PyInstaller extrae recursos.
+- `launcher.py` evita instancias duplicadas consultando primero `/health` en `127.0.0.1:8765`. Si ya hay servidor, no inicia otro; solo abre el dashboard existente. Si no hay servidor, arranca `local_adb_server.py` en el hilo principal y abre el navegador desde un hilo auxiliar.
+- `local_adb_server.py` usa esas rutas para que la persistencia quede estable aunque el programa este empaquetado.
+- ADB usa por defecto las claves normales del usuario de Windows. No se debe sobrescribir `USERPROFILE` ni `HOME` para ADB porque en EXE puede crear carpetas raras y perder autorizaciones ya aceptadas. Solo usar carpeta ADB portable si se define explicitamente `FLOWDASHBOARD_ADB_HOME`.
+- `wsapi_demo.html` ya no debe contener rutas absolutas del equipo del desarrollador para `Login.js`; el servidor resuelve `Login.js` por nombre desde la carpeta persistente o recursos empaquetados.
+
+Actualizacion automatica:
+
+- `updater.py` no reemplaza directamente el EXE activo. En Windows eso falla con frecuencia porque el ejecutable esta bloqueado.
+- El flujo nuevo espera un `update_config.json` local, ignorado por git, con:
+
+```json
+{
+  "manifest_url": "https://tu-dominio.com/flowdashboard/update.json"
+}
+```
+
+- El manifest remoto debe devolver al menos:
+
+```json
+{
+  "version": "1.0.1",
+  "package_url": "https://tu-dominio.com/flowdashboard/FlowDashboard-1.0.1.zip",
+  "sha256": "hash-opcional-del-zip"
+}
+```
+
+- Si `version` es mayor que `APP_VERSION`, descarga el ZIP, valida `sha256` si existe, extrae en staging y crea un `.bat` temporal que espera a que cierre el proceso, copia la nueva version sobre la carpeta de app con `robocopy` y relanza el EXE.
+- El ZIP de actualizacion debe contener los archivos de programa, pero no debe incluir cuentas, perfiles, payloads ni secretos del cliente.
+- `launcher.spec` fue ajustado para generar `FlowDashboard.exe` e incluir `wsapi_demo.html`, `wsapi.js`, `Login.js` y `logo.png`.
 
 ### 2026-05-14
 
@@ -348,3 +415,14 @@ Reglas de seguridad:
 - Flujo de validacion: usuario ingresa email y licencia, dashboard recupera MAC del primer dispositivo, servidor valida contra Supabase usando email, registra acceso con email y MAC detectado
 - `abrir_dashboard.bat` ahora exige feature `flowagent_auto_ensure` para reiniciar servidores viejos automaticamente.
 - Se agrego `flowlogin_cache_retry`: FlowLogin hace una primera pasada, limpia cache/datos del clon fallido y hace un segundo intento solo para esos clones.
+
+### 2026-05-15
+
+- Empaquetado comercial ajustado para `FlowDashboard.exe`.
+- Se agrego `Crearexe.bat` para recompilar el EXE desde la carpeta principal con doble clic.
+- Se agrego `CrearActualizacion.bat` y `update.json` para publicar actualizaciones por GitHub Releases usando el repo `ingestebandaza/FlowDashboard`.
+- Licencias configuradas en modo gratis con anon key + RPC `validate_flowdashboard_license`; no usar `service_role` en builds de cliente.
+- `supabase_license_rpc.sql` agrega columnas faltantes antes de crear la RPC de validacion.
+- Se corrigio la UI para no mostrar errores de licencia como exito.
+- Se restauro helper `account_lines()` en `local_adb_server.py`; sin este helper `/devices` fallaba con 500 al cargar perfiles guardados.
+- `run_process()` ahora ejecuta subprocess/ADB con `CREATE_NO_WINDOW` en Windows para evitar muchas ventanas de consola fugaces al abrir el EXE y cargar dispositivos.

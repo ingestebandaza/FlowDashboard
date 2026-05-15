@@ -17,6 +17,11 @@ from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import urlopen, Request
 
+from app_meta import APP_VERSION
+
+BASE_DIR = Path(os.getenv("FLOWDASHBOARD_BASE_DIR", Path(__file__).resolve().parent))
+RESOURCE_DIR = Path(os.getenv("FLOWDASHBOARD_RESOURCE_DIR", str(BASE_DIR)))
+ADB_HOME_OVERRIDE = os.getenv("FLOWDASHBOARD_ADB_HOME", "").strip()
 
 HOST = "127.0.0.1"
 PORT = 8765
@@ -25,13 +30,12 @@ AGENT_PORT = 8766
 SERVER_VERSION = "2026-05-12-device-public-ip-refresh"
 SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh"]
 ADB = shutil.which("adb") or r"C:\adb\adb.exe"
-ANDROID_HOME_DIR = Path(__file__).with_name(".android")
-ANDROID_HOME_DIR.mkdir(exist_ok=True)
-os.environ["ANDROID_USER_HOME"] = str(ANDROID_HOME_DIR)
-os.environ["ANDROID_SDK_HOME"] = str(ANDROID_HOME_DIR)
-os.environ["ADB_VENDOR_KEYS"] = str(ANDROID_HOME_DIR)
-os.environ["USERPROFILE"] = str(ANDROID_HOME_DIR)
-os.environ["HOME"] = str(ANDROID_HOME_DIR)
+ANDROID_HOME_DIR = Path(ADB_HOME_OVERRIDE).expanduser() if ADB_HOME_OVERRIDE else None
+if ANDROID_HOME_DIR:
+    ANDROID_HOME_DIR.mkdir(exist_ok=True)
+    os.environ["ANDROID_USER_HOME"] = str(ANDROID_HOME_DIR)
+    os.environ["ANDROID_SDK_HOME"] = str(ANDROID_HOME_DIR)
+    os.environ["ADB_VENDOR_KEYS"] = str(ANDROID_HOME_DIR)
 AUTOJS_PACKAGES = [
     "youhu.laixijs",
     "org.autojs.autojs",
@@ -40,10 +44,12 @@ AUTOJS_PACKAGES = [
     "com.stardust.autojspro",
     "com.stardust.commoncommonxmly1",
 ]
-DEVICE_NAMES_FILE = Path(__file__).with_name("device_names.json")
-FLOWLOGIN_PAYLOAD_DIR = Path(__file__).with_name(".flowlogin_payloads")
+DEVICE_NAMES_FILE = BASE_DIR / "device_names.json"
+FLOWLOGIN_PAYLOAD_DIR = BASE_DIR / ".flowlogin_payloads"
 FLOWLOGIN_PAYLOAD_DIR.mkdir(exist_ok=True)
-FLOW_AGENT_APK = Path(__file__).with_name("flow_agent_apk") / "build" / "flowagent-debug.apk"
+FLOW_AGENT_APK = BASE_DIR / "flow_agent_apk" / "build" / "flowagent-debug.apk"
+if not FLOW_AGENT_APK.exists():
+    FLOW_AGENT_APK = RESOURCE_DIR / "flow_agent_apk" / "build" / "flowagent-debug.apk"
 FLOW_AGENT_PACKAGE = "com.flowlogin.agent"
 FLOW_AGENT_ACTIVITY = "com.flowlogin.agent/.MainActivity"
 FLOW_AGENT_EXPECTED_VERSION = "0.2.1"
@@ -80,9 +86,10 @@ UI_DUMP_REMOTE = "/sdcard/window.xml"
 NODE_BOUNDS_RE = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
 
 # Cargar configuración de Supabase desde archivo o variables de entorno
-SUPABASE_CONFIG_FILE = Path(__file__).with_name(".supabase_config.json")
+SUPABASE_CONFIG_FILE = BASE_DIR / ".supabase_config.json"
 SUPABASE_URL = ""
 SUPABASE_API_KEY = ""
+ALLOW_LOCAL_LICENSE_MODE = os.getenv("FLOWDASHBOARD_ALLOW_LOCAL_LICENSE", "").strip().lower() in {"1", "true", "yes"}
 
 if SUPABASE_CONFIG_FILE.exists():
     try:
@@ -95,7 +102,7 @@ if SUPABASE_CONFIG_FILE.exists():
 
 # Fallback a variables de entorno si no hay archivo de config
 SUPABASE_URL = os.getenv("SUPABASE_URL", SUPABASE_URL)
-SUPABASE_API_KEY = os.getenv("SUPABASE_API_KEY", SUPABASE_API_KEY)
+SUPABASE_API_KEY = os.getenv("SUPABASE_API_KEY", os.getenv("SUPABASE_ANON_KEY", SUPABASE_API_KEY))
 
 SUPABASE_HEADERS = {
     "apikey": SUPABASE_API_KEY,
@@ -134,10 +141,77 @@ def supabase_request(endpoint, method="GET", data=None):
         return None
 
 
+def validate_license_with_supabase_rpc(device_email, license_key, device_info=None):
+    if not SUPABASE_URL or SUPABASE_URL == "" or SUPABASE_URL == "https://your-supabase-url.supabase.co":
+        return None
+    if not SUPABASE_API_KEY:
+        return None
+
+    device_info = device_info or {}
+    payload = {
+        "p_device_email": device_email,
+        "p_license_key": license_key,
+        "p_device_hostname": device_info.get("hostname", ""),
+        "p_device_serial": device_info.get("serial", ""),
+        "p_device_os": device_info.get("os", ""),
+        "p_ip_public": device_info.get("ip", ""),
+        "p_country_code": device_info.get("country", ""),
+    }
+    return supabase_request("/rpc/validate_flowdashboard_license", method="POST", data=payload)
+
+
+def validate_license_local_mode(device_email, license_key, device_info=None):
+    if not license_key or license_key == "":
+        return {"status": "error", "message": "Licencia invalida"}
+
+    device_reg_file = BASE_DIR / "device_registrations.json"
+    registrations = {}
+    if device_reg_file.exists():
+        try:
+            with device_reg_file.open("r", encoding="utf-8") as fh:
+                registrations = json.load(fh)
+        except Exception:
+            registrations = {}
+
+    existing_key = f"{device_email}:{license_key}"
+    if existing_key in registrations:
+        registrations[existing_key]["last_seen_at"] = datetime.now(timezone.utc).isoformat()
+    else:
+        device_info = device_info or {}
+        registrations[existing_key] = {
+            "license_key": license_key,
+            "device_email": device_email,
+            "device_hostname": device_info.get("hostname", ""),
+            "device_serial": device_info.get("serial", ""),
+            "device_os": device_info.get("os", ""),
+            "ip_public": device_info.get("ip", ""),
+            "country_code": device_info.get("country", ""),
+            "status": "approved",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "last_seen_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    with device_reg_file.open("w", encoding="utf-8") as fh:
+        json.dump(registrations, fh, ensure_ascii=False, indent=2)
+
+    return {"status": "success", "device_status": "approved", "message": "Dispositivo aprobado (modo local)"}
+
+
 def validate_device_license(device_email, license_key, device_info=None):
     try:
         if not license_key or not device_email:
             return {"status": "error", "message": "Email y license_key requeridos"}
+
+        rpc_result = validate_license_with_supabase_rpc(device_email, license_key, device_info=device_info)
+        if isinstance(rpc_result, dict):
+            return rpc_result
+
+        if not SUPABASE_API_KEY or SUPABASE_API_KEY == "" or SUPABASE_URL == "https://your-supabase-url.supabase.co":
+            if ALLOW_LOCAL_LICENSE_MODE:
+                return validate_license_local_mode(device_email, license_key, device_info=device_info)
+            return {"status": "error", "message": "Supabase no configurado. No se permite modo local en esta build."}
+
+        return {"status": "error", "message": "No se pudo validar con Supabase. Ejecuta supabase_license_rpc.sql y revisa la anon key."}
 
         # Modo local: si no hay Supabase configurado, aceptar cualquier licencia válida
         if not SUPABASE_API_KEY or SUPABASE_API_KEY == "" or SUPABASE_URL == "https://your-supabase-url.supabase.co":
@@ -146,7 +220,7 @@ def validate_device_license(device_email, license_key, device_info=None):
                 return {"status": "error", "message": "Licencia inválida"}
             
             # Guardar registro del dispositivo en archivo local
-            device_reg_file = Path(__file__).with_name("device_registrations.json")
+            device_reg_file = BASE_DIR / "device_registrations.json"
             registrations = {}
             if device_reg_file.exists():
                 try:
@@ -252,6 +326,14 @@ def log_device_access(device_email, license_key, event_type, message):
 def account_id_for(serial, clone, line):
     raw = f"{serial}|{clone}|{line}".encode("utf-8", errors="ignore")
     return hashlib.sha1(raw).hexdigest()[:12]
+
+
+def account_lines(value):
+    return [
+        line.strip()
+        for line in str(value or "").replace("\r\n", "\n").replace("\r", "\n").split("\n")
+        if line.strip()
+    ]
 
 
 def normalize_account_statuses(serial, person, statuses=None):
@@ -487,11 +569,17 @@ def run_process(args, timeout=120):
         raise RuntimeError("No se encontro adb. Agrega adb al PATH o instala Android platform-tools.")
 
     env = os.environ.copy()
-    env["ANDROID_USER_HOME"] = str(ANDROID_HOME_DIR)
-    env["ANDROID_SDK_HOME"] = str(ANDROID_HOME_DIR)
-    env["ADB_VENDOR_KEYS"] = str(ANDROID_HOME_DIR)
-    env["USERPROFILE"] = str(ANDROID_HOME_DIR)
-    env["HOME"] = str(ANDROID_HOME_DIR)
+    if ANDROID_HOME_DIR:
+        env["ANDROID_USER_HOME"] = str(ANDROID_HOME_DIR)
+        env["ANDROID_SDK_HOME"] = str(ANDROID_HOME_DIR)
+        env["ADB_VENDOR_KEYS"] = str(ANDROID_HOME_DIR)
+
+    popen_options = {}
+    if os.name == "nt":
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        popen_options["startupinfo"] = startupinfo
+        popen_options["creationflags"] = subprocess.CREATE_NO_WINDOW
 
     completed = subprocess.run(
         args,
@@ -501,6 +589,7 @@ def run_process(args, timeout=120):
         encoding="utf-8",
         errors="replace",
         env=env,
+        **popen_options,
     )
     output = (completed.stdout or "").strip()
     error = (completed.stderr or "").strip()
@@ -1246,6 +1335,20 @@ def normalize_clone_filter(clone=None, clones=None):
     return set(values)
 
 
+def resolve_local_script_path(file_path):
+    raw_path = str(file_path or "").strip()
+    script = Path(raw_path)
+    if script.exists() and script.is_file():
+        return script
+
+    if script.name:
+        for base in (BASE_DIR, RESOURCE_DIR):
+            candidate = base / script.name
+            if candidate.exists() and candidate.is_file():
+                return candidate
+    return script
+
+
 def prepare_flowlogin_payload(serial, clone=None, clones=None, delimiter=":"):
     names = load_device_names()
     profile = names.get(serial, {"name": "", "person": "", "accountStatuses": []})
@@ -1711,7 +1814,7 @@ def start_flowlogin_agent_jobs(serials, clone=None, clones=None, delimiter=":"):
 
 
 def execute_autojs(file_path, device_ids="all", clone=None, clones=None, delimiter=":"):
-    script = Path(file_path.strip())
+    script = resolve_local_script_path(file_path)
     if not script.exists() or not script.is_file():
         raise RuntimeError(f"No se encontro el script: {script}")
 
@@ -2461,7 +2564,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             path = urlparse(self.path).path
             if path in {"/", "/health"}:
-                self._json({"ok": True, "adb": ADB, "version": SERVER_VERSION, "features": SERVER_FEATURES})
+                self._json({"ok": True, "adb": ADB, "version": SERVER_VERSION, "appVersion": APP_VERSION, "features": SERVER_FEATURES})
             elif path == "/devices":
                 self._json({"devices": list_devices()})
             elif path == "/device-names":
@@ -2548,9 +2651,13 @@ class Handler(BaseHTTPRequestHandler):
         print(f"{self.address_string()} - {fmt % args}")
 
 
-if __name__ == "__main__":
+def serve_forever():
     threading.Thread(target=run_agent_socket_server_safely, daemon=True).start()
     server = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"ADB dashboard local listo en http://{HOST}:{PORT}")
     print(f"ADB: {ADB or 'no encontrado'}")
     server.serve_forever()
+
+
+if __name__ == "__main__":
+    serve_forever()

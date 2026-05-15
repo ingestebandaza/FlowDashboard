@@ -2352,8 +2352,7 @@
                 <label for="scriptPreset">Scripts de esta carpeta</label>
                 <select id="scriptPreset" class="js-script-preset" disabled>
                   <option value="">Elegir script...</option>
-                  <option value="C:\Users\elyup\Downloads\laixi_wsapi_demo (7)\laixi_wsapi_demo\Html\html\Login.js">Login.js</option>
-                  <option value="C:\Users\elyup\Downloads\laixi_wsapi_demo (7)\laixi_wsapi_demo\Html\html\0506032700.js">0506032700.js</option>
+                  <option value="Login.js">Login.js</option>
                 </select>
               </div>
               <div class="field">
@@ -4991,10 +4990,10 @@
 
         msgEl.style.display = 'block';
 
-        if (data.error) {
+        if (data.error || data.status === 'error') {
           msgEl.style.background = '#ff5f72';
           msgEl.style.color = '#fff';
-          msgEl.textContent = `Error: ${data.error}`;
+          msgEl.textContent = `Error: ${data.error || data.message || 'No se pudo validar la licencia.'}`;
           btnEl.disabled = false;
           btnEl.textContent = 'Validar';
           return;
