@@ -429,3 +429,5 @@ Actualizacion automatica:
 - `wsapi_demo.html` muestra la version del programa debajo del logotipo; usa `v1.0.0` como fallback y actualiza desde `/health.appVersion`.
 - `launcher.py` abre el dashboard por `http://127.0.0.1:8765/wsapi_demo.html`, no por `file://.../_MEI...`; esto evita pantalla `ERR_FILE_NOT_FOUND` tras actualizaciones PyInstaller.
 - `local_adb_server.py` sirve archivos estaticos empaquetados (`wsapi_demo.html`, `wsapi.js`, `logo.png`) desde `/wsapi_demo.html`, `/wsapi.js` y `/logo.png`.
+- `SERVER_FEATURES` incluye `static_dashboard`.
+- `launcher.py` exige `static_dashboard` al reutilizar un servidor existente. Si detecta un servidor viejo en `127.0.0.1:8765`, cierra el proceso que escucha ese puerto y arranca el servidor de la build nueva.
