@@ -31,30 +31,90 @@ PORT = 8765
 AGENT_HOST = "0.0.0.0"
 AGENT_PORT = 8766
 SERVER_VERSION = "2026-05-12-device-public-ip-refresh"
-SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe"]
+SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe"]
 
 
-def find_adb():
+def unique_paths(values):
+    seen = set()
+    result = []
+    for value in values:
+        text = str(value or "").strip().strip('"')
+        if not text:
+            continue
+        key = text.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(Path(text))
+    return result
+
+
+def candidate_adb_paths():
+    candidates = []
+    path_dirs = os.getenv("PATH", "").split(os.pathsep)
+    for folder in path_dirs:
+        if folder:
+            candidates.append(Path(folder) / "adb.exe")
+
     candidates = [
         os.getenv("FLOWDASHBOARD_ADB", ""),
+        os.getenv("ADB", ""),
         str(BASE_DIR / "platform-tools" / "adb.exe"),
         str(RESOURCE_DIR / "platform-tools" / "adb.exe"),
         shutil.which("adb") or "",
         r"C:\adb\adb.exe",
+        *[str(item) for item in candidates],
     ]
     local_app_data = os.getenv("LOCALAPPDATA", "")
     program_files = os.getenv("ProgramFiles", "")
     program_files_x86 = os.getenv("ProgramFiles(x86)", "")
     user_profile = os.getenv("USERPROFILE", "")
+    android_home = os.getenv("ANDROID_HOME", "")
+    android_sdk_root = os.getenv("ANDROID_SDK_ROOT", "")
     candidates.extend([
+        str(Path(android_home) / "platform-tools" / "adb.exe") if android_home else "",
+        str(Path(android_sdk_root) / "platform-tools" / "adb.exe") if android_sdk_root else "",
         str(Path(local_app_data) / "Android" / "Sdk" / "platform-tools" / "adb.exe") if local_app_data else "",
+        str(Path(local_app_data) / "Android" / "android-sdk" / "platform-tools" / "adb.exe") if local_app_data else "",
         str(Path(program_files) / "Android" / "android-sdk" / "platform-tools" / "adb.exe") if program_files else "",
+        str(Path(program_files) / "Android" / "Sdk" / "platform-tools" / "adb.exe") if program_files else "",
         str(Path(program_files_x86) / "Android" / "android-sdk" / "platform-tools" / "adb.exe") if program_files_x86 else "",
+        str(Path(program_files_x86) / "Android" / "Sdk" / "platform-tools" / "adb.exe") if program_files_x86 else "",
         str(Path(user_profile) / "AppData" / "Local" / "Android" / "Sdk" / "platform-tools" / "adb.exe") if user_profile else "",
+        str(Path(user_profile) / "platform-tools" / "adb.exe") if user_profile else "",
+        str(Path(user_profile) / "Downloads" / "platform-tools" / "adb.exe") if user_profile else "",
+        str(Path(user_profile) / "Desktop" / "platform-tools" / "adb.exe") if user_profile else "",
+        str(Path(user_profile) / "adb.exe") if user_profile else "",
     ])
-    for candidate in candidates:
-        if candidate and Path(candidate).exists():
-            return candidate
+    return unique_paths(candidates)
+
+
+def deep_probe_adb():
+    roots = [
+        BASE_DIR,
+        Path(os.getenv("USERPROFILE", "")),
+        Path(os.getenv("LOCALAPPDATA", "")),
+    ]
+    for root in roots:
+        if not str(root) or not root.exists() or not root.is_dir():
+            continue
+        try:
+            for path in root.rglob("adb.exe"):
+                parts = {part.lower() for part in path.parts}
+                if "platform-tools" in parts or path.parent == root:
+                    return path
+        except Exception:
+            continue
+    return None
+
+
+def find_adb():
+    for candidate in candidate_adb_paths():
+        if candidate.exists() and candidate.is_file():
+            return str(candidate)
+    found = deep_probe_adb()
+    if found:
+        return str(found)
     return shutil.which("adb") or r"C:\adb\adb.exe"
 
 
@@ -143,9 +203,12 @@ SUPABASE_HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {SUPABASE_API_KEY}",
 }
+LAST_SUPABASE_ERROR = ""
 
 
 def supabase_request(endpoint, method="GET", data=None):
+    global LAST_SUPABASE_ERROR
+    LAST_SUPABASE_ERROR = ""
     # Si no hay Supabase configurado, retornar None para usar modo local
     if not SUPABASE_URL or SUPABASE_URL == "" or SUPABASE_URL == "https://your-supabase-url.supabase.co":
         return None
@@ -172,6 +235,7 @@ def supabase_request(endpoint, method="GET", data=None):
             except Exception:
                 pass
         print(f"Error en Supabase request: {error_msg}")
+        LAST_SUPABASE_ERROR = error_msg
         return None
 
 
@@ -248,7 +312,8 @@ def validate_device_license(device_email, license_key, device_info=None):
                 return validate_license_local_mode(device_email, license_key, device_info=device_info)
             return {"status": "error", "message": "Supabase no configurado. No se permite modo local en esta build."}
 
-        return {"status": "error", "message": "No se pudo validar con Supabase. Ejecuta supabase_license_rpc.sql y revisa la anon key."}
+        detail = f" Detalle: {LAST_SUPABASE_ERROR}" if LAST_SUPABASE_ERROR else ""
+        return {"status": "error", "message": f"No se pudo validar con Supabase. Ejecuta supabase_license_rpc.sql y revisa la anon key.{detail}"}
 
         # Modo local: si no hay Supabase configurado, aceptar cualquier licencia válida
         if not SUPABASE_API_KEY or SUPABASE_API_KEY == "" or SUPABASE_URL == "https://your-supabase-url.supabase.co":
@@ -1260,6 +1325,7 @@ def get_client_info():
         "appVersion": APP_VERSION,
         "adb": ADB,
         "adbExists": bool(ADB and Path(ADB).exists()),
+        "adbCandidates": [str(path) for path in candidate_adb_paths()[:12]],
     }
 
 
