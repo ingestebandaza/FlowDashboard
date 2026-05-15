@@ -65,12 +65,18 @@ def write_apply_script(app_dir, staging_dir, app_name):
         exe_path = Path(sys.executable).resolve()
 
     script_path = Path(tempfile.gettempdir()) / f"{app_name}_apply_update.bat"
+    log_path = Path(tempfile.gettempdir()) / f"{app_name}_apply_update.log"
+    exe_name = exe_path.name
     script = f"""@echo off
 setlocal
 set "APP_DIR={app_dir}"
 set "STAGING_DIR={staging_dir}"
 set "APP_EXE={exe_path}"
+set "APP_NAME={exe_name}"
 set "PID={os.getpid()}"
+set "LOG_FILE={log_path}"
+
+echo [%date% %time%] Esperando cierre de proceso %PID% > "%LOG_FILE%"
 
 :wait_loop
 tasklist /FI "PID eq %PID%" 2>NUL | find "%PID%" >NUL
@@ -79,7 +85,25 @@ if not errorlevel 1 (
   goto wait_loop
 )
 
-robocopy "%STAGING_DIR%" "%APP_DIR%" /E /NFL /NDL /NJH /NJS /NP >NUL
+echo [%date% %time%] Esperando cierre de %APP_NAME% >> "%LOG_FILE%"
+:wait_app
+tasklist /FI "IMAGENAME eq %APP_NAME%" 2>NUL | find /I "%APP_NAME%" >NUL
+if not errorlevel 1 (
+  timeout /T 1 /NOBREAK >NUL
+  goto wait_app
+)
+
+timeout /T 2 /NOBREAK >NUL
+echo [%date% %time%] Copiando actualizacion >> "%LOG_FILE%"
+robocopy "%STAGING_DIR%" "%APP_DIR%" /E /R:10 /W:1 /NFL /NDL /NJH /NJS /NP >> "%LOG_FILE%"
+set "ROBOCOPY_EXIT=%ERRORLEVEL%"
+if %ROBOCOPY_EXIT% GEQ 8 (
+  echo [%date% %time%] ERROR robocopy %ROBOCOPY_EXIT% >> "%LOG_FILE%"
+  exit /b %ROBOCOPY_EXIT%
+)
+
+timeout /T 2 /NOBREAK >NUL
+echo [%date% %time%] Reiniciando %APP_EXE% >> "%LOG_FILE%"
 start "" "%APP_EXE%"
 endlocal
 """
