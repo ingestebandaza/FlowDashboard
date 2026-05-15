@@ -44,8 +44,8 @@ def run_update_check():
 
 
 def run_server():
-    os.environ.setdefault("FLOWDASHBOARD_BASE_DIR", str(app_dir()))
-    os.environ.setdefault("FLOWDASHBOARD_RESOURCE_DIR", str(bundle_dir()))
+    os.environ["FLOWDASHBOARD_BASE_DIR"] = str(app_dir())
+    os.environ["FLOWDASHBOARD_RESOURCE_DIR"] = str(bundle_dir())
     import local_adb_server
 
     local_adb_server.serve_forever()

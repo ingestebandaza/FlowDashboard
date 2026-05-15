@@ -1,4 +1,5 @@
 import hashlib
+import hashlib
 import json
 import os
 import subprocess
@@ -109,6 +110,8 @@ set "_PYI_APPLICATION_HOME_DIR="
 set "_PYI_ARCHIVE_FILE="
 set "_PYI_PARENT_PROCESS_LEVEL="
 set "_PYI_SPLASH_IPC="
+set "FLOWDASHBOARD_RESOURCE_DIR="
+set "FLOWDASHBOARD_BASE_DIR="
 start "" /D "%APP_DIR%" "%APP_EXE%"
 endlocal
 """
