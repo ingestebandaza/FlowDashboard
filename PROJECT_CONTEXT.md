@@ -446,3 +446,6 @@ Actualizacion automatica:
 - `wsapi_demo.html` envia a la validacion de licencia `ip_public`, `local_ip`, `country_code`, `country_name` y `mac_address` para que el panel admin tenga datos de la PC cliente.
 - `supabase_license_rpc.sql` agrega y rellena `local_ip`, `mac_address` y `country_name` en `app_devices`, `app_access_logs` y `app_device_registrations`.
 - `license_admin.html` muestra IP publica, IP local, MAC, pais y version en dispositivos e intentos de acceso.
+- Desde `1.0.10`, ADB se ejecuta con la carpeta donde vive `adb.exe` al inicio de `PATH` y como `cwd`, para igualar mejor el entorno de la terminal del usuario.
+- Se agrego `/adb-diagnostics`, que devuelve `adb version`, `adb start-server`, salida cruda de `adb devices -l` y dispositivos parseados desde dentro del EXE.
+- `/devices` se hizo mas rapido: ya no intenta consultar IP publica/MAC de cada telefono durante la carga normal, solo usa cache y deja esas consultas para acciones explicitas. Esto evita que muchos telefonos o conexiones lentas bloqueen la deteccion inicial.

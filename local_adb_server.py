@@ -31,7 +31,7 @@ PORT = 8765
 AGENT_HOST = "0.0.0.0"
 AGENT_PORT = 8766
 SERVER_VERSION = "2026-05-12-device-public-ip-refresh"
-SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info"]
+SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics"]
 
 
 def unique_paths(values):
@@ -171,6 +171,9 @@ ANDROID_ID_LOCK = threading.Lock()
 PUBLIC_IP_CACHE = {}
 PUBLIC_IP_LOCK = threading.Lock()
 PUBLIC_IP_CACHE_TTL = 600
+DEVICE_MAC_CACHE = {}
+DEVICE_MAC_LOCK = threading.Lock()
+LAST_ADB_DEVICES_OUTPUT = ""
 UI_DUMP_REMOTE = "/sdcard/window.xml"
 NODE_BOUNDS_RE = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
 STATIC_FILES = {
@@ -673,11 +676,7 @@ def run_process(args, timeout=120):
     if not ADB or not Path(ADB).exists():
         raise RuntimeError("No se encontro adb. Agrega adb al PATH o instala Android platform-tools.")
 
-    env = os.environ.copy()
-    if ANDROID_HOME_DIR:
-        env["ANDROID_USER_HOME"] = str(ANDROID_HOME_DIR)
-        env["ANDROID_SDK_HOME"] = str(ANDROID_HOME_DIR)
-        env["ADB_VENDOR_KEYS"] = str(ANDROID_HOME_DIR)
+    env, adb_parent = get_adb_environment()
 
     popen_options = {}
     if os.name == "nt":
@@ -694,6 +693,7 @@ def run_process(args, timeout=120):
         encoding="utf-8",
         errors="replace",
         env=env,
+        cwd=adb_parent or None,
         **popen_options,
     )
     output = (completed.stdout or "").strip()
@@ -705,6 +705,79 @@ def run_process(args, timeout=120):
 
 def adb(args, timeout=120):
     return run_process([ADB, *args], timeout=timeout)
+
+
+def get_adb_environment():
+    adb_parent = str(Path(ADB).resolve().parent) if ADB else ""
+    env = os.environ.copy()
+    if adb_parent:
+        env["PATH"] = adb_parent + os.pathsep + env.get("PATH", "")
+    if ANDROID_HOME_DIR:
+        env["ANDROID_USER_HOME"] = str(ANDROID_HOME_DIR)
+        env["ANDROID_SDK_HOME"] = str(ANDROID_HOME_DIR)
+        env["ADB_VENDOR_KEYS"] = str(ANDROID_HOME_DIR)
+    return env, adb_parent
+
+
+def run_adb_probe(args, timeout=20):
+    if not ADB or not Path(ADB).exists():
+        return {"ok": False, "stdout": "", "stderr": "ADB no existe", "returncode": -1}
+    env, adb_parent = get_adb_environment()
+    popen_options = {}
+    if os.name == "nt":
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        popen_options["startupinfo"] = startupinfo
+        popen_options["creationflags"] = subprocess.CREATE_NO_WINDOW
+    try:
+        completed = subprocess.run(
+            [ADB, *args],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            encoding="utf-8",
+            errors="replace",
+            env=env,
+            cwd=adb_parent or None,
+            **popen_options,
+        )
+        return {
+            "ok": completed.returncode == 0,
+            "stdout": (completed.stdout or "").strip(),
+            "stderr": (completed.stderr or "").strip(),
+            "returncode": completed.returncode,
+        }
+    except Exception as exc:
+        return {"ok": False, "stdout": "", "stderr": str(exc), "returncode": -1}
+
+
+def parse_adb_devices_output(output):
+    rows = []
+    for line in str(output or "").splitlines()[1:]:
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        rows.append({"serial": parts[0], "status": parts[1], "raw": line})
+    return rows
+
+
+def get_adb_diagnostics():
+    version = run_adb_probe(["version"], timeout=10)
+    start_server = run_adb_probe(["start-server"], timeout=15)
+    devices = run_adb_probe(["devices", "-l"], timeout=20)
+    return {
+        "adb": ADB,
+        "adbExists": bool(ADB and Path(ADB).exists()),
+        "adbDir": str(Path(ADB).resolve().parent) if ADB else "",
+        "version": version,
+        "startServer": start_server,
+        "devices": devices,
+        "parsedDevices": parse_adb_devices_output(devices.get("stdout", "")),
+        "lastDevicesOutput": LAST_ADB_DEVICES_OUTPUT,
+    }
 
 
 def adb_shell(serial, command, timeout=30):
@@ -1090,7 +1163,9 @@ def perform_flowlogin_adb(serial, item, account):
 
 
 def list_devices():
+    global LAST_ADB_DEVICES_OUTPUT
     output = adb(["devices", "-l"], timeout=20)
+    LAST_ADB_DEVICES_OUTPUT = output
     saved_names = load_device_names()
     devices = []
     for line in output.splitlines()[1:]:
@@ -1112,8 +1187,11 @@ def list_devices():
         account_statuses = profile.get("accountStatuses", []) if isinstance(profile, dict) else []
         name = custom_name or original_name
         android_id = get_device_android_id(serial)
-        public_ip_info = get_device_public_ip_info(serial)
-        mac_address = get_device_mac_address(serial)
+        with PUBLIC_IP_LOCK:
+            cached_public_ip = PUBLIC_IP_CACHE.get(serial, {})
+        public_ip_info = dict(cached_public_ip.get("data", {})) if isinstance(cached_public_ip, dict) else {}
+        with DEVICE_MAC_LOCK:
+            mac_address = DEVICE_MAC_CACHE.get(serial, "")
         devices.append({
             "id": serial,
             "serial": serial,
@@ -1287,6 +1365,10 @@ def get_device_mac_address(serial):
     serial = str(serial or "").strip()
     if not serial:
         return ""
+    with DEVICE_MAC_LOCK:
+        cached = DEVICE_MAC_CACHE.get(serial, "")
+        if cached:
+            return cached
     try:
         # Intentar obtener MAC desde diferentes fuentes en Android
         commands = [
@@ -1299,7 +1381,10 @@ def get_device_mac_address(serial):
             try:
                 mac = adb_shell(serial, command, timeout=10).strip()
                 if mac and re.match(r"^[0-9a-fA-F:]{17}$", mac):
-                    return mac.upper()
+                    mac = mac.upper()
+                    with DEVICE_MAC_LOCK:
+                        DEVICE_MAC_CACHE[serial] = mac
+                    return mac
             except Exception:
                 continue
         return ""
@@ -2779,6 +2864,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"ok": True, "adb": ADB, "version": SERVER_VERSION, "appVersion": APP_VERSION, "features": SERVER_FEATURES})
             elif path == "/client-info":
                 self._json(get_client_info())
+            elif path == "/adb-diagnostics":
+                self._json(get_adb_diagnostics())
             elif path == "/devices":
                 self._json({"devices": list_devices()})
             elif path == "/device-names":
