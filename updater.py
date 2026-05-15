@@ -104,7 +104,12 @@ if %ROBOCOPY_EXIT% GEQ 8 (
 
 timeout /T 2 /NOBREAK >NUL
 echo [%date% %time%] Reiniciando %APP_EXE% >> "%LOG_FILE%"
-start "" "%APP_EXE%"
+set "PYINSTALLER_RESET_ENVIRONMENT=1"
+set "_PYI_APPLICATION_HOME_DIR="
+set "_PYI_ARCHIVE_FILE="
+set "_PYI_PARENT_PROCESS_LEVEL="
+set "_PYI_SPLASH_IPC="
+start "" /D "%APP_DIR%" "%APP_EXE%"
 endlocal
 """
     script_path.write_text(script, encoding="utf-8")
