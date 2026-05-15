@@ -11,6 +11,7 @@ from pathlib import Path
 from app_meta import APP_NAME, APP_VERSION
 
 CONFIG_FILE = "update_config.json"
+DEFAULT_MANIFEST_URL = "https://raw.githubusercontent.com/ingestebandaza/FlowDashboard/main/update.json"
 
 
 def version_tuple(value):
@@ -29,7 +30,7 @@ def load_config(app_dir):
     if config_path.exists():
         with config_path.open("r", encoding="utf-8") as fh:
             config = json.load(fh)
-    manifest_url = os.getenv("FLOWDASHBOARD_UPDATE_MANIFEST_URL", config.get("manifest_url", ""))
+    manifest_url = os.getenv("FLOWDASHBOARD_UPDATE_MANIFEST_URL", config.get("manifest_url", DEFAULT_MANIFEST_URL))
     return {"manifest_url": manifest_url.strip()}
 
 
@@ -136,4 +137,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

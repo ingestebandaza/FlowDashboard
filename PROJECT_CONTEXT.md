@@ -449,3 +449,4 @@ Actualizacion automatica:
 - Desde `1.0.10`, ADB se ejecuta con la carpeta donde vive `adb.exe` al inicio de `PATH` y como `cwd`, para igualar mejor el entorno de la terminal del usuario.
 - Se agrego `/adb-diagnostics`, que devuelve `adb version`, `adb start-server`, salida cruda de `adb devices -l` y dispositivos parseados desde dentro del EXE.
 - `/devices` se hizo mas rapido: ya no intenta consultar IP publica/MAC de cada telefono durante la carga normal, solo usa cache y deja esas consultas para acciones explicitas. Esto evita que muchos telefonos o conexiones lentas bloqueen la deteccion inicial.
+- Desde `1.0.11`, `updater.py` trae como fallback interno el manifest publico `https://raw.githubusercontent.com/ingestebandaza/FlowDashboard/main/update.json`; asi el EXE puede actualizar aunque falte `update_config.json` junto al ejecutable.
