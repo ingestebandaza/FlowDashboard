@@ -725,6 +725,11 @@
       --select-color: #ff5c7a;
     }
 
+    .device-select-btn.refresh-country {
+      --select-color: #45caff;
+      color: #dff7ff;
+    }
+
     .device-list {
       --device-tile-size: 132px;
       display: grid;
@@ -2260,6 +2265,14 @@
                     <path d="m20 16-5 5" />
                   </svg>
                 </button>
+                <button class="device-select-btn refresh-country js-refresh-country-btn" type="button" title="Actualizar pais de dispositivos" aria-label="Actualizar pais de los dispositivos">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 21V5" />
+                    <path d="M5 5c3-2 5 2 8 0s5-1 7 1v10c-2-2-4-3-7-1s-5-2-8 0" />
+                    <path d="M17 4v4h4" />
+                    <path d="M21 4a6 6 0 0 0-6 6" />
+                  </svg>
+                </button>
               </div>
               <label class="zoom-control" for="deviceZoom">
                 Zoom
@@ -2461,6 +2474,7 @@
       accountTraceCollapsed: false,
       accountAssignments: {},
       refreshingPublicIpDevices: new Set(),
+      refreshingCountries: false,
       loginStatusTimer: null,
       loginPollingDeviceIds: '',
       loginPollStartedAt: 0,
@@ -2488,6 +2502,7 @@
       selectAllDevicesBtn: document.querySelector('.js-select-all-devices-btn'),
       clearSelectedDeviceAccountsBtn: document.querySelector('.js-clear-selected-device-accounts-btn'),
       clearDeviceSelectionBtn: document.querySelector('.js-clear-device-selection-btn'),
+      refreshCountryBtn: document.querySelector('.js-refresh-country-btn'),
       flowAgentStatus: document.querySelector('.js-flow-agent-status'),
       flowAgentSetupBtn: document.querySelector('.js-flow-agent-setup-btn'),
       flowAgentRefreshBtn: document.querySelector('.js-flow-agent-refresh-btn'),
@@ -2664,6 +2679,54 @@
         appendOutput('Error al actualizar IP publica', error.message);
       } finally {
         state.refreshingPublicIpDevices.delete(deviceId);
+        renderDevices();
+      }
+    }
+
+    async function refreshDeviceCountries(showMessage = true, onlyMissing = false) {
+      if (!wsapi.connected || state.refreshingCountries || !state.devices.length) return;
+      const targetIds = state.devices
+        .filter(device => !onlyMissing || !normalizeCountryCode(device.countryCode))
+        .map(getDeviceId)
+        .filter(Boolean);
+      if (!targetIds.length) {
+        if (showMessage) appendOutput('Paises actualizados', 'Todos los dispositivos ya tienen pais detectado.');
+        return;
+      }
+
+      state.refreshingCountries = true;
+      targetIds.forEach(id => state.refreshingPublicIpDevices.add(id));
+      renderDevices();
+      if (showMessage) appendOutput('Actualizando paises', `Consultando pais/IP de ${targetIds.length} dispositivo${targetIds.length === 1 ? '' : 's'}...`);
+
+      let ok = 0;
+      const failed = [];
+      try {
+        for (const deviceId of targetIds) {
+          try {
+            const [devices, info] = await wsapi.refreshDevicePublicIp({ serial: deviceId });
+            state.devices = devices;
+            if (info && (info.countryCode || info.publicIp)) {
+              ok += 1;
+            } else {
+              failed.push(shortDeviceId(deviceId));
+            }
+          } catch (error) {
+            failed.push(shortDeviceId(deviceId));
+          } finally {
+            state.refreshingPublicIpDevices.delete(deviceId);
+            renderDevices();
+          }
+        }
+        if (showMessage) {
+          appendOutput(
+            'Paises actualizados',
+            `${ok} actualizado${ok === 1 ? '' : 's'}${failed.length ? `\nSin detectar:\n${failed.join('\n')}` : ''}`
+          );
+        }
+      } finally {
+        state.refreshingCountries = false;
+        targetIds.forEach(id => state.refreshingPublicIpDevices.delete(id));
         renderDevices();
       }
     }
@@ -4312,6 +4375,9 @@
       if (els.clearDeviceSelectionBtn) {
         els.clearDeviceSelectionBtn.disabled = !enabled || !state.selectedDeviceIds.length;
       }
+      if (els.refreshCountryBtn) {
+        els.refreshCountryBtn.disabled = !enabled || !state.devices.length || state.refreshingCountries;
+      }
     }
 
     function updateDeviceZoom() {
@@ -4703,17 +4769,21 @@
           state.agents = [];
           updateFlowAgentControls();
         });
-      
-      // Obtener automáticamente la MAC de los dispositivos conectados
+
+      if (deviceList.length > 0) {
+        window.setTimeout(() => refreshDeviceCountries(false, true), 1200);
+      }
+
+      // Obtener automaticamente la MAC de los dispositivos conectados
       if (deviceList.length > 0) {
         deviceList.forEach(async (device) => {
+          const serial = device.serial || device.id || '';
           try {
-            const serial = device.serial || device.id || '';
             if (serial) {
               const mac = await wsapi.getDeviceMac({ serial });
               if (mac) {
                 console.log(`MAC de ${serial}: ${mac}`);
-                // La MAC se guarda automáticamente en la lista de dispositivos
+                // La MAC se guarda automaticamente en la lista de dispositivos
               }
             }
           } catch (error) {
@@ -4748,6 +4818,7 @@
     els.refreshBtn.addEventListener('click', () => refreshDevices(true));
     els.flowAgentSetupBtn.addEventListener('click', setupFlowAgent);
     els.flowAgentRefreshBtn.addEventListener('click', () => refreshAgents(true));
+    els.refreshCountryBtn.addEventListener('click', () => refreshDeviceCountries(true, false));
     els.deviceZoom.addEventListener('input', updateDeviceZoom);
     els.selectAllDevicesBtn.addEventListener('click', selectAllDevices);
     els.clearSelectedDeviceAccountsBtn.addEventListener('click', clearSelectedDeviceAccounts);

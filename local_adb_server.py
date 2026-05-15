@@ -31,7 +31,7 @@ PORT = 8765
 AGENT_HOST = "0.0.0.0"
 AGENT_PORT = 8766
 SERVER_VERSION = "2026-05-12-device-public-ip-refresh"
-SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics", "visual_update_check"]
+SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics", "visual_update_check", "bundled_flowagent_apk"]
 
 
 def unique_paths(values):
@@ -136,9 +136,20 @@ AUTOJS_PACKAGES = [
 DEVICE_NAMES_FILE = BASE_DIR / "device_names.json"
 FLOWLOGIN_PAYLOAD_DIR = BASE_DIR / ".flowlogin_payloads"
 FLOWLOGIN_PAYLOAD_DIR.mkdir(exist_ok=True)
-FLOW_AGENT_APK = BASE_DIR / "flow_agent_apk" / "build" / "flowagent-debug.apk"
-if not FLOW_AGENT_APK.exists():
-    FLOW_AGENT_APK = RESOURCE_DIR / "flow_agent_apk" / "build" / "flowagent-debug.apk"
+def find_flow_agent_apk():
+    candidates = [
+        BASE_DIR / "flow_agent_apk" / "build" / "flowagent-debug.apk",
+        RESOURCE_DIR / "flow_agent_apk" / "build" / "flowagent-debug.apk",
+        BASE_DIR.parent / "flow_agent_apk" / "build" / "flowagent-debug.apk",
+        Path(r"C:\DASHBOARD\flow_agent_apk\build\flowagent-debug.apk"),
+    ]
+    for candidate in candidates:
+        if candidate.exists() and candidate.is_file():
+            return candidate
+    return candidates[0]
+
+
+FLOW_AGENT_APK = find_flow_agent_apk()
 FLOW_AGENT_PACKAGE = "com.flowlogin.agent"
 FLOW_AGENT_ACTIVITY = "com.flowlogin.agent/.MainActivity"
 FLOW_AGENT_EXPECTED_VERSION = "0.2.1"
@@ -1572,6 +1583,8 @@ def get_client_info():
         "countryCode": public_info.get("countryCode", ""),
         "countryName": public_info.get("countryName", ""),
         "macAddress": get_pc_mac_address(),
+        "flowAgentApk": str(FLOW_AGENT_APK),
+        "flowAgentApkExists": FLOW_AGENT_APK.exists(),
     }
 
 
@@ -2959,7 +2972,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             path = urlparse(self.path).path
             if path in {"/", "/health"}:
-                self._json({"ok": True, "adb": ADB, "version": SERVER_VERSION, "appVersion": APP_VERSION, "features": SERVER_FEATURES})
+                self._json({"ok": True, "adb": ADB, "version": SERVER_VERSION, "appVersion": APP_VERSION, "features": SERVER_FEATURES, "flowAgentApk": str(FLOW_AGENT_APK), "flowAgentApkExists": FLOW_AGENT_APK.exists()})
             elif path == "/client-info":
                 self._json(get_client_info())
             elif path == "/adb-diagnostics":
