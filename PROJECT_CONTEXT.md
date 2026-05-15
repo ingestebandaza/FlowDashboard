@@ -426,3 +426,4 @@ Actualizacion automatica:
 - Se corrigio la UI para no mostrar errores de licencia como exito.
 - Se restauro helper `account_lines()` en `local_adb_server.py`; sin este helper `/devices` fallaba con 500 al cargar perfiles guardados.
 - `run_process()` ahora ejecuta subprocess/ADB con `CREATE_NO_WINDOW` en Windows para evitar muchas ventanas de consola fugaces al abrir el EXE y cargar dispositivos.
+- `wsapi_demo.html` muestra la version del programa debajo del logotipo; usa `v1.0.0` como fallback y actualiza desde `/health.appVersion`.

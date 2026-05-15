@@ -68,6 +68,13 @@
       gap: 14px;
     }
 
+    .brand-lockup {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
     .brand-mark {
       display: grid;
       place-items: center;
@@ -80,6 +87,15 @@
       width: 380px;
       max-width: none;
       max-height: none;
+    }
+
+    .app-version {
+      margin-top: -14px;
+      color: rgba(159, 176, 204, 0.72);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0;
+      line-height: 1;
     }
 
     .icon {
@@ -2018,8 +2034,11 @@
   <main class="shell">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true">
-          <img src="./logo.png" alt="FlowLogin" />
+        <div class="brand-lockup">
+          <div class="brand-mark" aria-hidden="true">
+            <img src="./logo.png" alt="FlowLogin" />
+          </div>
+          <span class="app-version js-app-version">v1.0.0</span>
         </div>
       </div>
       <div class="status-pill js-status">
@@ -2509,8 +2528,20 @@
       deviceFlowRetryAccounts: document.querySelector('.js-device-flow-retry-accounts'),
       deviceFlowReplaceAccounts: document.querySelector('.js-device-flow-replace-accounts'),
       deviceFlowAddAccounts: document.querySelector('.js-device-flow-add-accounts'),
+      appVersion: document.querySelector('.js-app-version'),
       output: document.querySelector('.js-output')
     };
+
+    async function refreshAppVersion() {
+      if (!els.appVersion) return;
+      try {
+        const response = await fetch('http://127.0.0.1:8765/health');
+        const data = await response.json();
+        if (data.appVersion) {
+          els.appVersion.textContent = `v${data.appVersion}`;
+        }
+      } catch (error) {}
+    }
 
     function getDeviceId(device) {
       if (typeof device === 'string') return device;
@@ -5036,6 +5067,7 @@
       setBusy(true);
       setStatus(false, 'Conectando...');
       setOutput('Cargando dispositivos desde el servidor ADB local...');
+      refreshAppVersion();
       wsapi.connectWs();
     });
   </script>
