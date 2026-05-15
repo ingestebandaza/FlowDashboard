@@ -989,6 +989,11 @@
       transform: scale(0.98);
     }
 
+    .device-card.is-login-running {
+      border-color: rgba(255, 95, 114, 0.48);
+      box-shadow: 0 8px 18px rgba(255, 95, 114, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
     .device-list.is-list .device-card {
       aspect-ratio: auto;
       min-height: clamp(46px, calc(var(--device-tile-size) * 0.42), 104px);
@@ -1067,6 +1072,19 @@
 
     .device-edit-btn {
       right: 8px;
+    }
+
+    .device-stop-btn {
+      left: 8px;
+      color: #ffd5db;
+      background: rgba(255, 95, 114, 0.18);
+      border-color: rgba(255, 95, 114, 0.34);
+      opacity: 1;
+      box-shadow: 0 0 16px rgba(255, 95, 114, 0.18);
+    }
+
+    .device-list.is-list .device-stop-btn {
+      left: 8px;
     }
 
     .device-person-btn.has-data {
@@ -3063,6 +3081,14 @@
       });
     }
 
+    const FLOWLOGIN_PLAY_STATUSES = new Set(['pending']);
+
+    function getPendingFlowLoginItems(device) {
+      return getDeviceAccountStatuses(device).filter(item => {
+        return item.line && FLOWLOGIN_PLAY_STATUSES.has(item.status || 'pending');
+      });
+    }
+
     function getTargetDeviceIds() {
       return state.selectedDeviceIds.length ? state.selectedDeviceIds.join(',') : 'all';
     }
@@ -4139,6 +4165,10 @@
       delete els.deviceFlowMenu.dataset.deviceId;
     }
 
+    function isDeviceLoginRunning(deviceId) {
+      return parseDeviceIdList(state.loginPollingDeviceIds).includes(deviceId);
+    }
+
     function setDevicePersonMessage(text, type = '') {
       if (!els.devicePersonMessage) return;
       els.devicePersonMessage.textContent = text || '';
@@ -4218,11 +4248,13 @@
       state.flowMenuDeviceId = deviceId;
       els.deviceFlowMenu.dataset.deviceId = deviceId;
       const lines = getDeviceAccountLines(device);
+      const pendingItems = getPendingFlowLoginItems(device);
       const editableItems = getBulkEditableAccountItems(device);
       const freeSlots = Math.max(0, 10 - lines.length);
       const freeAccounts = getAvailableAccountRecordsForDeviceAdd(deviceId).length;
       const addMax = Math.min(freeSlots, freeAccounts);
-      els.deviceFlowPlay.disabled = !lines.length;
+      els.deviceFlowPlay.disabled = !pendingItems.length || isDeviceLoginRunning(deviceId);
+      els.deviceFlowStop.disabled = !isDeviceLoginRunning(deviceId);
       els.deviceFlowRetryAccounts.disabled = !editableItems.length;
       els.deviceFlowReplaceAccounts.disabled = !editableItems.length;
       els.deviceFlowAddAccounts.disabled = freeSlots <= 0;
@@ -4519,6 +4551,7 @@
         const id = getDeviceId(device);
         const targetDropzone = dropzones.get(getDeviceCategoryId(id)) || dropzones.get('');
         const card = document.createElement('div');
+        const stopBtn = document.createElement('button');
         const personBtn = document.createElement('button');
         const editBtn = document.createElement('button');
         const accountStatusColumn = document.createElement('div');
@@ -4532,13 +4565,19 @@
         const accountStatuses = getDeviceAccountStatuses(device);
         const agent = getAgentForDevice(device);
         const agentReady = isFlowAgentReady(agent);
+        const isLoginRunning = isDeviceLoginRunning(id);
 
         card.tabIndex = 0;
         card.setAttribute('role', 'button');
         card.setAttribute('aria-label', `Seleccionar ${getDeviceName(device, index)}`);
         card.dataset.deviceId = id;
         card.draggable = true;
-        card.className = `device-card${isMultiSelected ? ' is-selected' : ''}`;
+        card.className = `device-card${isMultiSelected ? ' is-selected' : ''}${isLoginRunning ? ' is-login-running' : ''}`;
+        stopBtn.type = 'button';
+        stopBtn.className = 'device-action-btn device-stop-btn';
+        stopBtn.setAttribute('aria-label', `Detener FlowLogin de ${getDeviceName(device, index)}`);
+        stopBtn.setAttribute('title', 'Detener FlowLogin');
+        stopBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>';
         personBtn.type = 'button';
         personBtn.className = `device-action-btn device-person-btn${device.person ? ' has-data' : ''}`;
         personBtn.setAttribute('aria-label', `Editar cuentas de ${getDeviceName(device, index)}`);
@@ -4636,7 +4675,18 @@
 
         nameLine.append(name);
         nameRow.append(nameLine, badge);
+        if (isLoginRunning) {
+          card.appendChild(stopBtn);
+        }
         card.append(personBtn, editBtn, accountStatusColumn, nameRow, loginSummary, deviceId);
+        stopBtn.addEventListener('pointerdown', event => {
+          event.stopPropagation();
+        });
+        stopBtn.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          stopFlowLoginForDevice(id);
+        });
         personBtn.addEventListener('pointerdown', event => {
           event.stopPropagation();
         });
@@ -4715,6 +4765,7 @@
       state.loginLastStatusSignature = '';
       state.runningFlow = '';
       updateFlowRunControls();
+      renderDevices();
     }
 
     function loginStatusesAreTerminal(deviceIds) {
@@ -4763,6 +4814,7 @@
       state.loginLastProgressAt = Date.now();
       state.runningFlow = 'FlowLogin';
       updateFlowRunControls();
+      renderDevices();
     }
 
     function startLoginStatusPolling(deviceIds, merge = false) {
@@ -4779,6 +4831,7 @@
       state.loginLastStatusSignature = loginStatusSignature(state.loginPollingDeviceIds);
       state.runningFlow = 'FlowLogin';
       updateFlowRunControls();
+      renderDevices();
       const poll = async () => {
         try {
           const [devices] = await wsapi.refreshLoginStatus({ deviceIds: state.loginPollingDeviceIds });
@@ -5444,30 +5497,20 @@
         appendOutput('No hay cuentas asignadas', `${shortDeviceId(deviceId)} no tiene cuentas guardadas para FlowLogin.`);
         return;
       }
-      const loginPath = selectLoginScript();
-      if (!loginPath) {
-        appendOutput('Falta Login.js', 'No se encontro Login.js en el selector de scripts.');
+      const pendingItems = getPendingFlowLoginItems(device);
+      if (!pendingItems.length) {
+        appendOutput('Sin cuentas nuevas', `${shortDeviceId(deviceId)} no tiene bolitas grises pendientes. Usa Reintentar Cuentas para volver a probar rojas/revision.`);
         return;
       }
 
       setBusy(true);
       try {
-        await ensureFlowAgentsForDevices([deviceId]);
-        const readyIds = getReadyFlowAgentDeviceIds([deviceId]);
-        if (!readyIds.length) {
-          appendOutput('FlowLogin no se pudo iniciar', `${shortDeviceId(deviceId)} no quedo listo con FlowAgent.`);
-          return;
-        }
-        const [devices, result] = await wsapi.executeAutoJs({
-          deviceIds: deviceId,
-          filePath: loginPath,
-          delimiter: getAccountDelimiter()
-        });
-        state.devices = devices;
-        markDeviceAccountsAttempted([deviceId], 'running');
-        renderDevices();
-        startLoginStatusPolling(deviceId, true);
-        appendOutput('FlowLogin iniciado en dispositivo', `${shortDeviceId(deviceId)}\n\n${result}`);
+        await runDeviceClones(
+          deviceId,
+          pendingItems.map(item => item.clone),
+          'FlowLogin iniciado en cuentas nuevas',
+          'Cuenta nueva'
+        );
       } catch (error) {
         appendOutput('Error al iniciar FlowLogin del dispositivo', error.message);
       } finally {
