@@ -662,6 +662,7 @@
                       <button type="button" data-action="edit-license" data-id="${item.id}">Editar</button>
                       <button class="success" type="button" data-action="license-status" data-id="${item.id}" data-status="approved">Aprobar</button>
                       <button class="danger" type="button" data-action="license-status" data-id="${item.id}" data-status="blocked">Bloquear</button>
+                      <button class="danger" type="button" data-action="delete-license" data-id="${item.id}">Eliminar</button>
                     </div>
                   </td>
                 </tr>`;
@@ -803,6 +804,29 @@
       await loadAll();
     }
 
+    async function deleteLicense(id) {
+      const license = state.licenses.find((item) => item.id === id);
+      if (!license) return;
+      const deviceCount = state.devices.filter((device) => device.license_id === id).length;
+      const label = license.customer_name || license.customer_email || license.license_key || id;
+      const confirmed = window.confirm(
+        `Eliminar licencia "${label}"?\n\nSe borraran tambien ${deviceCount} PC(s) vinculada(s). Se intentara limpiar registros de aprobacion e intentos de acceso de esta licencia. Esta accion no se puede deshacer.`
+      );
+      if (!confirmed) return;
+
+      await api(`/rest/v1/app_devices?license_id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+      await api(`/rest/v1/app_licenses?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (license.license_key) {
+        const encodedKey = encodeURIComponent(license.license_key);
+        await Promise.allSettled([
+          api(`/rest/v1/app_device_registrations?license_key=eq.${encodedKey}`, { method: 'DELETE' }),
+          api(`/rest/v1/app_access_logs?license_key=eq.${encodedKey}`, { method: 'DELETE' })
+        ]);
+      }
+      toast('Licencia eliminada.');
+      await loadAll();
+    }
+
     async function updateDeviceStatus(id, status) {
       await api(`/rest/v1/app_devices?id=eq.${encodeURIComponent(id)}`, {
         method: 'PATCH',
@@ -849,6 +873,8 @@
         openLicenseModal(state.licenses.find((item) => item.id === id));
       } else if (name === 'license-status') {
         updateLicenseStatus(id, status).catch((error) => toast(error.message));
+      } else if (name === 'delete-license') {
+        deleteLicense(id).catch((error) => toast(error.message));
       } else if (name === 'device-status') {
         updateDeviceStatus(id, status).catch((error) => toast(error.message));
       }
