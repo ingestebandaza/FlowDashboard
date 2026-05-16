@@ -131,7 +131,7 @@ com.flowlogin.agent
 Version actual:
 
 ```text
-0.2.1
+0.2.2
 ```
 
 Cambios clave:
@@ -148,11 +148,13 @@ Comandos soportados actualmente por `/agent/command`:
 - `status`
 - `dump`
 - `launchPackage`
+- `openAppInfo`
 - `getEditTexts`
 - `clickText`
 - `setText`
 - `setTextIndex`
 - `tap`
+- `swipe`
 - `home`
 - `back`
 - `recents`
@@ -493,3 +495,10 @@ Actualizacion automatica:
 - `agent_for_serial()` acepta claves `mac:...`/`serial:...` y las resuelve al serial ADB actual antes de buscar el socket, manteniendo el runner compatible con la identidad estable por MAC.
 - `launcher.py` y `abrir_dashboard.bat` exigen la feature `device_visible_ip` para no reutilizar un servidor viejo que todavia muestre MAC en tarjetas o falle al emparejar Socket con `deviceKey`.
 - Version comercial preparada como `1.0.28` para publicar el ZIP de actualizacion con la IP visible en tarjetas y el arreglo de deteccion Socket.
+- FlowAgent APK subio a `0.2.2`: agrega comandos socket `openAppInfo` y `swipe`, y el dump de accesibilidad ahora expone `checkable`, `checked`, `selected` y `enabled` para decidir switches/radios sin ADB.
+- `FLOW_AGENT_EXPECTED_VERSION` ahora exige `0.2.2`; el dashboard y el launcher no consideran listo un agente viejo para el flujo actual, obligando a reinstalar/actualizar antes de FlowLogin.
+- La limpieza visual previa al segundo intento de login ahora es socket-only: FlowAgent abre App info, entra a Storage/Almacenamiento, pulsa Clear cache, Clear data y confirma; luego vuelve a App info, entra a Permissions/Permisos, revisa Storage/Almacenamiento y activa Allow/Permitir segun flujo de switch (Android 9) o radio/Allow (Android 10+).
+- `clear_clone_cache_data_visual()` ya no cae a `pm clear` ni abre App info con ADB durante este flujo; si la limpieza por socket falla, la cuenta queda con error/revision del intento de limpieza en lugar de usar ADB como motor alterno.
+- `reset_flowlogin_clone_start()` ya no hace `adb shell am force-stop`; despues de restaurar permisos, el segundo intento vuelve a `home` y lanza el clon por FlowAgent.
+- Se copio el proyecto fuente de `flow_agent_apk` dentro de esta carpeta para que futuras modificaciones del APK queden visibles junto al dashboard. La APK compilada incluida en `flow_agent_apk/build/flowagent-debug.apk` corresponde a FlowAgent `0.2.2`.
+- Version comercial preparada como `1.0.29` para publicar una nueva actualizacion con limpieza App info y restauracion de permiso Storage por socket.

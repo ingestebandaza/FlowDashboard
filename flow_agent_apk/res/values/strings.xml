@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">FlowAgent</string>
+    <string name="accessibility_description">FlowAgent permite automatizar este dispositivo desde tu dashboard local.</string>
+    <color name="icon_background">#07111F</color>
+</resources>

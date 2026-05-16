@@ -3147,7 +3147,8 @@
     function isFlowAgentReady(agent) {
       if (!agent || !agent.accessibility) return false;
       const [major, minor] = versionParts(agent.agentVersion);
-      return major > 0 || minor >= 2;
+      const [, , patch] = versionParts(agent.agentVersion);
+      return major > 0 || minor > 2 || (minor === 2 && patch >= 2);
     }
 
     function normalizeCountryCode(value) {

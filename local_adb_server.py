@@ -31,7 +31,7 @@ PORT = 8765
 AGENT_HOST = "0.0.0.0"
 AGENT_PORT = 8766
 SERVER_VERSION = "2026-05-12-device-public-ip-refresh"
-SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics", "visual_update_check", "bundled_flowagent_apk", "device_categories", "device_mac_identity", "flowagent_auto_socket_watchdog", "device_visible_ip"]
+SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics", "visual_update_check", "bundled_flowagent_apk", "device_categories", "device_mac_identity", "flowagent_auto_socket_watchdog", "device_visible_ip", "flowagent_socket_app_info_permissions"]
 
 
 def unique_paths(values):
@@ -153,7 +153,7 @@ def find_flow_agent_apk():
 FLOW_AGENT_APK = find_flow_agent_apk()
 FLOW_AGENT_PACKAGE = "com.flowlogin.agent"
 FLOW_AGENT_ACTIVITY = "com.flowlogin.agent/.MainActivity"
-FLOW_AGENT_EXPECTED_VERSION = "0.2.1"
+FLOW_AGENT_EXPECTED_VERSION = "0.2.2"
 FLOWLOGIN_ACCOUNTS_REMOTE = "/sdcard/Download/flowlogin_accounts.json"
 FLOWLOGIN_STATUS_REMOTE = "/sdcard/Download/flowlogin_status.json"
 SPOTIFY_CLONE_PACKAGES = [
@@ -2055,6 +2055,102 @@ def clear_clone_cache_data(serial, package_name):
     return output or f"{package_name} cache/datos limpiados"
 
 
+STORAGE_PERMISSION_PATTERNS = [
+    r"^Storage$",
+    r"Almacenamiento",
+    r"Files and media",
+    r"Archivos y contenido multimedia",
+    r"Archivos y multimedia",
+]
+
+
+def find_permissions_entry_socket(agent, max_swipes=8):
+    for index in range(max_swipes + 1):
+        node = agent_find_text_node(agent, [r"^Permissions$", r"^Permisos$"], timeout=1.2, contains=False)
+        if node:
+            return node
+        if index < max_swipes:
+            agent_scroll_up(agent)
+    return None
+
+
+def node_center_y(node):
+    bounds = agent_bounds(node)
+    return bounds["centerY"] if bounds else -10000
+
+
+def restore_storage_permission_socket(agent):
+    permissions = find_permissions_entry_socket(agent)
+    if not permissions:
+        return "Permisos no encontrado; se continua sin restaurar Storage."
+    agent_click_node(agent, permissions)
+    time.sleep(1.2)
+
+    nodes = agent_dump(agent, max_nodes=500, timeout=10)
+    has_switch = any("switch" in str(node.get("className", "") or "").lower() for node in nodes)
+
+    if has_switch:
+        storage_row = agent_find_text_node(agent, STORAGE_PERMISSION_PATTERNS, timeout=2.0, contains=True)
+        storage_y = node_center_y(storage_row) if storage_row else -10000
+        switches = [
+            node for node in agent_dump(agent, max_nodes=500, timeout=10)
+            if "switch" in str(node.get("className", "") or "").lower()
+        ]
+        target = None
+        if storage_row:
+            for node in switches:
+                if abs(node_center_y(node) - storage_y) < 140:
+                    target = node
+                    break
+        if target is None:
+            target = next((node for node in switches if not bool(node.get("checked"))), None)
+        if target is not None and not bool(target.get("checked")):
+            agent_click_node(agent, target)
+            time.sleep(0.8)
+        agent_result(agent, {"name": "back"}, timeout=8, raise_on_error=False)
+        time.sleep(0.9)
+        return "Permiso Storage revisado por switch."
+
+    storage_button = agent_find_text_node(agent, STORAGE_PERMISSION_PATTERNS, timeout=2.5, contains=True)
+    if not storage_button:
+        agent_scroll_up(agent)
+        storage_button = agent_find_text_node(agent, STORAGE_PERMISSION_PATTERNS, timeout=1.8, contains=True)
+    if storage_button:
+        agent_click_node(agent, storage_button)
+        time.sleep(1.2)
+
+    allow_node = agent_find_text_node(agent, [r"^Allow$", r"^Permitir$"], timeout=1.5, contains=False)
+    if allow_node:
+        allow_y = node_center_y(allow_node)
+        radios = [
+            node for node in agent_dump(agent, max_nodes=500, timeout=10)
+            if "radiobutton" in str(node.get("className", "") or "").lower()
+        ]
+        target_radio = next((node for node in radios if abs(node_center_y(node) - allow_y) < 130), None)
+        if target_radio is not None and not bool(target_radio.get("checked")):
+            agent_click_node(agent, target_radio)
+            time.sleep(0.7)
+        elif target_radio is None:
+            agent_click_node(agent, allow_node)
+            time.sleep(0.7)
+    else:
+        fallback = agent_find_text_node(
+            agent,
+            [r"Allow access to media only", r"Allow management of all files", r"Permitir"],
+            timeout=1.5,
+            contains=True,
+        )
+        if fallback:
+            agent_click_node(agent, fallback)
+            time.sleep(0.7)
+
+    agent_result(agent, {"name": "back"}, timeout=8, raise_on_error=False)
+    time.sleep(0.9)
+    agent_result(agent, {"name": "back"}, timeout=8, raise_on_error=False)
+    time.sleep(0.9)
+    return "Permiso Storage revisado por pantalla Allow."
+
+
 def clear_clone_cache_data_visual(serial, package_name):
     package_name = str(package_name or "").strip()
     if not package_name:
@@ -2062,15 +2158,10 @@ def clear_clone_cache_data_visual(serial, package_name):
 
     agent = agent_for_serial(serial)
     if not agent or not agent_supports_flowlogin(agent):
-        return clear_clone_cache_data(serial, package_name)
+        raise RuntimeError("FlowAgent no conectado o sin Accesibilidad para limpiar el clon por socket.")
 
     try:
-        adb([
-            "-s", serial,
-            "shell", "am", "start",
-            "-a", "android.settings.APPLICATION_DETAILS_SETTINGS",
-            "-d", f"package:{package_name}",
-        ], timeout=20)
+        agent_open_app_info(agent, package_name)
         time.sleep(2.2)
         agent_ui_has_marker(agent, r"(App info|Informaci.n|Spotify|Almacenamiento|Storage)", timeout=5)
 
@@ -2108,20 +2199,20 @@ def clear_clone_cache_data_visual(serial, package_name):
             ], timeout=4)
             time.sleep(1.8)
 
+        if not data_clicked:
+            raise RuntimeError("No se encontro Clear data/Borrar datos en App info.")
+
+        agent_result(agent, {"name": "back"}, timeout=8, raise_on_error=False)
+        time.sleep(0.9)
+        permission_result = restore_storage_permission_socket(agent)
+        agent_result(agent, {"name": "home"}, timeout=8, raise_on_error=False)
+        return f"{package_name} cache/datos limpiados por socket. {permission_result}"
+    except Exception as exc:
         try:
-            agent_result(agent, {"name": "back"}, timeout=8, raise_on_error=False)
-            time.sleep(0.5)
-            agent_result(agent, {"name": "back"}, timeout=8, raise_on_error=False)
-            time.sleep(0.5)
             agent_result(agent, {"name": "home"}, timeout=8, raise_on_error=False)
         except Exception:
             pass
-
-        if data_clicked:
-            return f"{package_name} cache/datos limpiados desde App info."
-        return clear_clone_cache_data(serial, package_name)
-    except Exception:
-        return clear_clone_cache_data(serial, package_name)
+        raise RuntimeError(f"Limpieza por socket fallo: {exc}")
 
 
 def run_flowlogin_agent_attempt(serial, item, account, attempt, status_label, line, stop_event):
@@ -2159,7 +2250,7 @@ def run_flowlogin_agent_job(serial, payload_path, delimiter=":", stop_event=None
             message = (
                 "FlowAgent no conectado. Pulsa Instalar FlowAgent y activa Accesibilidad."
                 if not agent
-                else "FlowAgent debe actualizarse a 0.2.0 y tener Accesibilidad activa."
+                else f"FlowAgent debe actualizarse a {FLOW_AGENT_EXPECTED_VERSION} y tener Accesibilidad activa."
             )
             for item in accounts:
                 if not isinstance(item, dict):
@@ -2358,7 +2449,7 @@ def start_flowlogin_agent_jobs(serials, clone=None, clones=None, delimiter=":"):
                 message = (
                     "FlowAgent no conectado. Pulsa Instalar FlowAgent y activa Accesibilidad."
                     if not agent
-                    else "FlowAgent debe actualizarse a 0.2.0 y tener Accesibilidad activa."
+                    else f"FlowAgent debe actualizarse a {FLOW_AGENT_EXPECTED_VERSION} y tener Accesibilidad activa."
                 )
                 for item in payload.get("accounts", []):
                     if not isinstance(item, dict):
@@ -2695,7 +2786,7 @@ def version_tuple(value):
 def agent_supports_flowlogin(agent):
     if not agent:
         return False
-    return bool(agent.meta.get("accessibility")) and version_tuple(agent.meta.get("agentVersion", "")) >= (0, 2, 0)
+    return bool(agent.meta.get("accessibility")) and version_tuple(agent.meta.get("agentVersion", "")) >= version_tuple(FLOW_AGENT_EXPECTED_VERSION)
 
 
 def agent_result(agent, command, timeout=12, raise_on_error=True):
@@ -2764,6 +2855,25 @@ def agent_tap(agent, x, y, timeout=8):
     return agent_result(agent, {"name": "tap", "x": int(x), "y": int(y)}, timeout=timeout)
 
 
+def agent_swipe(agent, start_x, start_y, end_x, end_y, duration=350, timeout=8):
+    return agent_result(
+        agent,
+        {
+            "name": "swipe",
+            "startX": int(start_x),
+            "startY": int(start_y),
+            "endX": int(end_x),
+            "endY": int(end_y),
+            "duration": int(duration),
+        },
+        timeout=timeout,
+    )
+
+
+def agent_open_app_info(agent, package_name, timeout=10):
+    return agent_result(agent, {"name": "openAppInfo", "packageName": package_name}, timeout=timeout)
+
+
 def agent_click_node(agent, node):
     bounds = agent_bounds(node)
     if not bounds or bounds["width"] <= 0 or bounds["height"] <= 0:
@@ -2817,6 +2927,48 @@ def agent_click_any_text(agent, patterns, timeout=4):
             time.sleep(1.1)
             return True
     return False
+
+
+def agent_find_text_node(agent, patterns, timeout=3, contains=True):
+    regexes = [re.compile(pattern, re.I) for pattern in patterns]
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            nodes = agent_dump(agent, max_nodes=500, timeout=10)
+            for node in nodes:
+                label = agent_node_label(node).strip()
+                if not label:
+                    continue
+                matched = any(regex.search(label) if contains else regex.fullmatch(label) for regex in regexes)
+                if matched:
+                    return node
+        except Exception:
+            pass
+        time.sleep(0.45)
+    return None
+
+
+def agent_screen_size_from_dump(agent):
+    width = 0
+    height = 0
+    try:
+        for node in agent_dump(agent, max_nodes=500, timeout=10):
+            bounds = agent_bounds(node)
+            if not bounds:
+                continue
+            width = max(width, bounds["right"])
+            height = max(height, bounds["bottom"])
+    except Exception:
+        pass
+    return max(width, 540), max(height, 960)
+
+
+def agent_scroll_up(agent):
+    width, height = agent_screen_size_from_dump(agent)
+    x = width // 2
+    agent_swipe(agent, x, int(height * 0.78), x, int(height * 0.28), duration=350)
+    time.sleep(0.7)
+    return True
 
 
 def agent_ui_has_marker(agent, pattern, timeout=3):
@@ -2893,10 +3045,6 @@ def agent_launch_package_and_wait(agent, package_name, wait_seconds=12):
 def reset_flowlogin_clone_start(serial, agent, package_name):
     try:
         agent_result(agent, {"name": "home"}, timeout=8, raise_on_error=False)
-    except Exception:
-        pass
-    try:
-        adb_shell(serial, f"am force-stop {shlex.quote(package_name)}", timeout=15)
     except Exception:
         pass
     time.sleep(0.8)
@@ -3067,7 +3215,7 @@ def perform_flowlogin_agent(serial, item, account):
     if not agent:
         return {"status": "review", "message": "FlowAgent no conectado. Instala/actualiza FlowAgent y activa Accesibilidad.", "retry": False}
     if not agent_supports_flowlogin(agent):
-        return {"status": "review", "message": "FlowAgent debe actualizarse a 0.2.0 y tener Accesibilidad activa.", "retry": False}
+        return {"status": "review", "message": f"FlowAgent debe actualizarse a {FLOW_AGENT_EXPECTED_VERSION} y tener Accesibilidad activa.", "retry": False}
 
     package_name = str(item.get("package", "") or "").strip()
     clone = int(item.get("clone", 0) or 0)
