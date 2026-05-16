@@ -31,7 +31,7 @@ PORT = 8765
 AGENT_HOST = "0.0.0.0"
 AGENT_PORT = 8766
 SERVER_VERSION = "2026-05-12-device-public-ip-refresh"
-SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics", "visual_update_check", "bundled_flowagent_apk", "device_categories", "device_mac_identity", "flowagent_auto_socket_watchdog"]
+SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics", "visual_update_check", "bundled_flowagent_apk", "device_categories", "device_mac_identity", "flowagent_auto_socket_watchdog", "device_visible_ip"]
 
 
 def unique_paths(values):
@@ -185,6 +185,8 @@ PUBLIC_IP_LOCK = threading.Lock()
 PUBLIC_IP_CACHE_TTL = 600
 DEVICE_MAC_CACHE = {}
 DEVICE_MAC_LOCK = threading.Lock()
+DEVICE_LOCAL_IP_CACHE = {}
+DEVICE_LOCAL_IP_LOCK = threading.Lock()
 LAST_ADB_DEVICES_OUTPUT = ""
 UPDATE_LOCK = threading.Lock()
 UPDATE_STATUS = {
@@ -1425,6 +1427,7 @@ def list_devices():
         account_statuses = profile.get("accountStatuses", []) if isinstance(profile, dict) else []
         name = custom_name or original_name
         android_id = get_device_android_id(serial)
+        device_ip = get_device_local_ip_address(serial)
         with PUBLIC_IP_LOCK:
             cached_public_ip = PUBLIC_IP_CACHE.get(serial, {})
         public_ip_info = dict(cached_public_ip.get("data", {})) if isinstance(cached_public_ip, dict) else {}
@@ -1435,6 +1438,7 @@ def list_devices():
             "deviceKey": device_key,
             "legacyDeviceId": serial,
             "androidId": android_id,
+            "deviceIp": device_ip,
             "publicIp": public_ip_info.get("publicIp", ""),
             "countryCode": public_ip_info.get("countryCode", ""),
             "countryName": public_ip_info.get("countryName", ""),
@@ -1618,6 +1622,45 @@ def refresh_device_public_ip(serial):
         "countryCode": data.get("countryCode", ""),
         "countryName": data.get("countryName", ""),
     }
+
+
+def serial_host_ip(serial):
+    text = str(serial or "").strip()
+    match = re.match(r"^(\d{1,3}(?:\.\d{1,3}){3})(?::\d+)?$", text)
+    return match.group(1) if match else ""
+
+
+def get_device_local_ip_address(serial):
+    """IP local visible del telefono; la identidad estable sigue siendo MAC/deviceKey."""
+    serial = str(serial or "").strip()
+    if not serial:
+        return ""
+    direct_ip = serial_host_ip(serial)
+    if direct_ip:
+        return direct_ip
+    if serial.startswith("serial:"):
+        serial = serial[7:]
+    with DEVICE_LOCAL_IP_LOCK:
+        cached = DEVICE_LOCAL_IP_CACHE.get(serial, "")
+        if cached:
+            return cached
+    commands = [
+        "ip route get 8.8.8.8 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i==\"src\") {print $(i+1); exit}}'",
+        "ip -f inet addr show wlan0 2>/dev/null | awk '/inet / {sub(/\\/.*$/, \"\", $2); print $2; exit}'",
+        "ifconfig wlan0 2>/dev/null | awk '/inet addr:/ {sub(/.*inet addr:/, \"\"); sub(/ .*/, \"\"); print; exit} /inet / {print $2; exit}'",
+    ]
+    for command in commands:
+        try:
+            output = adb_shell(serial, command, timeout=4).strip()
+            match = re.search(r"\b\d{1,3}(?:\.\d{1,3}){3}\b", output)
+            if match:
+                ip = match.group(0)
+                with DEVICE_LOCAL_IP_LOCK:
+                    DEVICE_LOCAL_IP_CACHE[serial] = ip
+                return ip
+        except Exception:
+            continue
+    return ""
 
 
 def get_device_mac_address(serial):
@@ -2622,6 +2665,10 @@ def agent_for_serial(serial):
     serial = str(serial or "").strip()
     if not serial:
         return None
+    if serial.startswith(("mac:", "serial:")):
+        serials = get_target_serials(serial)
+        if serials:
+            serial = serials[0]
     with AGENT_CONNECTIONS_LOCK:
         for agent in AGENT_CONNECTIONS.values():
             if str(agent.meta.get("serial", "") or "").strip() == serial:

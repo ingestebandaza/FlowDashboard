@@ -12,7 +12,7 @@ from app_meta import APP_NAME, APP_VERSION
 
 SERVER_PORT = 8765
 HTML_FILE = "wsapi_demo.html"
-REQUIRED_SERVER_FEATURES = {"static_dashboard", "client_info", "license_remember", "adb_path_probe", "client_network_info", "adb_diagnostics", "visual_update_check", "bundled_flowagent_apk", "device_categories"}
+REQUIRED_SERVER_FEATURES = {"static_dashboard", "client_info", "license_remember", "adb_path_probe", "client_network_info", "adb_diagnostics", "visual_update_check", "bundled_flowagent_apk", "device_categories", "device_visible_ip"}
 
 
 def app_dir():

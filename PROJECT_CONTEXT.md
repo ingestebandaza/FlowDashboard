@@ -487,3 +487,9 @@ Actualizacion automatica:
 - `ensureFlowAgentsForDevices()` acepta modo silencioso para reparacion automatica: crea/recrea `adb reverse`, abre FlowAgent con `autoconnect=true`, refresca agentes y solo muestra aviso si la accion fue manual o no es watchdog.
 - El Play del menu contextual respeta seleccion multiple: si se hace clic derecho sobre una tarjeta ya seleccionada, Play ejecuta las cuentas pendientes de todos los dispositivos seleccionados; si se hace clic derecho sobre una tarjeta no seleccionada, opera solo sobre esa tarjeta.
 - Version comercial preparada como `1.0.27` para publicar el ZIP de actualizacion con estos cambios.
+- La grilla ahora muestra la IP local del dispositivo en la tarjeta en lugar del `mac:...`, pero la identidad interna para nombres, cuentas, categorias y estados sigue siendo `deviceKey` basado en MAC cuando esta disponible.
+- `/devices` incluye `deviceIp`; para ADB WiFi se deriva del serial `IP:5555` y para USB puede consultarse desde Android como fallback.
+- Se corrigio el emparejamiento visual de FlowAgent: el frontend compara agentes tambien contra `device.serial`/`legacyDeviceId`, no solo contra `deviceKey`, para que las tarjetas muestren `Socket` cuando FlowAgent ya esta conectado.
+- `agent_for_serial()` acepta claves `mac:...`/`serial:...` y las resuelve al serial ADB actual antes de buscar el socket, manteniendo el runner compatible con la identidad estable por MAC.
+- `launcher.py` y `abrir_dashboard.bat` exigen la feature `device_visible_ip` para no reutilizar un servidor viejo que todavia muestre MAC en tarjetas o falle al emparejar Socket con `deviceKey`.
+- Version comercial preparada como `1.0.28` para publicar el ZIP de actualizacion con la IP visible en tarjetas y el arreglo de deteccion Socket.

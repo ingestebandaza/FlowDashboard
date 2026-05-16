@@ -3046,6 +3046,18 @@
       return device.deviceId || device.id || device.serial || device.udid || device.name || JSON.stringify(device);
     }
 
+    function getDeviceDisplayIp(device) {
+      if (typeof device === 'string') {
+        return device.startsWith('mac:') ? device : device.replace(/:5555$/, '');
+      }
+      const explicitIp = String(device.deviceIp || '').trim();
+      if (explicitIp) return explicitIp;
+      const serial = String(device.serial || device.legacyDeviceId || '').trim();
+      const match = serial.match(/^(\d{1,3}(?:\.\d{1,3}){3})(?::\d+)?$/);
+      if (match) return match[1];
+      return serial || getDeviceId(device);
+    }
+
     function getDeviceName(device, index) {
       if (typeof device === 'string') return `Dispositivo ${index + 1}`;
       return device.name || device.customName || device.deviceName || device.model || device.brand || `Dispositivo ${index + 1}`;
@@ -3111,7 +3123,13 @@
 
     function getAgentForDevice(device) {
       const deviceId = String(getDeviceId(device) || '').trim();
-      const bySerial = state.agents.find(agent => String(agent.serial || '').trim() === deviceId);
+      const serials = [
+        deviceId,
+        device && device.serial,
+        device && device.legacyDeviceId,
+        device && device.deviceIp ? `${device.deviceIp}:5555` : ''
+      ].map(item => String(item || '').trim()).filter(Boolean);
+      const bySerial = state.agents.find(agent => serials.includes(String(agent.serial || '').trim()));
       if (bySerial) return bySerial;
       const androidId = String(device.androidId || '').trim().toLowerCase();
       if (!androidId) return null;
@@ -4729,7 +4747,8 @@
         loginSummary.className = 'device-login-summary';
         loginSummary.textContent = accountStatuses.length ? getDeviceLoginSummary(accountStatuses) : 'Sin cuentas';
         deviceId.className = 'device-id';
-        deviceId.textContent = id;
+        deviceId.textContent = getDeviceDisplayIp(device);
+        deviceId.title = `IP: ${getDeviceDisplayIp(device)}\nID interno: ${id}`;
 
         nameLine.append(name);
         nameRow.append(nameLine, badge);
