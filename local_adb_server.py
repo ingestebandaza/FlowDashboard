@@ -31,7 +31,7 @@ PORT = 8765
 AGENT_HOST = "0.0.0.0"
 AGENT_PORT = 8766
 SERVER_VERSION = "2026-05-12-device-public-ip-refresh"
-SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics", "visual_update_check", "bundled_flowagent_apk", "device_categories"]
+SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics", "visual_update_check", "bundled_flowagent_apk", "device_categories", "device_mac_identity", "flowagent_auto_socket_watchdog"]
 
 
 def unique_paths(values):
@@ -610,6 +610,56 @@ def normalize_device_profiles(data):
     return profiles
 
 
+def normalize_mac_address(value):
+    text = str(value or "").strip().upper().replace("-", ":")
+    match = re.fullmatch(r"([0-9A-F]{2}:){5}[0-9A-F]{2}", text)
+    return text if match else ""
+
+
+def device_key_from_parts(serial, mac_address=""):
+    mac = normalize_mac_address(mac_address)
+    if mac:
+        return f"mac:{mac}"
+    serial = str(serial or "").strip()
+    return f"serial:{serial}" if serial else ""
+
+
+def merge_device_profiles(primary, fallback, key):
+    primary = primary if isinstance(primary, dict) else {}
+    fallback = fallback if isinstance(fallback, dict) else {}
+    name = str(primary.get("name", "") or "") or str(fallback.get("name", "") or "")
+    person = str(primary.get("person", "") or "") or str(fallback.get("person", "") or "")
+    statuses = primary.get("accountStatuses") or fallback.get("accountStatuses") or []
+    return {
+        "name": name,
+        "person": person,
+        "accountStatuses": normalize_account_statuses(key, person, statuses),
+    }
+
+
+def migrate_device_profile_key(names, legacy_key, stable_key):
+    legacy_key = str(legacy_key or "").strip()
+    stable_key = str(stable_key or "").strip()
+    if not legacy_key or not stable_key or legacy_key == stable_key or legacy_key not in names:
+        return names, False
+    names[stable_key] = merge_device_profiles(names.get(stable_key, {}), names.get(legacy_key, {}), stable_key)
+    names.pop(legacy_key, None)
+    return names, True
+
+
+def resolve_device_profile_key(device_id):
+    raw = str(device_id or "").strip()
+    if not raw:
+        return ""
+    if raw.startswith(("mac:", "serial:")):
+        return raw
+    try:
+        mac = get_device_mac_address(raw)
+    except Exception:
+        mac = ""
+    return device_key_from_parts(raw, mac) or raw
+
+
 def limit_lines(value, max_lines=10):
     lines = str(value or "").replace("\r\n", "\n").replace("\r", "\n").split("\n")
     return "\n".join(lines[:max_lines]).strip()
@@ -674,23 +724,39 @@ def save_device_groups(data):
     return normalized
 
 
+def migrate_device_group_key(legacy_key, stable_key):
+    legacy_key = str(legacy_key or "").strip()
+    stable_key = str(stable_key or "").strip()
+    if not legacy_key or not stable_key or legacy_key == stable_key:
+        return
+    groups = load_device_groups()
+    assignments = groups.get("assignments", {})
+    if legacy_key not in assignments:
+        return
+    assignments.setdefault(stable_key, assignments.get(legacy_key))
+    assignments.pop(legacy_key, None)
+    save_device_groups(groups)
+
+
 def set_device_name(serial, name):
     serial = str(serial or "").strip()
     name = str(name or "").strip()
     if not serial:
         raise RuntimeError("Falta el serial del dispositivo.")
 
+    key = resolve_device_profile_key(serial)
     names = load_device_names()
-    profile = names.get(serial, {"name": "", "person": "", "accountStatuses": []})
+    names, _ = migrate_device_profile_key(names, serial, key)
+    profile = names.get(key, {"name": "", "person": "", "accountStatuses": []})
     if name:
         profile["name"] = name[:80]
-        names[serial] = profile
+        names[key] = profile
     else:
         profile["name"] = ""
         if profile.get("person") or profile.get("accountStatuses"):
-            names[serial] = profile
+            names[key] = profile
         else:
-            names.pop(serial, None)
+            names.pop(key, None)
     save_device_names(names)
     return names
 
@@ -701,20 +767,22 @@ def set_device_person(serial, person):
     if not serial:
         raise RuntimeError("Falta el serial del dispositivo.")
 
+    key = resolve_device_profile_key(serial)
     names = load_device_names()
-    profile = names.get(serial, {"name": "", "person": "", "accountStatuses": []})
+    names, _ = migrate_device_profile_key(names, serial, key)
+    profile = names.get(key, {"name": "", "person": "", "accountStatuses": []})
     previous_statuses = profile.get("accountStatuses", [])
     if person:
         profile["person"] = person[:1200]
-        profile["accountStatuses"] = normalize_account_statuses(serial, profile["person"], previous_statuses)
-        names[serial] = profile
+        profile["accountStatuses"] = normalize_account_statuses(key, profile["person"], previous_statuses)
+        names[key] = profile
     else:
         profile["person"] = ""
         profile["accountStatuses"] = []
         if profile.get("name"):
-            names[serial] = profile
+            names[key] = profile
         else:
-            names.pop(serial, None)
+            names.pop(key, None)
     save_device_names(names)
     return names
 
@@ -724,9 +792,11 @@ def update_device_account_statuses(serial, status_payload):
     if not serial:
         raise RuntimeError("Falta el serial del dispositivo.")
 
+    key = resolve_device_profile_key(serial)
     names = load_device_names()
-    profile = names.get(serial, {"name": "", "person": "", "accountStatuses": []})
-    current = normalize_account_statuses(serial, profile.get("person", ""), profile.get("accountStatuses", []))
+    names, _ = migrate_device_profile_key(names, serial, key)
+    profile = names.get(key, {"name": "", "person": "", "accountStatuses": []})
+    current = normalize_account_statuses(key, profile.get("person", ""), profile.get("accountStatuses", []))
     by_clone = {int(item.get("clone", 0)): item for item in current}
 
     items = status_payload.get("items", []) if isinstance(status_payload, dict) else []
@@ -754,9 +824,9 @@ def update_device_account_statuses(serial, status_payload):
 
     profile["accountStatuses"] = current
     if profile.get("name") or profile.get("person") or profile.get("accountStatuses"):
-        names[serial] = profile
+        names[key] = profile
     else:
-        names.pop(serial, None)
+        names.pop(key, None)
     save_device_names(names)
     return names
 
@@ -773,6 +843,7 @@ def set_device_account_status(serial, clone, status, message="", attempts=0, lin
         clone = 0
     if not serial or clone <= 0:
         return
+    key = resolve_device_profile_key(serial)
 
     status = str(status or "pending").lower()
     if status not in {"pending", "running", "retrying", "success", "error", "already", "review", "replaced"}:
@@ -780,8 +851,9 @@ def set_device_account_status(serial, clone, status, message="", attempts=0, lin
 
     with DEVICE_NAMES_LOCK:
         names = load_device_names()
-        profile = names.get(serial, {"name": "", "person": "", "accountStatuses": []})
-        current = normalize_account_statuses(serial, profile.get("person", ""), profile.get("accountStatuses", []))
+        names, _ = migrate_device_profile_key(names, serial, key)
+        profile = names.get(key, {"name": "", "person": "", "accountStatuses": []})
+        current = normalize_account_statuses(key, profile.get("person", ""), profile.get("accountStatuses", []))
         for item in current:
             try:
                 item_clone = int(item.get("clone", 0))
@@ -799,9 +871,9 @@ def set_device_account_status(serial, clone, status, message="", attempts=0, lin
 
         profile["accountStatuses"] = current
         if profile.get("name") or profile.get("person") or current:
-            names[serial] = profile
+            names[key] = profile
         else:
-            names.pop(serial, None)
+            names.pop(key, None)
         save_device_names(names)
 
 
@@ -1326,6 +1398,7 @@ def list_devices():
     output = adb(["devices", "-l"], timeout=20)
     LAST_ADB_DEVICES_OUTPUT = output
     saved_names = load_device_names()
+    profiles_changed = False
     devices = []
     for line in output.splitlines()[1:]:
         line = line.strip()
@@ -1340,7 +1413,13 @@ def list_devices():
         model = details.get("model", "").replace("_", " ")
         product = details.get("product", "").replace("_", " ")
         original_name = model or product or serial
-        profile = saved_names.get(serial, {})
+        mac_address = get_device_mac_address(serial)
+        device_key = device_key_from_parts(serial, mac_address)
+        saved_names, migrated = migrate_device_profile_key(saved_names, serial, device_key)
+        profiles_changed = profiles_changed or migrated
+        if migrated:
+            migrate_device_group_key(serial, device_key)
+        profile = saved_names.get(device_key, {})
         custom_name = profile.get("name", "") if isinstance(profile, dict) else str(profile or "")
         person = profile.get("person", "") if isinstance(profile, dict) else ""
         account_statuses = profile.get("accountStatuses", []) if isinstance(profile, dict) else []
@@ -1349,12 +1428,12 @@ def list_devices():
         with PUBLIC_IP_LOCK:
             cached_public_ip = PUBLIC_IP_CACHE.get(serial, {})
         public_ip_info = dict(cached_public_ip.get("data", {})) if isinstance(cached_public_ip, dict) else {}
-        with DEVICE_MAC_LOCK:
-            mac_address = DEVICE_MAC_CACHE.get(serial, "")
         devices.append({
-            "id": serial,
+            "id": device_key,
             "serial": serial,
-            "deviceId": serial,
+            "deviceId": device_key,
+            "deviceKey": device_key,
+            "legacyDeviceId": serial,
             "androidId": android_id,
             "publicIp": public_ip_info.get("publicIp", ""),
             "countryCode": public_ip_info.get("countryCode", ""),
@@ -1363,11 +1442,17 @@ def list_devices():
             "name": name,
             "customName": custom_name,
             "person": person,
-            "accountStatuses": normalize_account_statuses(serial, person, account_statuses),
+            "accountStatuses": normalize_account_statuses(device_key, person, account_statuses),
             "originalName": original_name,
             "model": model or original_name,
             "product": product,
         })
+    if profiles_changed:
+        save_device_names(saved_names)
+    devices.sort(key=lambda item: (
+        0 if str(item.get("deviceKey", "")).startswith("mac:") else 1,
+        str(item.get("deviceKey") or item.get("serial") or "").lower(),
+    ))
     return devices
 
 
@@ -1385,10 +1470,24 @@ def normalize_adb_command(command):
 def get_target_serials(device_ids):
     if not device_ids or device_ids == "all":
         return [device["serial"] for device in list_devices()]
+    devices = list_devices()
+    by_id = {}
+    for device in devices:
+        serial = str(device.get("serial", "") or "").strip()
+        for key in (
+            device.get("deviceKey"),
+            device.get("deviceId"),
+            device.get("id"),
+            device.get("legacyDeviceId"),
+            serial,
+        ):
+            key = str(key or "").strip()
+            if key and serial:
+                by_id[key] = serial
     if isinstance(device_ids, str):
-        return [item.strip() for item in device_ids.split(",") if item.strip()]
+        return [by_id.get(item.strip(), item.strip()) for item in device_ids.split(",") if item.strip()]
     if isinstance(device_ids, list):
-        return [str(item).strip() for item in device_ids if str(item).strip()]
+        return [by_id.get(str(item).strip(), str(item).strip()) for item in device_ids if str(item).strip()]
     return []
 
 
@@ -1508,6 +1607,8 @@ def get_device_public_ip_info(serial, force=False):
 
 def refresh_device_public_ip(serial):
     serial = str(serial or "").strip()
+    serials = get_target_serials(serial)
+    serial = serials[0] if serials else serial
     if not serial:
         raise RuntimeError("Falta el serial del dispositivo.")
     data = get_device_public_ip_info(serial, force=True)
@@ -1524,6 +1625,10 @@ def get_device_mac_address(serial):
     serial = str(serial or "").strip()
     if not serial:
         return ""
+    if serial.startswith("mac:"):
+        return normalize_mac_address(serial[4:])
+    if serial.startswith("serial:"):
+        serial = serial[7:]
     with DEVICE_MAC_LOCK:
         cached = DEVICE_MAC_CACHE.get(serial, "")
         if cached:
@@ -1531,16 +1636,16 @@ def get_device_mac_address(serial):
     try:
         # Intentar obtener MAC desde diferentes fuentes en Android
         commands = [
-            "cat /sys/class/net/wlan0/address 2>/dev/null",
-            "cat /sys/class/net/eth0/address 2>/dev/null",
-            "ip addr show wlan0 2>/dev/null | grep 'ether' | awk '{print $2}'",
-            "ip addr show eth0 2>/dev/null | grep 'ether' | awk '{print $2}'",
+            "for i in wlan0 eth0; do [ -r /sys/class/net/$i/address ] && cat /sys/class/net/$i/address; done",
+            "ip addr 2>/dev/null | awk '/ether/ {print $2; exit}'",
         ]
         for command in commands:
             try:
-                mac = adb_shell(serial, command, timeout=10).strip()
-                if mac and re.match(r"^[0-9a-fA-F:]{17}$", mac):
-                    mac = mac.upper()
+                output = adb_shell(serial, command, timeout=5).strip()
+                for raw_mac in output.splitlines():
+                    mac = normalize_mac_address(raw_mac)
+                    if not mac or mac == "02:00:00:00:00:00":
+                        continue
                     with DEVICE_MAC_LOCK:
                         DEVICE_MAC_CACHE[serial] = mac
                     return mac
@@ -1786,9 +1891,11 @@ def resolve_local_script_path(file_path):
 
 
 def prepare_flowlogin_payload(serial, clone=None, clones=None, delimiter=":"):
+    key = resolve_device_profile_key(serial)
     names = load_device_names()
-    profile = names.get(serial, {"name": "", "person": "", "accountStatuses": []})
-    statuses = normalize_account_statuses(serial, profile.get("person", ""), profile.get("accountStatuses", []))
+    names, migrated = migrate_device_profile_key(names, serial, key)
+    profile = names.get(key, {"name": "", "person": "", "accountStatuses": []})
+    statuses = normalize_account_statuses(key, profile.get("person", ""), profile.get("accountStatuses", []))
     clone_filter = normalize_clone_filter(clone=clone, clones=clones)
     accounts = []
     for item in statuses:
@@ -1818,7 +1925,9 @@ def prepare_flowlogin_payload(serial, clone=None, clones=None, delimiter=":"):
         item["updatedAt"] = ""
     profile["accountStatuses"] = statuses
     if profile.get("name") or profile.get("person") or statuses:
-        names[serial] = profile
+        names[key] = profile
+        migrated = True
+    if migrated:
         save_device_names(names)
 
     payload = {
@@ -1839,7 +1948,11 @@ def refresh_login_statuses(device_ids="all"):
     names = load_device_names()
     outputs = []
     for serial in serials:
-        profile = names.get(serial, {}) if isinstance(names, dict) else {}
+        key = resolve_device_profile_key(serial)
+        names, migrated = migrate_device_profile_key(names, serial, key)
+        if migrated:
+            save_device_names(names)
+        profile = names.get(key, {}) if isinstance(names, dict) else {}
         statuses = profile.get("accountStatuses", []) if isinstance(profile, dict) else []
         with FLOWLOGIN_JOBS_LOCK:
             running = serial in FLOWLOGIN_JOBS

@@ -2923,6 +2923,7 @@
       editingDevice: null,
       editingDevicePerson: null,
       flowMenuDeviceId: '',
+      flowMenuDeviceIds: [],
       deviceViewMode: localStorage.getItem('flowdashboard.deviceViewMode') || 'grid',
       deviceGroups: { groups: [], assignments: {} },
       draggingDeviceIds: [],
@@ -2933,6 +2934,9 @@
       accountAssignments: {},
       refreshingPublicIpDevices: new Set(),
       refreshingCountries: false,
+      autoSocketTimer: null,
+      autoSocketPreparing: false,
+      lastAutoSocketAttemptAt: 0,
       loginStatusTimer: null,
       loginPollingDeviceIds: '',
       loginPollStartedAt: 0,
@@ -3484,8 +3488,32 @@
 
     function shortDeviceId(deviceId) {
       const text = String(deviceId || '');
+      if (text.startsWith('mac:')) return text.slice(-5).replace(/:/g, '');
+      if (text.startsWith('serial:')) return shortDeviceId(text.slice(7));
       if (text.includes(':')) return text.split(':')[0].split('.').slice(-1)[0];
       return text.slice(-4) || 'D';
+    }
+
+    function migrateAccountAssignmentsForDevice(device) {
+      const deviceId = getDeviceId(device);
+      const legacyIds = [
+        device.legacyDeviceId,
+        device.serial,
+        device.udid,
+        device.id && device.id !== deviceId ? device.id : ''
+      ].map(item => String(item || '').trim()).filter(Boolean);
+      if (!deviceId || !legacyIds.length) return false;
+      let changed = false;
+      Object.entries(state.accountAssignments).forEach(([key, assignment]) => {
+        if (!assignment || !legacyIds.includes(String(assignment.deviceId || '').trim())) return;
+        state.accountAssignments[key] = {
+          ...assignment,
+          deviceId,
+          updatedAt: new Date().toISOString()
+        };
+        changed = true;
+      });
+      return changed;
     }
 
     function updateAccountTraceLegacy() {
@@ -3794,6 +3822,7 @@
         allRecords.push(...getAccountRecords(input.dataset.accountInput));
       });
       state.devices.forEach(device => {
+        migrateAccountAssignmentsForDevice(device);
         const deviceId = getDeviceId(device);
         getDeviceAccountStatuses(device).forEach(item => {
           const record = allRecords.find(candidate => candidate.line === item.line);
@@ -4163,7 +4192,9 @@
       els.deviceFlowMenu.classList.remove('is-open');
       els.deviceFlowAddPanel.classList.remove('is-open');
       state.flowMenuDeviceId = '';
+      state.flowMenuDeviceIds = [];
       delete els.deviceFlowMenu.dataset.deviceId;
+      delete els.deviceFlowMenu.dataset.deviceIds;
     }
 
     function isDeviceLoginRunning(deviceId) {
@@ -4260,8 +4291,18 @@
       if (!deviceId) return;
       closeDeviceNamePopover();
       closeDevicePersonPopover();
+      const targetIds = state.selectedDeviceIds.includes(deviceId) && state.selectedDeviceIds.length > 1
+        ? [...state.selectedDeviceIds]
+        : [deviceId];
+      const targetDevices = targetIds.map(getDeviceById).filter(Boolean);
+      const hasPending = targetDevices.some(item => getPendingFlowLoginItems(item).length);
+      const hasAccounts = targetDevices.some(item => getDeviceAccountLines(item).length);
+      const anyActionBusy = targetIds.some(isDeviceActionBusy);
+      const anyLoginRunning = targetIds.some(isDeviceLoginRunning);
       state.flowMenuDeviceId = deviceId;
+      state.flowMenuDeviceIds = targetIds;
       els.deviceFlowMenu.dataset.deviceId = deviceId;
+      els.deviceFlowMenu.dataset.deviceIds = targetIds.join(',');
       const lines = getDeviceAccountLines(device);
       const pendingItems = getPendingFlowLoginItems(device);
       const editableItems = getBulkEditableAccountItems(device);
@@ -4269,7 +4310,8 @@
       const freeAccounts = getAvailableAccountRecordsForDeviceAdd(deviceId).length;
       const addMax = Math.min(freeSlots, freeAccounts);
       const actionBusy = isDeviceActionBusy(deviceId);
-      els.deviceFlowPlay.disabled = actionBusy || !pendingItems.length || isDeviceLoginRunning(deviceId);
+      els.deviceFlowPlay.disabled = anyActionBusy || anyLoginRunning || !hasPending || !hasAccounts;
+      els.deviceFlowPlay.title = targetIds.length > 1 ? `Ejecutar pendientes en ${targetIds.length} seleccionados` : 'Ejecutar pendientes';
       els.deviceFlowStop.disabled = !isDeviceLoginRunning(deviceId);
       els.deviceFlowRetryAccounts.disabled = actionBusy || !editableItems.length;
       els.deviceFlowReplaceAccounts.disabled = actionBusy || !editableItems.length;
@@ -5251,6 +5293,7 @@
         state.deviceGroups = normalizeDeviceGroups(groups);
         renderDevices();
         if (showMessage) appendOutput('Dispositivos actualizados', JSON.stringify(state.devices, null, 2));
+        window.setTimeout(() => autoPrepareFlowAgentSockets('refresh'), 500);
       } catch (error) {
         appendOutput('Error al actualizar dispositivos', error.message);
       } finally {
@@ -5309,7 +5352,8 @@
       return !getDevicesWithoutReadyAgent(deviceIds).length;
     }
 
-    async function ensureFlowAgentsForDevices(deviceIds) {
+    async function ensureFlowAgentsForDevices(deviceIds, options = {}) {
+      const { quiet = false, timeoutMs = 8500 } = options;
       try {
         state.agents = await wsapi.getAgents();
         renderDevices();
@@ -5319,10 +5363,12 @@
       if (!missing.length) return true;
 
       const missingIds = missing.map(getDeviceId);
-      appendOutput(
-        'Preparando FlowAgent automaticamente',
-        `Reconectando socket y creando ADB reverse para:\n${missingIds.join('\n')}\n\nSolo se instala/actualiza la APK si falta o esta vieja.`
-      );
+      if (!quiet) {
+        appendOutput(
+          'Preparando FlowAgent automaticamente',
+          `Reconectando socket y creando ADB reverse para:\n${missingIds.join('\n')}\n\nSolo se instala/actualiza la APK si falta o esta vieja.`
+        );
+      }
 
       const [devices, result, agents] = await wsapi.setupFlowAgent({
         deviceIds: missingIds.join(','),
@@ -5333,15 +5379,57 @@
       state.agents = agents;
       renderDevices();
 
-      const ready = await waitForReadyFlowAgents(deviceIds);
+      const ready = await waitForReadyFlowAgents(deviceIds, timeoutMs);
       if (ready) return true;
 
       missing = getDevicesWithoutReadyAgent(deviceIds);
-      appendOutput(
-        'FlowAgent requiere atencion',
-        `${result}\n\nNo quedaron listos:\n${missing.map(getDeviceId).join('\n')}\n\nRevisa que el telefono siga conectado por ADB/WiFi y que Accesibilidad de FlowAgent este activa.`
-      );
+      if (!quiet) {
+        appendOutput(
+          'FlowAgent requiere atencion',
+          `${result}\n\nNo quedaron listos:\n${missing.map(getDeviceId).join('\n')}\n\nRevisa que el telefono siga conectado por ADB/WiFi y que Accesibilidad de FlowAgent este activa.`
+        );
+      }
       return false;
+    }
+
+    async function autoPrepareFlowAgentSockets(reason = 'watchdog') {
+      if (!wsapi.connected || !state.devices.length || state.busy || state.autoSocketPreparing) return;
+      const now = Date.now();
+      if (now - state.lastAutoSocketAttemptAt < 25000) return;
+      const missingIds = getDevicesWithoutReadyAgent(state.devices.map(getDeviceId)).map(getDeviceId);
+      if (!missingIds.length) return;
+
+      state.autoSocketPreparing = true;
+      state.lastAutoSocketAttemptAt = now;
+      try {
+        await ensureFlowAgentsForDevices(missingIds, { quiet: true, timeoutMs: 6500 });
+        const stillMissing = getDevicesWithoutReadyAgent(missingIds).map(getDeviceId);
+        if (stillMissing.length && reason !== 'watchdog') {
+          appendOutput(
+            'Socket pendiente',
+            `FlowAgent se intento abrir automaticamente, pero aun falta activar Socket en:\n${stillMissing.join('\n')}\n\nNormalmente falta activar Accesibilidad o aceptar el telefono en ADB.`
+          );
+        }
+      } catch (error) {
+        if (reason !== 'watchdog') appendOutput('Auto Socket no pudo preparar FlowAgent', error.message);
+      } finally {
+        state.autoSocketPreparing = false;
+        updateFlowAgentControls();
+      }
+    }
+
+    function startAutoSocketWatchdog() {
+      if (state.autoSocketTimer) window.clearInterval(state.autoSocketTimer);
+      state.autoSocketTimer = window.setInterval(() => autoPrepareFlowAgentSockets('watchdog'), 30000);
+      window.setTimeout(() => autoPrepareFlowAgentSockets('connect'), 1800);
+    }
+
+    function stopAutoSocketWatchdog() {
+      if (state.autoSocketTimer) {
+        window.clearInterval(state.autoSocketTimer);
+        state.autoSocketTimer = null;
+      }
+      state.autoSocketPreparing = false;
     }
 
     async function setupFlowAgent() {
@@ -5534,6 +5622,59 @@
       }
     }
 
+    async function executeFlowLoginForDevices(deviceIds) {
+      const targetIds = uniqueDeviceIds(deviceIds);
+      if (targetIds.length <= 1) {
+        if (targetIds[0]) executeFlowLoginForDevice(targetIds[0]);
+        return;
+      }
+      closeDeviceFlowMenu();
+
+      const runnable = targetIds
+        .map(deviceId => ({ deviceId, device: getDeviceById(deviceId) }))
+        .filter(item => item.device)
+        .filter(item => !isDeviceActionBusy(item.deviceId) && !isDeviceLoginRunning(item.deviceId))
+        .map(item => ({
+          ...item,
+          pendingItems: getPendingFlowLoginItems(item.device)
+        }))
+        .filter(item => item.pendingItems.length);
+
+      if (!runnable.length) {
+        appendOutput('Sin cuentas nuevas', 'Los dispositivos seleccionados no tienen bolitas grises pendientes para Play.');
+        return;
+      }
+
+      const runnableIds = runnable.map(item => item.deviceId);
+      runnableIds.forEach(deviceId => setDeviceActionBusy(deviceId, true));
+      try {
+        await ensureFlowAgentsForDevices(runnableIds);
+        const readyIds = new Set(getReadyFlowAgentDeviceIds(runnableIds));
+        const skippedNotReady = runnableIds.filter(id => !readyIds.has(id));
+        let started = 0;
+        const results = [];
+        for (const item of runnable) {
+          if (!readyIds.has(item.deviceId)) continue;
+          const result = await runDeviceClones(
+            item.deviceId,
+            item.pendingItems.map(pending => pending.clone),
+            'FlowLogin iniciado en cuentas nuevas',
+            'Cuenta nueva'
+          );
+          started += 1;
+          if (result) results.push(`[${shortDeviceId(item.deviceId)}]\n${result}`);
+        }
+        appendOutput(
+          'Play multiple enviado',
+          `${started} dispositivo${started === 1 ? '' : 's'} iniciado${started === 1 ? '' : 's'}${skippedNotReady.length ? `\nOmitidos sin Socket:\n${skippedNotReady.join('\n')}` : ''}${results.length ? `\n\n${results.join('\n\n')}` : ''}`
+        );
+      } catch (error) {
+        appendOutput('Error al iniciar Play multiple', error.message);
+      } finally {
+        runnableIds.forEach(deviceId => setDeviceActionBusy(deviceId, false));
+      }
+    }
+
     async function stopFlowLoginForDevice(deviceId) {
       closeDeviceFlowMenu();
       const loginPath = selectLoginScript();
@@ -5609,6 +5750,7 @@
       renderDevices();
       setBusy(false);
       appendOutput('Conexion establecida', `Dispositivos detectados: ${deviceList.length}`);
+      startAutoSocketWatchdog();
       wsapi.getDeviceGroups()
         .then(groups => {
           state.deviceGroups = normalizeDeviceGroups(groups);
@@ -5649,6 +5791,7 @@
     }
 
     function handleConnectFail() {
+      stopAutoSocketWatchdog();
       state.agents = [];
       setStatus(false, 'Sin conexion');
       setBusy(false);
@@ -5656,6 +5799,7 @@
     }
 
     function handleConnectClose() {
+      stopAutoSocketWatchdog();
       state.agents = [];
       setStatus(false, 'Conexion cerrada');
       stopLoginStatusPolling();
@@ -5710,11 +5854,18 @@
         event.stopPropagation();
       });
     });
+    function getFlowMenuDeviceIds() {
+      const ids = state.flowMenuDeviceIds.length
+        ? state.flowMenuDeviceIds
+        : parseDeviceIdList(els.deviceFlowMenu.dataset.deviceIds || state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '');
+      return uniqueDeviceIds(ids);
+    }
+
     els.deviceFlowPlay.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
-      const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
-      if (deviceId) executeFlowLoginForDevice(deviceId);
+      const deviceIds = getFlowMenuDeviceIds();
+      if (deviceIds.length) executeFlowLoginForDevices(deviceIds);
     });
     els.deviceFlowStop.addEventListener('click', event => {
       event.preventDefault();

@@ -1,6 +1,6 @@
 # FlowLogin Project Context
 
-Ultima actualizacion: 2026-05-14
+Ultima actualizacion: 2026-05-16
 
 Este archivo es la memoria viva del proyecto. Cualquier agente de IA debe leerlo antes de modificar el programa y debe actualizarlo al terminar cambios relevantes.
 
@@ -21,7 +21,7 @@ El objetivo de arquitectura actual es `socket-first hybrid`:
 - `local_adb_server.py`: servidor local HTTP/ADB. Expone endpoints para dispositivos, comandos ADB, FlowLogin, nombres/cuentas persistentes, FlowAgent y socket APK.
 - `abrir_dashboard.bat`: lanzador Windows. Debe usarse para abrir el dashboard; reinicia servidor viejo si faltan features requeridas.
 - `Login.js`: runner AutoJS alternativo/legacy. Lee `/sdcard/Download/flowlogin_accounts.json` y escribe `/sdcard/Download/flowlogin_status.json`.
-- `device_names.json`: persistencia por serial/IP. Guarda nombre, cuentas asignadas al telefono y `accountStatuses`. Puede contener datos sensibles.
+- `device_names.json`: persistencia por identidad estable del telefono. Desde 2026-05-16 usa MAC cuando Android la expone (`mac:AA:BB:...`) y solo cae a `serial:<serial>` si no se puede detectar MAC. Guarda nombre, cuentas asignadas al telefono y `accountStatuses`. Puede contener datos sensibles.
 - `.flowlogin_payloads/`: payloads locales generados para FlowLogin. Puede contener datos sensibles.
 - `flow_agent_apk/`: proyecto Android del APK FlowAgent.
 - `flow_agent_apk/build/flowagent-debug.apk`: APK compilada actual que instala el dashboard.
@@ -68,6 +68,8 @@ flowlogin_retry_form_fix
 flowlogin_clone_list
 device_public_ip_flags
 device_public_ip_refresh
+device_mac_identity
+flowagent_auto_socket_watchdog
 ```
 
 Endpoints importantes:
@@ -75,6 +77,7 @@ Endpoints importantes:
 - `GET /health`: version, features y ruta ADB.
   - Incluye `appVersion` desde `app_meta.py`.
 - `GET /devices`: lista dispositivos ADB, ahora incluye `androidId` cuando se puede leer.
+  - Desde 2026-05-16 incluye `deviceKey` como identidad estable para UI/persistencia: MAC si esta disponible y fallback por serial si no.
 - `GET /agents`: lista FlowAgent APKs conectadas por socket.
 - `POST /adb`: ejecuta comandos ADB.
 - `POST /packages`: lista paquetes instalados.
@@ -215,17 +218,23 @@ Regla de seguridad del flujo:
 
 ## Persistencia
 
-`device_names.json` guarda por serial/IP:
+`device_names.json` guarda por identidad estable del telefono:
 
 ```json
 {
-  "serial": {
+  "mac:AA:BB:CC:DD:EE:FF": {
     "name": "nombre opcional",
     "person": "maximo 10 lineas de cuentas",
     "accountStatuses": []
   }
 }
 ```
+
+Compatibilidad:
+
+- Si existe un perfil viejo guardado por serial/IP, `/devices` lo migra automaticamente a `mac:...` cuando detecta la MAC del dispositivo.
+- Si Android no entrega MAC, se usa temporalmente `serial:<serial>` para no bloquear la operacion.
+- Las categorias de `device_groups.json` y las asignaciones locales del dashboard tambien migran de serial/IP a `deviceKey` cuando el dispositivo vuelve a aparecer.
 
 No copiar cuentas reales ni passwords en documentacion o logs largos.
 
@@ -466,3 +475,15 @@ Actualizacion automatica:
 - Desde `1.0.24`, el Play del menu contextual de un dispositivo ejecuta solo clones con estado `pending` (bolita gris). Las cuentas ya analizadas como `success`, `already`, `error` o `review` no se vuelven a probar con Play; para rojas/revision se mantiene la accion `Reintentar Cuentas`. Cada tarjeta de dispositivo muestra un boton Stop pequeno mientras ese dispositivo esta en ejecucion/polling de FlowLogin.
 - Desde `1.0.25`, la confirmacion de login espera mas tiempo antes de marcar revision/reintento para evitar falsos amarillos cuando Spotify tarda en cargar la pantalla principal. El detector de sesion iniciada reconoce tambien marcadores en espanol (`Inicio`, `Buscar`, `Tu biblioteca`, `Biblioteca`) ademas de `Home`, `Search` y `Your Library`.
 - Desde `1.0.26`, las acciones del menu contextual por dispositivo usan bloqueo por telefono y no `state.busy` global. Esto permite iniciar Play, reintentar, reemplazar, anadir o detener en un dispositivo libre mientras otros dispositivos siguen ejecutando FlowLogin. Solo se bloquea el mismo dispositivo si ya esta arrancando una accion o ya esta corriendo.
+
+### 2026-05-16
+
+- La identidad persistente de dispositivos cambio de serial/IP a MAC cuando esta disponible.
+- `/devices` ahora calcula `deviceKey`, `legacyDeviceId` y `macAddress`; ordena la grilla por `deviceKey` para que el orden no dependa de la IP WiFi.
+- `device_names.json` migra automaticamente perfiles viejos por serial/IP a claves `mac:...` al detectar la MAC, conservando nombre, perfil/cuentas y estados.
+- `device_groups.json` migra asignaciones de categoria desde serial/IP a `deviceKey` junto con el perfil del telefono.
+- El frontend usa `deviceKey` para seleccion, categorias, trazabilidad de cuentas y acciones visuales; el backend resuelve esa clave al serial ADB actual antes de ejecutar comandos.
+- El dashboard ahora tiene watchdog Auto Socket: al conectar o actualizar dispositivos y luego cada 30 segundos intenta preparar automaticamente FlowAgent para telefonos detectados en ADB que aun no esten en Socket, usando `install: "auto"` para no reinstalar si el APK ya esta actualizado.
+- `ensureFlowAgentsForDevices()` acepta modo silencioso para reparacion automatica: crea/recrea `adb reverse`, abre FlowAgent con `autoconnect=true`, refresca agentes y solo muestra aviso si la accion fue manual o no es watchdog.
+- El Play del menu contextual respeta seleccion multiple: si se hace clic derecho sobre una tarjeta ya seleccionada, Play ejecuta las cuentas pendientes de todos los dispositivos seleccionados; si se hace clic derecho sobre una tarjeta no seleccionada, opera solo sobre esa tarjeta.
+- Version comercial preparada como `1.0.27` para publicar el ZIP de actualizacion con estos cambios.

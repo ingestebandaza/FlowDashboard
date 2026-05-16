@@ -55,12 +55,12 @@ Estas reglas protegen el estilo visual de `wsapi_demo.html`. Cualquier cambio fu
 - A la izquierda del slider de zoom deben mantenerse botones compactos para seleccionar todos, eliminar cuentas de seleccionados y deseleccionar todos.
 - Debajo del titulo `Dispositivos Conectados` debe verse un aviso compacto con la cantidad de dispositivos seleccionados, sin aumentar visualmente la altura de la fila.
 - Los dispositivos deben verse como cuadros seleccionables, no como lista vertical.
-- Los nombres de dispositivos se pueden editar desde cada cuadro y deben persistir en `device_names.json`, usando el serial/IP como clave.
+- Los nombres de dispositivos se pueden editar desde cada cuadro y deben persistir en `device_names.json`, usando MAC Address como clave estable cuando este disponible; solo usar serial/IP como fallback temporal si Android no entrega MAC.
 - La edicion del nombre debe usar el popover visual del dashboard, no `window.prompt()`.
 - Los popovers de nombre y perfil deben mantenerse anclados visualmente al boton que los abrio durante scroll o resize.
 - Cada dispositivo debe conservar un boton con silueta de persona junto al boton de editar nombre.
 - El boton de persona abre un popover visual con textarea de maximo 10 lineas y acciones Limpiar, Cancelar y Guardar.
-- La informacion del boton de persona tambien debe persistir en `device_names.json` por serial/IP.
+- La informacion del boton de persona tambien debe persistir en `device_names.json` por MAC Address, con fallback temporal por serial/IP si no se puede detectar MAC.
 - El tamano base debe mostrar aproximadamente 5 cuadros por fila en desktop.
 - Mantener el slider de zoom: derecha hace los cuadros mas grandes y caben menos; izquierda los hace mas pequenos y caben mas.
 - Los cuadros no deben deformar la pagina ni desbordar horizontalmente.
@@ -76,6 +76,8 @@ Estas reglas protegen el estilo visual de `wsapi_demo.html`. Cualquier cambio fu
 - No volver a depender de Laixi. El dashboard debe usar `local_adb_server.py` + `wsapi.js` apuntando al servidor ADB local.
 - Para abrir el dashboard en Windows, usar `abrir_dashboard.bat`; este lanzador inicia `local_adb_server.py` si hace falta y abre `wsapi_demo.html`.
 - Al cargar `wsapi_demo.html`, el dashboard debe intentar conectarse automaticamente al servidor ADB local para mostrar dispositivos sin pulsar `Conectar`.
+- El dashboard debe intentar preparar FlowAgent automaticamente para dispositivos conectados por ADB que aun no esten en `Socket`, usando `install: "auto"` para abrir/reconectar sin reinstalar si el APK ya esta actualizado.
+- FlowLogin debe tratar `Socket` como canal obligatorio: si un telefono no queda con FlowAgent listo, se omite o se avisa, no debe caer silenciosamente a ADB como motor de login.
 - La seccion `Cuentas` debe mantener pestañas visuales solo con iconos y contador para `Total`, `Validos` y `No validos`, cada una con su propio textarea.
 - En `Cuentas`, los campos `Delimitador` y `Dividir` deben permanecer lado a lado.
 - El contenido de los textareas de `Cuentas`, `Delimitador` y `Dividir` debe persistir en `localStorage`.
