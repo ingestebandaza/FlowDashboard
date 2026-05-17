@@ -82,20 +82,20 @@
         "attempts": 2,
         "clone": 3,
         "line": "Vincent.Petty410@flowrevelde.com:clakEp?t3p",
-        "message": "Intento 2",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musif",
-        "status": "retrying",
-        "updatedAt": "2026-05-17T03:53:24.658930+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:54:44.063946+00:00"
       },
       {
         "accountId": "343ece9542bd",
         "attempts": 1,
         "clone": 4,
         "line": "Paul.Santos399@flowrevelde.com:em7Vwx#ftb",
-        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "message": "Abriendo App info y limpiando cache/datos del clon antes del segundo intento.",
         "package": "com.spotify.musig",
         "status": "retrying",
-        "updatedAt": "2026-05-17T03:48:22.084247+00:00"
+        "updatedAt": "2026-05-17T03:54:44.952703+00:00"
       },
       {
         "accountId": "558b1d20888f",
@@ -201,13 +201,13 @@
       },
       {
         "accountId": "7ca669aca8e8",
-        "attempts": 1,
+        "attempts": 2,
         "clone": 4,
         "line": "Brittany.Moore417@flowrevelde.com:Xyc3n?ejtf",
-        "message": "Abriendo App info y limpiando cache/datos del clon antes del segundo intento.",
+        "message": "Intento 2",
         "package": "com.spotify.musig",
         "status": "retrying",
-        "updatedAt": "2026-05-17T03:54:14.993367+00:00"
+        "updatedAt": "2026-05-17T03:54:38.155551+00:00"
       },
       {
         "accountId": "946b96088e5e",
@@ -313,13 +313,13 @@
       },
       {
         "accountId": "55b6a0258e2f",
-        "attempts": 1,
+        "attempts": 2,
         "clone": 4,
         "line": "Brandon.Lindsey338@flowrevelde.com:&ujtt1Dznn",
-        "message": "Abriendo App info y limpiando cache/datos del clon antes del segundo intento.",
+        "message": "Intento 2",
         "package": "com.spotify.musig",
         "status": "retrying",
-        "updatedAt": "2026-05-17T03:54:20.084666+00:00"
+        "updatedAt": "2026-05-17T03:54:43.285829+00:00"
       },
       {
         "accountId": "be06ad71a008",
@@ -866,20 +866,20 @@
         "attempts": 2,
         "clone": 3,
         "line": "Heidi.Wells351@flowrevelde.com:l3yfGkn?iz",
-        "message": "Intento 2",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musif",
-        "status": "retrying",
-        "updatedAt": "2026-05-17T03:53:23.360281+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:54:42.556915+00:00"
       },
       {
         "accountId": "0f53c4e1265d",
         "attempts": 1,
         "clone": 4,
         "line": "David.Lewis395@flowrevelde.com:Xynpp9cy&h",
-        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "message": "Abriendo App info y limpiando cache/datos del clon antes del segundo intento.",
         "package": "com.spotify.musig",
         "status": "retrying",
-        "updatedAt": "2026-05-17T03:48:19.774601+00:00"
+        "updatedAt": "2026-05-17T03:54:43.440746+00:00"
       },
       {
         "accountId": "505cd543949b",
@@ -932,20 +932,20 @@
         "attempts": 2,
         "clone": 4,
         "line": "Erin.Gray375@flowrevelde.com:z6&mmhpgnZ",
-        "message": "Intento 2",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musig",
-        "status": "retrying",
-        "updatedAt": "2026-05-17T03:53:16.862821+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:54:35.702151+00:00"
       },
       {
         "accountId": "d9688ff98cca",
         "attempts": 1,
         "clone": 5,
         "line": "Katherine.Austin435@flowrevelde.com:jjyo0fYp?x",
-        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "message": "Abriendo App info y limpiando cache/datos del clon antes del segundo intento.",
         "package": "com.spotify.musih",
         "status": "retrying",
-        "updatedAt": "2026-05-17T03:48:46.254445+00:00"
+        "updatedAt": "2026-05-17T03:54:36.547330+00:00"
       }
     ],
     "name": "",
