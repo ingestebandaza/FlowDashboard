@@ -4317,6 +4317,11 @@
         .reduce((total, item) => total + getBulkEditableAccountItems(item.device).length, 0);
     }
 
+    function getReplaceableCountForDevices(deviceIds) {
+      return getFlowMenuTargetDevices(deviceIds)
+        .reduce((total, item) => total + getReplaceableAccountItems(item.device).length, 0);
+    }
+
     function getAddCapacityForDevices(deviceIds) {
       const targets = getFlowMenuTargetDevices(deviceIds).filter(item => {
         return !isDeviceActionBusy(item.deviceId) && !isDeviceLoginRunning(item.deviceId);
@@ -4344,7 +4349,10 @@
       const hasAccounts = targetDevices.some(item => getDeviceAccountLines(item).length);
       const anyActionBusy = targetIds.some(isDeviceActionBusy);
       const anyLoginRunning = targetIds.some(isDeviceLoginRunning);
-      const editableCount = getBulkEditableCountForDevices(targetIds);
+      const availableTargetIds = targetIds.filter(id => !isDeviceActionBusy(id) && !isDeviceLoginRunning(id));
+      const availableTargetDevices = availableTargetIds.map(getDeviceById).filter(Boolean);
+      const availableHasAccounts = availableTargetDevices.some(item => getDeviceAccountLines(item).length);
+      const replaceableCount = getReplaceableCountForDevices(targetIds);
       const addCapacity = getAddCapacityForDevices(targetIds);
       state.flowMenuDeviceId = deviceId;
       state.flowMenuDeviceIds = targetIds;
@@ -4356,13 +4364,23 @@
       els.deviceFlowPlay.title = targetIds.length > 1 ? `Ejecutar pendientes en ${targetIds.length} seleccionados` : 'Ejecutar pendientes';
       els.deviceFlowStop.disabled = !anyLoginRunning;
       els.deviceFlowStop.title = targetIds.length > 1 ? `Detener FlowLogin en ${targetIds.length} seleccionados` : 'Detener FlowLogin';
-      els.deviceFlowRetryAccounts.disabled = anyActionBusy || (targetIds.length <= 1 && !editableCount);
+      els.deviceFlowRetryAccounts.disabled = targetIds.length > 1
+        ? !availableTargetIds.length || !hasAccounts
+        : anyActionBusy || anyLoginRunning || !hasAccounts;
       els.deviceFlowRetryAccounts.title = targetIds.length > 1 ? `Reintentar cuentas editables en ${targetIds.length} seleccionados` : 'Reintentar Cuentas';
-      els.deviceFlowReplaceAccounts.disabled = anyActionBusy || (targetIds.length <= 1 && !editableCount);
-      els.deviceFlowReplaceAccounts.title = targetIds.length > 1 ? `Reemplazar cuentas editables en ${targetIds.length} seleccionados` : 'Reemplazar Cuentas';
-      els.deviceFlowAddAccounts.disabled = anyActionBusy || addCapacity.maxCount <= 0;
+      els.deviceFlowReplaceAccounts.disabled = targetIds.length > 1
+        ? !availableTargetIds.length || !hasAccounts
+        : anyActionBusy || anyLoginRunning || !hasAccounts;
+      els.deviceFlowReplaceAccounts.title = targetIds.length > 1
+        ? `Reemplazar ${replaceableCount} cuenta${replaceableCount === 1 ? '' : 's'} roja${replaceableCount === 1 ? '' : 's'}/morada${replaceableCount === 1 ? '' : 's'} en ${targetIds.length} seleccionados`
+        : 'Reemplazar cuentas rojas/moradas';
+      els.deviceFlowAddAccounts.disabled = targetIds.length > 1
+        ? !availableTargetIds.length || addCapacity.maxCount <= 0
+        : anyActionBusy || anyLoginRunning || addCapacity.maxCount <= 0;
       els.deviceFlowAddAccounts.title = targetIds.length > 1 ? `Anadir cuentas a ${targetIds.length} seleccionados` : 'Anadir Cuentas';
-      els.deviceFlowClearAccounts.disabled = anyActionBusy || !hasAccounts;
+      els.deviceFlowClearAccounts.disabled = targetIds.length > 1
+        ? !availableTargetIds.length || !availableHasAccounts
+        : anyActionBusy || anyLoginRunning || !hasAccounts;
       els.deviceFlowClearAccounts.title = targetIds.length > 1 ? `Eliminar cuentas de ${targetIds.length} seleccionados` : 'Eliminar Cuentas';
       els.deviceFlowAddPanel.classList.remove('is-open');
       els.deviceFlowAddCount.max = String(Math.max(1, addCapacity.maxCount));
@@ -5055,6 +5073,14 @@
       });
     }
 
+    const REPLACEABLE_STATUSES = new Set(['error', 'review']);
+
+    function getReplaceableAccountItems(device) {
+      return getDeviceAccountStatuses(device).filter(item => {
+        return item.line && REPLACEABLE_STATUSES.has(item.status || 'pending');
+      });
+    }
+
     async function runDeviceClones(deviceId, clones, messageTitle, messagePrefix = '') {
       const cloneList = uniqueDeviceIds(clones.map(clone => String(Number(clone) || '')).filter(Boolean)).map(Number);
       if (!cloneList.length) return '';
@@ -5144,9 +5170,9 @@
       if (isDeviceActionBusy(deviceId) || isDeviceLoginRunning(deviceId)) return;
       const device = getDeviceById(deviceId);
       if (!device) return;
-      const items = getBulkEditableAccountItems(device);
+      const items = getReplaceableAccountItems(device);
       if (!items.length) {
-        appendOutput('Sin cuentas para reemplazar', `${shortDeviceId(deviceId)} solo tiene cuentas funcionando o no tiene cuentas asignadas.`);
+        appendOutput('Sin cuentas para reemplazar', `${shortDeviceId(deviceId)} no tiene cuentas rojas o moradas para reemplazar.`);
         return;
       }
       const freeRecords = getAvailableAccountRecords('total').slice(0, items.length);
@@ -5172,7 +5198,7 @@
         items.forEach((item, index) => {
           assignAccountRecord(freeRecords[index], deviceId, item.clone, 'assigned');
         });
-        await runDeviceClones(deviceId, items.map(item => item.clone), 'Reemplazo masivo enviado', 'Cuenta reemplazada');
+        await runDeviceClones(deviceId, items.map(item => item.clone), 'Reemplazo de cuentas fallidas enviado', 'Cuenta reemplazada');
       } catch (error) {
         appendOutput('Error al reemplazar cuentas', error.message);
       } finally {
@@ -5189,10 +5215,10 @@
       closeDeviceFlowMenu();
       const targets = getFlowMenuTargetDevices(targetIds)
         .filter(item => !isDeviceActionBusy(item.deviceId) && !isDeviceLoginRunning(item.deviceId))
-        .map(item => ({ ...item, items: getBulkEditableAccountItems(item.device) }))
+        .map(item => ({ ...item, items: getReplaceableAccountItems(item.device) }))
         .filter(item => item.items.length);
       if (!targets.length) {
-        appendOutput('Sin cuentas para reemplazar', 'Los dispositivos seleccionados solo tienen cuentas funcionando o no tienen cuentas asignadas.');
+        appendOutput('Sin cuentas para reemplazar', 'Los dispositivos seleccionados no tienen cuentas rojas o moradas para reemplazar.');
         return;
       }
       const required = targets.reduce((total, item) => total + item.items.length, 0);
@@ -5224,7 +5250,7 @@
           item.items.forEach((accountItem, index) => {
             assignAccountRecord(records[index], item.deviceId, accountItem.clone, 'assigned');
           });
-          await runDeviceClones(item.deviceId, item.items.map(account => account.clone), 'Reemplazo masivo enviado', 'Cuenta reemplazada');
+          await runDeviceClones(item.deviceId, item.items.map(account => account.clone), 'Reemplazo de cuentas fallidas enviado', 'Cuenta reemplazada');
           cursor += item.items.length;
           changedDevices += 1;
         }

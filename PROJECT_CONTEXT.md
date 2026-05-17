@@ -495,6 +495,8 @@ Actualizacion automatica:
 - El Play del menu contextual respeta seleccion multiple: si se hace clic derecho sobre una tarjeta ya seleccionada, Play ejecuta las cuentas pendientes de todos los dispositivos seleccionados; si se hace clic derecho sobre una tarjeta no seleccionada, opera solo sobre esa tarjeta.
 - Todas las acciones del menu contextual de FlowLogin respetan la misma regla de seleccion multiple: `Play`, `Stop`, `Reintentar Cuentas`, `Reemplazar Cuentas`, `Anadir Cuentas` y `Eliminar Cuentas` operan sobre todos los dispositivos seleccionados cuando el clic derecho cae sobre una tarjeta seleccionada; si cae sobre una tarjeta no seleccionada, operan solo sobre esa tarjeta.
 - En multi-seleccion, `Reintentar Cuentas` y `Reemplazar Cuentas` no deben quedar silenciosamente deshabilitados por un calculo previo de cuentas editables; el click debe entrar al handler y mostrar un aviso claro si no hay cuentas editables o faltan cuentas libres.
+- En multi-seleccion, `Reintentar Cuentas` y `Reemplazar Cuentas` quedan clicables mientras exista al menos un dispositivo seleccionado disponible; el handler hace la validacion real y evita el caso donde el menu parecia no hacer nada por un estado previo/desactualizado.
+- `Reemplazar Cuentas` ahora usa una regla estricta de filtrado: solo reemplaza clones con bolita roja `error` o morada `review`, tomando cuentas libres desde la pestaña `Total`. Conserva intactas las cuentas verdes `success`, naranjas `already`, grises `pending`, azules `running` y amarillas `retrying`.
 - Version comercial preparada como `1.0.27` para publicar el ZIP de actualizacion con estos cambios.
 - La grilla ahora muestra la IP local del dispositivo en la tarjeta en lugar del `mac:...`, pero la identidad interna para nombres, cuentas, categorias y estados sigue siendo `deviceKey` basado en MAC cuando esta disponible.
 - `/devices` incluye `deviceIp`; para ADB WiFi se deriva del serial `IP:5555` y para USB puede consultarse desde Android como fallback.
@@ -517,3 +519,5 @@ Actualizacion automatica:
 - Version comercial preparada como `1.0.31` para publicar FlowAgent `0.2.4` y los diagnosticos de Accesibilidad.
 - Version comercial preparada como `1.0.32` para publicar la correccion del menu contextual multi-dispositivo.
 - Version comercial preparada como `1.0.33` para corregir el caso donde `Reemplazar Cuentas` en multi-seleccion no hacia nada porque el boton quedaba bloqueado antes de ejecutar el handler.
+- Version comercial preparada como `1.0.34` para endurecer el menu contextual multi-seleccion: `Reemplazar Cuentas` ya no depende del conteo previo de editables para disparar la accion.
+- Version comercial preparada como `1.0.35` para publicar la regla correcta de reemplazo: solo cuentas rojas/moradas se sustituyen por cuentas libres de `Total`.
