@@ -143,7 +143,7 @@ public class MainActivity extends Activity {
         titleStack.addView(subtitle);
         titleStack.addView(heroStatusText);
 
-        TextView badge = text("0.2.1", 12, true);
+        TextView badge = text("0.2.4", 12, true);
         badge.setGravity(Gravity.CENTER);
         badge.setTextColor(Color.rgb(186, 252, 242));
         badge.setBackground(outline(Color.rgb(18, 42, 60), Color.rgb(20, 184, 166), dp(999)));
@@ -320,14 +320,28 @@ public class MainActivity extends Activity {
     private void updateStatus() {
         FlowAccessibilityService service = FlowAccessibilityService.getInstance();
         boolean accessibility = service != null;
+        boolean accessibilitySettingEnabled = isAccessibilitySettingEnabled();
         boolean socket = AgentSocketClient.get().isConnected();
         String last = AgentSocketClient.get().getLastMessage();
 
-        updateChip(accessibilityChip, "Accesibilidad", accessibility);
-        updateChip(socketChip, "Socket", socket);
-        heroStatusText.setText(socket ? "Conectado al dashboard" : "Esperando dashboard");
+        updateChip(accessibilityChip, "Accesibilidad", accessibility, accessibility ? "Activo" : (accessibilitySettingEnabled ? "Sin enlazar" : "Pendiente"));
+        updateChip(socketChip, "Socket", socket, socket ? "Activo" : "Pendiente");
+        heroStatusText.setText(socket ? "Conectado al dashboard" : (accessibilitySettingEnabled && !accessibility ? "Reactiva Accesibilidad" : "Esperando dashboard"));
         configSummaryText.setText(hostInput.getText().toString().trim() + ":" + portInput.getText().toString().trim());
         lastMessageText.setText(last == null || last.length() == 0 ? "Sin mensajes recientes." : last);
+    }
+
+    private boolean isAccessibilitySettingEnabled() {
+        String enabled = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        if (enabled == null) return false;
+        String full = getPackageName() + "/" + FlowAccessibilityService.class.getName();
+        String shortName = getPackageName() + "/." + FlowAccessibilityService.class.getSimpleName();
+        String[] parts = enabled.split(":");
+        for (String part : parts) {
+            String item = part == null ? "" : part.trim();
+            if (full.equals(item) || shortName.equals(item)) return true;
+        }
+        return false;
     }
 
     private LinearLayout card() {
@@ -365,11 +379,11 @@ public class MainActivity extends Activity {
         return chip;
     }
 
-    private void updateChip(TextView chip, String title, boolean active) {
+    private void updateChip(TextView chip, String title, boolean active, String stateLabel) {
         int fill = active ? Color.rgb(12, 64, 55) : Color.rgb(35, 38, 54);
         int stroke = active ? Color.rgb(20, 184, 166) : Color.rgb(105, 82, 98);
         int textColor = active ? Color.rgb(186, 252, 242) : Color.rgb(255, 199, 205);
-        chip.setText(title + "\n" + (active ? "Activo" : "Pendiente"));
+        chip.setText(title + "\n" + stateLabel);
         chip.setTextColor(textColor);
         chip.setBackground(outline(fill, stroke, dp(16)));
     }

@@ -114,7 +114,7 @@ public class AgentSocketClient {
         hello.put("manufacturer", Build.MANUFACTURER);
         hello.put("model", Build.MODEL);
         hello.put("androidVersion", Build.VERSION.RELEASE);
-        hello.put("agentVersion", "0.2.2");
+        hello.put("agentVersion", "0.2.4");
         hello.put("accessibility", FlowAccessibilityService.getInstance() != null);
         return hello;
     }

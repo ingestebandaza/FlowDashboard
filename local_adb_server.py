@@ -31,7 +31,7 @@ PORT = 8765
 AGENT_HOST = "0.0.0.0"
 AGENT_PORT = 8766
 SERVER_VERSION = "2026-05-12-device-public-ip-refresh"
-SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics", "visual_update_check", "bundled_flowagent_apk", "device_categories", "device_mac_identity", "flowagent_auto_socket_watchdog", "device_visible_ip", "flowagent_socket_app_info_permissions"]
+SERVER_FEATURES = ["flowlogin_payload", "flowlogin_status", "account_statuses", "flowlogin_agent_runner", "flowlogin_stop", "apk_agent_socket", "flowagent_setup", "flowlogin_fresh_retry", "flowagent_auto_ensure", "flowlogin_cache_retry", "flowlogin_visual_cache_clear", "flowlogin_retry_form_fix", "flowlogin_clone_list", "device_public_ip_flags", "device_public_ip_refresh", "static_dashboard", "client_info", "license_remember", "adb_path_probe", "adb_deep_probe", "client_network_info", "adb_env_path", "adb_diagnostics", "visual_update_check", "bundled_flowagent_apk", "device_categories", "device_mac_identity", "flowagent_auto_socket_watchdog", "device_visible_ip", "flowagent_socket_app_info_permissions", "flowagent_accessibility_diagnostics"]
 
 
 def unique_paths(values):
@@ -153,7 +153,7 @@ def find_flow_agent_apk():
 FLOW_AGENT_APK = find_flow_agent_apk()
 FLOW_AGENT_PACKAGE = "com.flowlogin.agent"
 FLOW_AGENT_ACTIVITY = "com.flowlogin.agent/.MainActivity"
-FLOW_AGENT_EXPECTED_VERSION = "0.2.2"
+FLOW_AGENT_EXPECTED_VERSION = "0.2.4"
 FLOWLOGIN_ACCOUNTS_REMOTE = "/sdcard/Download/flowlogin_accounts.json"
 FLOWLOGIN_STATUS_REMOTE = "/sdcard/Download/flowlogin_status.json"
 SPOTIFY_CLONE_PACKAGES = [
@@ -1795,6 +1795,73 @@ def get_installed_package_version(serial, package_name):
     return match.group(1).strip() if match else ""
 
 
+FLOW_AGENT_ACCESSIBILITY_COMPONENT = "com.flowlogin.agent/com.flowlogin.agent.FlowAccessibilityService"
+FLOW_AGENT_ACCESSIBILITY_COMPONENT_SHORT = "com.flowlogin.agent/.FlowAccessibilityService"
+
+
+def normalize_accessibility_component(value):
+    text = str(value or "").strip()
+    if text == FLOW_AGENT_ACCESSIBILITY_COMPONENT_SHORT:
+        return FLOW_AGENT_ACCESSIBILITY_COMPONENT
+    return text
+
+
+def get_enabled_accessibility_components(serial):
+    try:
+        raw = adb(["-s", serial, "shell", "settings", "get", "secure", "enabled_accessibility_services"], timeout=20)
+    except Exception:
+        return []
+    return [
+        normalize_accessibility_component(item)
+        for item in raw.strip().split(":")
+        if item.strip() and item.strip().lower() != "null"
+    ]
+
+
+def extract_accessibility_section(output, title):
+    pattern = rf"{re.escape(title)}\s*\{{(?P<body>.*?)(?:\n\s*\}}\s*(?:\n\s*[a-zA-Z ]+ services:|\n\nWindow|\Z))"
+    match = re.search(pattern, output or "", re.S)
+    return match.group("body") if match else ""
+
+
+def flow_agent_accessibility_state(serial):
+    enabled_components = get_enabled_accessibility_components(serial)
+    enabled = FLOW_AGENT_ACCESSIBILITY_COMPONENT in enabled_components
+    state = {
+        "enabled": enabled,
+        "bound": False,
+        "binding": False,
+        "deadBinding": False,
+    }
+    try:
+        dump = adb(["-s", serial, "shell", "dumpsys", "accessibility"], timeout=30)
+        bound_body = extract_accessibility_section(dump, "bound services:")
+        binding_body = extract_accessibility_section(dump, "binding services:")
+        state["bound"] = "packageName=com.flowlogin.agent" in bound_body or "Service[label=FlowAgent" in bound_body
+        state["binding"] = "com.flowlogin.agent" in binding_body
+    except Exception:
+        pass
+    try:
+        services = adb(["-s", serial, "shell", "dumpsys", "activity", "services", FLOW_AGENT_PACKAGE], timeout=30)
+        state["deadBinding"] = "DEAD" in services and "com.flowlogin.agent/.FlowAccessibilityService" in services
+    except Exception:
+        pass
+    return state
+
+
+def describe_flow_agent_accessibility_state(state):
+    if state.get("bound"):
+        return "Accesibilidad FlowAgent enlazada por Android."
+    if state.get("enabled") and (state.get("binding") or state.get("deadBinding")):
+        return (
+            "Accesibilidad FlowAgent aparece habilitada, pero Android dejo el servicio "
+            "en binding/dead. Abre Accesibilidad y apaga/prende FlowAgent una vez."
+        )
+    if state.get("enabled"):
+        return "Accesibilidad FlowAgent aparece habilitada; Android aun no enlazo el servicio."
+    return "Accesibilidad FlowAgent no esta activa; activa el servicio FlowAgent en Android."
+
+
 def flow_agent_install_mode(value):
     if isinstance(value, bool):
         return "force" if value else "skip"
@@ -1854,12 +1921,16 @@ def setup_flow_agent(device_ids="all", install=True, launch=True, open_accessibi
                     "--ez", "autoconnect", "true",
                 ], timeout=25)
                 lines.append("FlowAgent abierto con host 127.0.0.1 y puerto 8766.")
+                time.sleep(1.2)
+
+            accessibility_state = flow_agent_accessibility_state(serial)
+            lines.append(describe_flow_agent_accessibility_state(accessibility_state))
 
             if open_accessibility:
                 adb(["-s", serial, "shell", "am", "start", "-a", "android.settings.ACCESSIBILITY_SETTINGS"], timeout=20)
                 lines.append("Ajustes de accesibilidad abiertos.")
-
-            lines.append("Si no aparece conectado, activa el servicio FlowAgent en Accesibilidad.")
+            elif not accessibility_state.get("bound"):
+                lines.append("Si no aparece conectado, usa el boton manual de preparar FlowAgent para abrir Accesibilidad.")
         except Exception as exc:
             lines.append(f"ERROR: {exc}")
         outputs.append("\n".join(lines))

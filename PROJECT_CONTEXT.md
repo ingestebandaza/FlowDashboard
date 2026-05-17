@@ -1,6 +1,6 @@
 # FlowLogin Project Context
 
-Ultima actualizacion: 2026-05-16
+Ultima actualizacion: 2026-05-17
 
 Este archivo es la memoria viva del proyecto. Cualquier agente de IA debe leerlo antes de modificar el programa y debe actualizarlo al terminar cambios relevantes.
 
@@ -70,6 +70,9 @@ device_public_ip_flags
 device_public_ip_refresh
 device_mac_identity
 flowagent_auto_socket_watchdog
+device_visible_ip
+flowagent_socket_app_info_permissions
+flowagent_accessibility_diagnostics
 ```
 
 Endpoints importantes:
@@ -94,7 +97,7 @@ Endpoints importantes:
 
 Implementado el 2026-05-11. Mejorado el 2026-05-12 para preparacion automatica sin reinstalar siempre.
 
-El boton visual del dashboard se llama `Instalar FlowAgent`.
+El boton visual del dashboard se llama `Instalar FlowAgent`, pero desde 2026-05-17 actua como preparacion inteligente: usa `install: "auto"` para no reinstalar si el APK ya esta en la version esperada, abre FlowAgent y puede abrir Accesibilidad cuando es una accion manual.
 
 Cuando se pulsa el boton manual, el servidor puede instalar/actualizar y abrir FlowAgent. Antes de ejecutar FlowLogin, el dashboard usa modo automatico:
 
@@ -112,6 +115,7 @@ Resultado esperado:
 - La APK se abre con `host=127.0.0.1` y `port=8766`.
 - Si Accesibilidad ya esta activa, reinicia el socket y conecta solo.
 - Si Accesibilidad no esta activa, el usuario solo debe activar el servicio FlowAgent en Android.
+- Si Android reporta FlowAgent habilitado pero lo deja en `binding/dead` y no aparece en `bound services`, el servidor lo informa como permiso atascado. La reparacion segura es apagar y prender FlowAgent una vez en Accesibilidad; reinstalar el APK no suele resolver ese estado.
 
 Importante:
 
@@ -131,7 +135,7 @@ com.flowlogin.agent
 Version actual:
 
 ```text
-0.2.2
+0.2.4
 ```
 
 Cambios clave:
@@ -139,6 +143,7 @@ Cambios clave:
 - `MainActivity` acepta extras por intent: `host`, `port`, `autoconnect`.
 - El dashboard puede forzar `127.0.0.1:8766` aunque antes se hubiera guardado otra IP.
 - Si `autoconnect=true` y el servicio de accesibilidad esta activo, reinicia el socket automaticamente.
+- Si Android muestra el permiso habilitado pero no enlaza el `AccessibilityService`, la pantalla del APK marca Accesibilidad como `Sin enlazar` para distinguirlo de un permiso realmente pendiente.
 - La interfaz visual del APK usa tarjetas oscuras, chips de estado, acciones compactas y un icono launcher propio.
 - `MainActivity` tambien acepta extra `serial` desde el dashboard y lo guarda para que el socket pueda vincularse con el dispositivo ADB correcto.
 
@@ -496,9 +501,15 @@ Actualizacion automatica:
 - `launcher.py` y `abrir_dashboard.bat` exigen la feature `device_visible_ip` para no reutilizar un servidor viejo que todavia muestre MAC en tarjetas o falle al emparejar Socket con `deviceKey`.
 - Version comercial preparada como `1.0.28` para publicar el ZIP de actualizacion con la IP visible en tarjetas y el arreglo de deteccion Socket.
 - FlowAgent APK subio a `0.2.2`: agrega comandos socket `openAppInfo` y `swipe`, y el dump de accesibilidad ahora expone `checkable`, `checked`, `selected` y `enabled` para decidir switches/radios sin ADB.
-- `FLOW_AGENT_EXPECTED_VERSION` ahora exige `0.2.2`; el dashboard y el launcher no consideran listo un agente viejo para el flujo actual, obligando a reinstalar/actualizar antes de FlowLogin.
+- `FLOW_AGENT_EXPECTED_VERSION` ahora exige `0.2.4`; el dashboard y el launcher no consideran listo un agente viejo para el flujo actual, obligando a reinstalar/actualizar antes de FlowLogin.
 - La limpieza visual previa al segundo intento de login ahora es socket-only: FlowAgent abre App info, entra a Storage/Almacenamiento, pulsa Clear cache, Clear data y confirma; luego vuelve a App info, entra a Permissions/Permisos, revisa Storage/Almacenamiento y activa Allow/Permitir segun flujo de switch (Android 9) o radio/Allow (Android 10+).
 - `clear_clone_cache_data_visual()` ya no cae a `pm clear` ni abre App info con ADB durante este flujo; si la limpieza por socket falla, la cuenta queda con error/revision del intento de limpieza en lugar de usar ADB como motor alterno.
 - `reset_flowlogin_clone_start()` ya no hace `adb shell am force-stop`; despues de restaurar permisos, el segundo intento vuelve a `home` y lanza el clon por FlowAgent.
-- Se copio el proyecto fuente de `flow_agent_apk` dentro de esta carpeta para que futuras modificaciones del APK queden visibles junto al dashboard. La APK compilada incluida en `flow_agent_apk/build/flowagent-debug.apk` corresponde a FlowAgent `0.2.2`.
+- Se copio el proyecto fuente de `flow_agent_apk` dentro de esta carpeta para que futuras modificaciones del APK queden visibles junto al dashboard. La APK compilada incluida en `flow_agent_apk/build/flowagent-debug.apk` corresponde a FlowAgent `0.2.4`.
 - Version comercial preparada como `1.0.29` para publicar una nueva actualizacion con limpieza App info y restauracion de permiso Storage por socket.
+- FlowAgent `0.2.3` corrige el badge visual de la app, que seguia mostrando `0.2.1` aunque el socket ya reportara la version nueva. Se subio el `versionCode` a 9 para forzar actualizacion sobre telefonos que ya tuvieran `0.2.2`.
+- Version comercial preparada como `1.0.30` para publicar el APK FlowAgent `0.2.3` y evitar confusion visual con versiones anteriores.
+- FlowAgent `0.2.4` distingue visualmente `Accesibilidad Sin enlazar` cuando Android tiene el permiso en ajustes pero el `AccessibilityService` no fue enlazado. Esto evita confundir un permiso atascado con una version vieja del APK.
+- `/flowagent/setup` agrega diagnostico de Accesibilidad: detecta `enabled`, `binding`, `bound` y conexiones `DEAD` en `dumpsys`, y reporta cuando Android requiere apagar/prender FlowAgent en Accesibilidad. El boton manual usa `install: "auto"` y `openAccessibility: true`, asi no reinstala sin necesidad y lleva directo al ajuste cuando hace falta.
+- `launcher.py` y `abrir_dashboard.bat` exigen la feature `flowagent_accessibility_diagnostics` para reiniciar servidores viejos que no sepan diagnosticar este estado.
+- Version comercial preparada como `1.0.31` para publicar FlowAgent `0.2.4` y los diagnosticos de Accesibilidad.

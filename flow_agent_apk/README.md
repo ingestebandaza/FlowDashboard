@@ -2,7 +2,7 @@
 
 Agente Android experimental para conectar un telefono con `local_adb_server.py` por socket TCP.
 
-Version actual: `0.2.2`.
+Version actual: `0.2.4`.
 
 La APK incluye icono propio, interfaz visual con tarjetas, chips de estado para Accesibilidad/Socket y configuracion automatica desde el dashboard.
 

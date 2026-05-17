@@ -1,643 +1,954 @@
 {
-  "mac:00:E0:99:C9:6E:90": {
+  "mac:00:E0:99:C9:63:82": {
     "accountStatuses": [
       {
-        "accountId": "0f54b43aaff3",
-        "attempts": 1,
+        "accountId": "8b55a2f3a235",
+        "attempts": 2,
         "clone": 1,
-        "line": "Paul.Carlson369@flowrevelde.com:Cshbl9dwu!",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Thomas.Rodriguez429@flowrevelde.com:yx2lnfZ!ad",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musid",
-        "status": "success",
-        "updatedAt": "2026-05-12T18:11:27.847044+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:49:57.857256+00:00"
       },
       {
-        "accountId": "a2b76b22d929",
-        "attempts": 1,
+        "accountId": "3526128b73c2",
+        "attempts": 2,
         "clone": 2,
-        "line": "Angela.Barnett475@flowrevelde.com:c0vIgyj&ue",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Nancy.Mathis500@flowrevelde.com:p#yqxoA4cg",
+        "message": "Error visible: Something went wrong",
         "package": "com.spotify.musie",
-        "status": "success",
-        "updatedAt": "2026-05-12T18:12:20.183200+00:00"
+        "status": "error",
+        "updatedAt": "2026-05-17T03:51:30.097160+00:00"
       },
       {
-        "accountId": "c668d6037cb9",
-        "attempts": 1,
+        "accountId": "d29d4878b2ee",
+        "attempts": 2,
         "clone": 3,
-        "line": "David.Williams319@flowrevelde.com:th4!uKcxew",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Maria.Thomas399@flowrevelde.com:wq2yjyDp&w",
+        "message": "FlowAgent no pudo abrir el clon",
         "package": "com.spotify.musif",
-        "status": "success",
-        "updatedAt": "2026-05-12T18:13:13.547335+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:51:52.682518+00:00"
       },
       {
-        "accountId": "578f3848da82",
-        "attempts": 1,
+        "accountId": "bdda82a3b671",
+        "attempts": 2,
         "clone": 4,
-        "line": "David.Garcia366@flowrevelde.com:gx4wwj?bMv",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Jeffrey.King344@flowrevelde.com:kbzm1Xnqu&",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musig",
-        "status": "success",
-        "updatedAt": "2026-05-12T18:14:05.683711+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:53:35.910088+00:00"
       },
       {
-        "accountId": "635d09b88d43",
-        "attempts": 1,
+        "accountId": "f0e490667900",
+        "attempts": 2,
         "clone": 5,
-        "line": "Anthony.Walters317@flowrevelde.com:rkzmwCg5v?",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Donald.Lee472@flowrevelde.com:&co3ifzjHr",
+        "message": "Intento 2",
         "package": "com.spotify.musih",
-        "status": "success",
-        "updatedAt": "2026-05-12T18:14:58.360296+00:00"
-      },
-      {
-        "accountId": "19b346190b18",
-        "attempts": 1,
-        "clone": 6,
-        "line": "Sarah.Sanders416@flowrevelde.com:uecV9ztzc?",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musii",
-        "status": "success",
-        "updatedAt": "2026-05-12T18:15:54.819751+00:00"
-      },
-      {
-        "accountId": "ea1650656bc4",
-        "attempts": 1,
-        "clone": 7,
-        "line": "Courtney.Chavez322@flowrevelde.com:sQzt0br&py",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musij",
-        "status": "success",
-        "updatedAt": "2026-05-12T18:16:50.105303+00:00"
-      },
-      {
-        "accountId": "b932c8dde4fd",
-        "attempts": 1,
-        "clone": 8,
-        "line": "Brittany.Miller321@flowrevelde.com:7rlocNa!vd",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musik",
-        "status": "success",
-        "updatedAt": "2026-05-12T18:17:46.013513+00:00"
-      },
-      {
-        "accountId": "a6bf9c348334",
-        "attempts": 1,
-        "clone": 9,
-        "line": "Lisa.Krause354@flowrevelde.com:qhnf#2Fvuh",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musil",
-        "status": "success",
-        "updatedAt": "2026-05-12T18:18:48.842938+00:00"
-      },
-      {
-        "accountId": "5aa45f7e3afe",
-        "attempts": 1,
-        "clone": 10,
-        "line": "Phillip.Harvey359@flowrevelde.com:Innhr!s5ql",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musim",
-        "status": "success",
-        "updatedAt": "2026-05-12T18:19:45.222358+00:00"
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:53:59.781547+00:00"
       }
     ],
     "name": "",
-    "person": "Paul.Carlson369@flowrevelde.com:Cshbl9dwu!\nAngela.Barnett475@flowrevelde.com:c0vIgyj&ue\nDavid.Williams319@flowrevelde.com:th4!uKcxew\nDavid.Garcia366@flowrevelde.com:gx4wwj?bMv\nAnthony.Walters317@flowrevelde.com:rkzmwCg5v?\nSarah.Sanders416@flowrevelde.com:uecV9ztzc?\nCourtney.Chavez322@flowrevelde.com:sQzt0br&py\nBrittany.Miller321@flowrevelde.com:7rlocNa!vd\nLisa.Krause354@flowrevelde.com:qhnf#2Fvuh\nPhillip.Harvey359@flowrevelde.com:Innhr!s5ql"
+    "person": "Thomas.Rodriguez429@flowrevelde.com:yx2lnfZ!ad\nNancy.Mathis500@flowrevelde.com:p#yqxoA4cg\nMaria.Thomas399@flowrevelde.com:wq2yjyDp&w\nJeffrey.King344@flowrevelde.com:kbzm1Xnqu&\nDonald.Lee472@flowrevelde.com:&co3ifzjHr"
+  },
+  "mac:00:E0:99:C9:64:E2": {
+    "accountStatuses": [
+      {
+        "accountId": "d6ec80c3421c",
+        "attempts": 2,
+        "clone": 1,
+        "line": "Diana.Johnson317@flowrevelde.com:ye8gK?kfzq",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musid",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:51:22.425413+00:00"
+      },
+      {
+        "accountId": "664b227c082d",
+        "attempts": 2,
+        "clone": 2,
+        "line": "Jason.Perkins478@flowrevelde.com:sds7tmntK#",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musie",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:53:02.975867+00:00"
+      },
+      {
+        "accountId": "a7c6ddef114b",
+        "attempts": 2,
+        "clone": 3,
+        "line": "Vincent.Petty410@flowrevelde.com:clakEp?t3p",
+        "message": "Intento 2",
+        "package": "com.spotify.musif",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:53:24.658930+00:00"
+      },
+      {
+        "accountId": "343ece9542bd",
+        "attempts": 1,
+        "clone": 4,
+        "line": "Paul.Santos399@flowrevelde.com:em7Vwx#ftb",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musig",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:48:22.084247+00:00"
+      },
+      {
+        "accountId": "558b1d20888f",
+        "attempts": 1,
+        "clone": 5,
+        "line": "Emma.Brown307@flowrevelde.com:r3Z!oxsyqk",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musih",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:49:41.625125+00:00"
+      }
+    ],
+    "name": "",
+    "person": "Diana.Johnson317@flowrevelde.com:ye8gK?kfzq\nJason.Perkins478@flowrevelde.com:sds7tmntK#\nVincent.Petty410@flowrevelde.com:clakEp?t3p\nPaul.Santos399@flowrevelde.com:em7Vwx#ftb\nEmma.Brown307@flowrevelde.com:r3Z!oxsyqk"
+  },
+  "mac:00:E0:99:C9:6E:90": {
+    "accountStatuses": [
+      {
+        "accountId": "8ecf66c3072f",
+        "attempts": 2,
+        "clone": 1,
+        "line": "Natalie.Fleming416@flowrevelde.com:!hnufDie6m",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musid",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:51:28.329409+00:00"
+      },
+      {
+        "accountId": "efe8bdf0a0f6",
+        "attempts": 2,
+        "clone": 2,
+        "line": "Cathy.Roberts446@flowrevelde.com:zVk?m8leuk",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musie",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:53:10.841964+00:00"
+      },
+      {
+        "accountId": "e62adae9b850",
+        "attempts": 2,
+        "clone": 3,
+        "line": "Gabrielle.Flores373@flowrevelde.com:sfheLk?9ia",
+        "message": "Intento 2",
+        "package": "com.spotify.musif",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:53:34.798591+00:00"
+      },
+      {
+        "accountId": "d07585c124af",
+        "attempts": 1,
+        "clone": 4,
+        "line": "Kristina.Mcclure399@flowrevelde.com:xjAkd#x0vx",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musig",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:48:23.914175+00:00"
+      },
+      {
+        "accountId": "57d9414f0214",
+        "attempts": 1,
+        "clone": 5,
+        "line": "Susan.Hill403@flowrevelde.com:lg4?uvPgxl",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musih",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:49:43.731269+00:00"
+      }
+    ],
+    "name": "",
+    "person": "Natalie.Fleming416@flowrevelde.com:!hnufDie6m\nCathy.Roberts446@flowrevelde.com:zVk?m8leuk\nGabrielle.Flores373@flowrevelde.com:sfheLk?9ia\nKristina.Mcclure399@flowrevelde.com:xjAkd#x0vx\nSusan.Hill403@flowrevelde.com:lg4?uvPgxl"
+  },
+  "mac:00:E0:99:C9:79:EC": {
+    "accountStatuses": [
+      {
+        "accountId": "a35ddb7438b2",
+        "attempts": 2,
+        "clone": 1,
+        "line": "Brent.Campbell484@flowrevelde.com:pnvk6cy&Sw",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musid",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:50:56.333137+00:00"
+      },
+      {
+        "accountId": "c4afae2058d8",
+        "attempts": 2,
+        "clone": 2,
+        "line": "Ashley.Cook308@flowrevelde.com:pnmNd5rg!w",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musie",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:52:30.784444+00:00"
+      },
+      {
+        "accountId": "2a6143879e43",
+        "attempts": 2,
+        "clone": 3,
+        "line": "Marvin.Campbell490@flowrevelde.com:8Nvmbms#ny",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musif",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:54:14.122856+00:00"
+      },
+      {
+        "accountId": "7ca669aca8e8",
+        "attempts": 1,
+        "clone": 4,
+        "line": "Brittany.Moore417@flowrevelde.com:Xyc3n?ejtf",
+        "message": "Abriendo App info y limpiando cache/datos del clon antes del segundo intento.",
+        "package": "com.spotify.musig",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:54:14.993367+00:00"
+      },
+      {
+        "accountId": "946b96088e5e",
+        "attempts": 1,
+        "clone": 5,
+        "line": "Kristie.Olson301@flowrevelde.com:ea?y1crygJ",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musih",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:49:19.780039+00:00"
+      }
+    ],
+    "name": "",
+    "person": "Brent.Campbell484@flowrevelde.com:pnvk6cy&Sw\nAshley.Cook308@flowrevelde.com:pnmNd5rg!w\nMarvin.Campbell490@flowrevelde.com:8Nvmbms#ny\nBrittany.Moore417@flowrevelde.com:Xyc3n?ejtf\nKristie.Olson301@flowrevelde.com:ea?y1crygJ"
+  },
+  "mac:00:E0:99:CA:1C:B9": {
+    "accountStatuses": [
+      {
+        "accountId": "038416a009c9",
+        "attempts": 2,
+        "clone": 1,
+        "line": "Alan.Sherman376@flowrevelde.com:gjZl8zbln&",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musid",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:51:29.398783+00:00"
+      },
+      {
+        "accountId": "991c6c117d9d",
+        "attempts": 2,
+        "clone": 2,
+        "line": "Amanda.Cunningham464@flowrevelde.com:A&gydnasn7",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musie",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:53:11.536960+00:00"
+      },
+      {
+        "accountId": "cb05dd60aa4f",
+        "attempts": 2,
+        "clone": 3,
+        "line": "Carl.Wilson420@flowrevelde.com:8xbyYmnr#t",
+        "message": "Intento 2",
+        "package": "com.spotify.musif",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:53:35.604465+00:00"
+      },
+      {
+        "accountId": "098e4207a6eb",
+        "attempts": 1,
+        "clone": 4,
+        "line": "Steven.Jones388@flowrevelde.com:&zidL7njuu",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musig",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:48:25.891179+00:00"
+      },
+      {
+        "accountId": "449ae7d5ef0b",
+        "attempts": 1,
+        "clone": 5,
+        "line": "Jessica.Kidd351@flowrevelde.com:t0yOww!sbp",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musih",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:49:45.657637+00:00"
+      }
+    ],
+    "name": "",
+    "person": "Alan.Sherman376@flowrevelde.com:gjZl8zbln&\nAmanda.Cunningham464@flowrevelde.com:A&gydnasn7\nCarl.Wilson420@flowrevelde.com:8xbyYmnr#t\nSteven.Jones388@flowrevelde.com:&zidL7njuu\nJessica.Kidd351@flowrevelde.com:t0yOww!sbp"
+  },
+  "mac:00:E0:99:CA:1F:DA": {
+    "accountStatuses": [
+      {
+        "accountId": "42e816ba5976",
+        "attempts": 2,
+        "clone": 1,
+        "line": "Edwin.Foster411@flowrevelde.com:evh1v&gUsg",
+        "message": "Error visible: Something went wrong",
+        "package": "com.spotify.musid",
+        "status": "error",
+        "updatedAt": "2026-05-17T03:51:01.660037+00:00"
+      },
+      {
+        "accountId": "e90df5acfb86",
+        "attempts": 2,
+        "clone": 2,
+        "line": "Edward.Nelson459@flowrevelde.com:hsp&kzH8mp",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musie",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:52:43.973446+00:00"
+      },
+      {
+        "accountId": "01acb927d5e5",
+        "attempts": 2,
+        "clone": 3,
+        "line": "Sarah.Miller345@flowrevelde.com:k?heFrw9dz",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musif",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:54:19.228150+00:00"
+      },
+      {
+        "accountId": "55b6a0258e2f",
+        "attempts": 1,
+        "clone": 4,
+        "line": "Brandon.Lindsey338@flowrevelde.com:&ujtt1Dznn",
+        "message": "Abriendo App info y limpiando cache/datos del clon antes del segundo intento.",
+        "package": "com.spotify.musig",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:54:20.084666+00:00"
+      },
+      {
+        "accountId": "be06ad71a008",
+        "attempts": 1,
+        "clone": 5,
+        "line": "Jose.Yang436@flowrevelde.com:3jqoayqzV#",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musih",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:49:29.391091+00:00"
+      }
+    ],
+    "name": "",
+    "person": "Edwin.Foster411@flowrevelde.com:evh1v&gUsg\nEdward.Nelson459@flowrevelde.com:hsp&kzH8mp\nSarah.Miller345@flowrevelde.com:k?heFrw9dz\nBrandon.Lindsey338@flowrevelde.com:&ujtt1Dznn\nJose.Yang436@flowrevelde.com:3jqoayqzV#"
+  },
+  "mac:00:E0:99:CA:37:77": {
+    "accountStatuses": [
+      {
+        "accountId": "0f4cc29e3596",
+        "attempts": 2,
+        "clone": 1,
+        "line": "Charles.Russell458@flowrevelde.com:2pUbkt&ayv",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musid",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:51:28.719919+00:00"
+      },
+      {
+        "accountId": "93f119ecffd4",
+        "attempts": 2,
+        "clone": 2,
+        "line": "Kelly.Patterson466@flowrevelde.com:B2?hewkyhg",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musie",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:53:11.490234+00:00"
+      },
+      {
+        "accountId": "cff6b5deb088",
+        "attempts": 2,
+        "clone": 3,
+        "line": "Stacy.Hardin419@flowrevelde.com:?yArn0fyef",
+        "message": "Intento 2",
+        "package": "com.spotify.musif",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:53:35.499124+00:00"
+      },
+      {
+        "accountId": "0b9f319ef89c",
+        "attempts": 1,
+        "clone": 4,
+        "line": "Todd.Crawford429@flowrevelde.com:d#ucuxpdG0",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musig",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:48:25.306134+00:00"
+      },
+      {
+        "accountId": "5adce2730d09",
+        "attempts": 1,
+        "clone": 5,
+        "line": "Jeffrey.Johnson456@flowrevelde.com:cu2aH?kvyb",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musih",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:49:45.050799+00:00"
+      }
+    ],
+    "name": "",
+    "person": "Charles.Russell458@flowrevelde.com:2pUbkt&ayv\nKelly.Patterson466@flowrevelde.com:B2?hewkyhg\nStacy.Hardin419@flowrevelde.com:?yArn0fyef\nTodd.Crawford429@flowrevelde.com:d#ucuxpdG0\nJeffrey.Johnson456@flowrevelde.com:cu2aH?kvyb"
   },
   "mac:00:E0:99:E1:38:AF": {
     "accountStatuses": [
       {
-        "accountId": "5339467ad2f2",
-        "attempts": 1,
+        "accountId": "11a0cd8dc8a7",
+        "attempts": 2,
         "clone": 1,
-        "line": "Natalie.Fleming416@flowrevelde.com:!hnufDie6m",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Ronald.Carrillo373@flowrevelde.com:Zojx#hn0na",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musid",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:30:17.282912+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:51:34.171557+00:00"
       },
       {
-        "accountId": "313bcd7d47fa",
-        "attempts": 1,
+        "accountId": "df272707d445",
+        "attempts": 2,
         "clone": 2,
-        "line": "Cathy.Roberts446@flowrevelde.com:zVk?m8leuk",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Teresa.Brooks426@flowrevelde.com:qvfcfq2sB!",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musie",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:31:09.078250+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:53:16.995950+00:00"
       },
       {
-        "accountId": "039563e3a4a2",
-        "attempts": 1,
+        "accountId": "2dbfc89f6557",
+        "attempts": 2,
         "clone": 3,
-        "line": "Gabrielle.Flores373@flowrevelde.com:sfheLk?9ia",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Melinda.Rubio347@flowrevelde.com:ix4j&qhgBi",
+        "message": "Intento 2",
         "package": "com.spotify.musif",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:32:04.041248+00:00"
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:53:41.002239+00:00"
       },
       {
-        "accountId": "95daf2f4e2ab",
+        "accountId": "786607c2cff7",
         "attempts": 1,
         "clone": 4,
-        "line": "Kristina.Mcclure399@flowrevelde.com:xjAkd#x0vx",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Nicole.Lewis339@flowrevelde.com:jhb!Ctcs4r",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
         "package": "com.spotify.musig",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:32:58.619684+00:00"
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:48:30.393277+00:00"
       },
       {
-        "accountId": "366e1131b294",
+        "accountId": "b198aa4072df",
         "attempts": 1,
         "clone": 5,
-        "line": "Susan.Hill403@flowrevelde.com:lg4?uvPgxl",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Katie.Wolf458@flowrevelde.com:#qqila2Zjz",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
         "package": "com.spotify.musih",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:33:53.350406+00:00"
-      },
-      {
-        "accountId": "1097994c3d45",
-        "attempts": 1,
-        "clone": 6,
-        "line": "Edwin.Foster411@flowrevelde.com:evh1v&gUsg",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musii",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:56:41.241274+00:00"
-      },
-      {
-        "accountId": "18aa71058339",
-        "attempts": 2,
-        "clone": 7,
-        "line": "Edward.Nelson459@flowrevelde.com:hsp&kzH8mp",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musij",
-        "status": "success",
-        "updatedAt": "2026-05-12T16:31:38.426252+00:00"
-      },
-      {
-        "accountId": "b639f634ed0f",
-        "attempts": 1,
-        "clone": 8,
-        "line": "Sarah.Miller345@flowrevelde.com:k?heFrw9dz",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musik",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:57:37.146626+00:00"
-      },
-      {
-        "accountId": "54b1f41b12aa",
-        "attempts": 1,
-        "clone": 9,
-        "line": "Brandon.Lindsey338@flowrevelde.com:&ujtt1Dznn",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musil",
-        "status": "success",
-        "updatedAt": "2026-05-12T16:30:23.861996+00:00"
-      },
-      {
-        "accountId": "e37c47cd0766",
-        "attempts": 1,
-        "clone": 10,
-        "line": "Jose.Yang436@flowrevelde.com:3jqoayqzV#",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musim",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:58:32.645426+00:00"
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:49:50.335711+00:00"
       }
     ],
     "name": "",
-    "person": "Natalie.Fleming416@flowrevelde.com:!hnufDie6m\nCathy.Roberts446@flowrevelde.com:zVk?m8leuk\nGabrielle.Flores373@flowrevelde.com:sfheLk?9ia\nKristina.Mcclure399@flowrevelde.com:xjAkd#x0vx\nSusan.Hill403@flowrevelde.com:lg4?uvPgxl\nEdwin.Foster411@flowrevelde.com:evh1v&gUsg\nEdward.Nelson459@flowrevelde.com:hsp&kzH8mp\nSarah.Miller345@flowrevelde.com:k?heFrw9dz\nBrandon.Lindsey338@flowrevelde.com:&ujtt1Dznn\nJose.Yang436@flowrevelde.com:3jqoayqzV#"
+    "person": "Ronald.Carrillo373@flowrevelde.com:Zojx#hn0na\nTeresa.Brooks426@flowrevelde.com:qvfcfq2sB!\nMelinda.Rubio347@flowrevelde.com:ix4j&qhgBi\nNicole.Lewis339@flowrevelde.com:jhb!Ctcs4r\nKatie.Wolf458@flowrevelde.com:#qqila2Zjz"
+  },
+  "mac:00:E0:99:E1:ED:7C": {
+    "accountStatuses": [
+      {
+        "accountId": "2ae8d27a277c",
+        "attempts": 2,
+        "clone": 1,
+        "line": "Paul.Carlson369@flowrevelde.com:Cshbl9dwu!",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musid",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:51:12.605685+00:00"
+      },
+      {
+        "accountId": "5c91be7d42e6",
+        "attempts": 2,
+        "clone": 2,
+        "line": "Angela.Barnett475@flowrevelde.com:c0vIgyj&ue",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musie",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:52:47.612423+00:00"
+      },
+      {
+        "accountId": "e93bac0d26cf",
+        "attempts": 2,
+        "clone": 3,
+        "line": "David.Williams319@flowrevelde.com:th4!uKcxew",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musif",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:54:30.843141+00:00"
+      },
+      {
+        "accountId": "798dc067469a",
+        "attempts": 1,
+        "clone": 4,
+        "line": "David.Garcia366@flowrevelde.com:gx4wwj?bMv",
+        "message": "Abriendo App info y limpiando cache/datos del clon antes del segundo intento.",
+        "package": "com.spotify.musig",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:54:31.718475+00:00"
+      },
+      {
+        "accountId": "679816a2b5ba",
+        "attempts": 1,
+        "clone": 5,
+        "line": "Anthony.Walters317@flowrevelde.com:rkzmwCg5v?",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musih",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:49:28.602353+00:00"
+      }
+    ],
+    "name": "",
+    "person": "Paul.Carlson369@flowrevelde.com:Cshbl9dwu!\nAngela.Barnett475@flowrevelde.com:c0vIgyj&ue\nDavid.Williams319@flowrevelde.com:th4!uKcxew\nDavid.Garcia366@flowrevelde.com:gx4wwj?bMv\nAnthony.Walters317@flowrevelde.com:rkzmwCg5v?"
   },
   "mac:00:E0:99:E1:FC:4A": {
     "accountStatuses": [
       {
-        "accountId": "f6ee74775fba",
-        "attempts": 1,
+        "accountId": "7f2778274b90",
+        "attempts": 2,
         "clone": 1,
-        "line": "Brent.Campbell484@flowrevelde.com:pnvk6cy&Sw",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Sarah.Sanders416@flowrevelde.com:uecV9ztzc?",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musid",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:48:02.579340+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:50:12.813643+00:00"
       },
       {
-        "accountId": "4fb09ff8e739",
-        "attempts": 1,
+        "accountId": "a28cc4f5e9db",
+        "attempts": 2,
         "clone": 2,
-        "line": "Ashley.Cook308@flowrevelde.com:pnmNd5rg!w",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Courtney.Chavez322@flowrevelde.com:sQzt0br&py",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musie",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:48:58.195059+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:51:53.420750+00:00"
       },
       {
-        "accountId": "0ab26830d874",
-        "attempts": 1,
+        "accountId": "07b66392de2f",
+        "attempts": 2,
         "clone": 3,
-        "line": "Marvin.Campbell490@flowrevelde.com:8Nvmbms#ny",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Brittany.Miller321@flowrevelde.com:7rlocNa!vd",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musif",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:49:53.794524+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:53:26.306485+00:00"
       },
       {
-        "accountId": "53ee53495bf3",
-        "attempts": 1,
+        "accountId": "db4fa1526286",
+        "attempts": 2,
         "clone": 4,
-        "line": "Brittany.Moore417@flowrevelde.com:Xyc3n?ejtf",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Lisa.Krause354@flowrevelde.com:qhnf#2Fvuh",
+        "message": "Intento 2",
         "package": "com.spotify.musig",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:50:49.341618+00:00"
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:53:47.468439+00:00"
       },
       {
-        "accountId": "8b5feb3dad49",
+        "accountId": "f75f4d35746d",
         "attempts": 1,
         "clone": 5,
-        "line": "Kristie.Olson301@flowrevelde.com:ea?y1crygJ",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Phillip.Harvey359@flowrevelde.com:Innhr!s5ql",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
         "package": "com.spotify.musih",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:51:44.516739+00:00"
-      },
-      {
-        "accountId": "29393cef7177",
-        "attempts": 1,
-        "clone": 6,
-        "line": "Charles.Russell458@flowrevelde.com:2pUbkt&ayv",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musii",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:56:51.142593+00:00"
-      },
-      {
-        "accountId": "965fa67d820a",
-        "attempts": 1,
-        "clone": 7,
-        "line": "Kelly.Patterson466@flowrevelde.com:B2?hewkyhg",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musij",
-        "status": "success",
-        "updatedAt": "2026-05-12T16:30:10.678774+00:00"
-      },
-      {
-        "accountId": "9d41f682422f",
-        "attempts": 1,
-        "clone": 8,
-        "line": "Stacy.Hardin419@flowrevelde.com:?yArn0fyef",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musik",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:57:48.266598+00:00"
-      },
-      {
-        "accountId": "ea69c1204189",
-        "attempts": 1,
-        "clone": 9,
-        "line": "Todd.Crawford429@flowrevelde.com:d#ucuxpdG0",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musil",
-        "status": "success",
-        "updatedAt": "2026-05-12T16:31:06.960269+00:00"
-      },
-      {
-        "accountId": "ec84280d5822",
-        "attempts": 1,
-        "clone": 10,
-        "line": "Jeffrey.Johnson456@flowrevelde.com:cu2aH?kvyb",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musim",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:58:44.657856+00:00"
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:48:39.753790+00:00"
       }
     ],
     "name": "",
-    "person": "Brent.Campbell484@flowrevelde.com:pnvk6cy&Sw\nAshley.Cook308@flowrevelde.com:pnmNd5rg!w\nMarvin.Campbell490@flowrevelde.com:8Nvmbms#ny\nBrittany.Moore417@flowrevelde.com:Xyc3n?ejtf\nKristie.Olson301@flowrevelde.com:ea?y1crygJ\nCharles.Russell458@flowrevelde.com:2pUbkt&ayv\nKelly.Patterson466@flowrevelde.com:B2?hewkyhg\nStacy.Hardin419@flowrevelde.com:?yArn0fyef\nTodd.Crawford429@flowrevelde.com:d#ucuxpdG0\nJeffrey.Johnson456@flowrevelde.com:cu2aH?kvyb"
+    "person": "Sarah.Sanders416@flowrevelde.com:uecV9ztzc?\nCourtney.Chavez322@flowrevelde.com:sQzt0br&py\nBrittany.Miller321@flowrevelde.com:7rlocNa!vd\nLisa.Krause354@flowrevelde.com:qhnf#2Fvuh\nPhillip.Harvey359@flowrevelde.com:Innhr!s5ql"
   },
   "mac:00:E0:99:E2:01:82": {
     "accountStatuses": [
       {
-        "accountId": "c483c1abc007",
-        "attempts": 2,
-        "clone": 1,
-        "line": "Thomas.Rodriguez429@flowrevelde.com:yx2lnfZ!ad",
-        "message": "Error visible: This email and password combination is incorrect.",
-        "package": "com.spotify.musid",
-        "status": "error",
-        "updatedAt": "2026-05-12T18:19:16.277360+00:00"
-      },
-      {
-        "accountId": "e22f4debba5a",
-        "attempts": 2,
-        "clone": 2,
-        "line": "Nancy.Mathis500@flowrevelde.com:p#yqxoA4cg",
-        "message": "Error visible: This email and password combination is incorrect.",
-        "package": "com.spotify.musie",
-        "status": "error",
-        "updatedAt": "2026-05-12T18:20:24.943569+00:00"
-      },
-      {
-        "accountId": "c9f676dbb1a6",
-        "attempts": 2,
-        "clone": 3,
-        "line": "Maria.Thomas399@flowrevelde.com:wq2yjyDp&w",
-        "message": "Ejecucion FlowAgent no activa; estado revisado por el dashboard.",
-        "package": "com.spotify.musif",
-        "status": "review",
-        "updatedAt": "2026-05-12T18:21:06.865572+00:00"
-      },
-      {
-        "accountId": "3b9d39b81f5c",
-        "attempts": 1,
-        "clone": 4,
-        "line": "Jeffrey.King344@flowrevelde.com:kbzm1Xnqu&",
-        "message": "Ejecucion FlowAgent no activa; estado revisado por el dashboard.",
-        "package": "com.spotify.musig",
-        "status": "review",
-        "updatedAt": "2026-05-12T18:21:06.872667+00:00"
-      },
-      {
-        "accountId": "e2eef5b2c6e6",
-        "attempts": 1,
-        "clone": 5,
-        "line": "Donald.Lee472@flowrevelde.com:&co3ifzjHr",
-        "message": "Ejecucion FlowAgent no activa; estado revisado por el dashboard.",
-        "package": "com.spotify.musih",
-        "status": "review",
-        "updatedAt": "2026-05-12T18:21:06.881670+00:00"
-      },
-      {
-        "accountId": "1327356a5938",
-        "attempts": 1,
-        "clone": 6,
-        "line": "Ronald.Carrillo373@flowrevelde.com:Zojx#hn0na",
-        "message": "Ejecucion FlowAgent no activa; estado revisado por el dashboard.",
-        "package": "com.spotify.musii",
-        "status": "review",
-        "updatedAt": "2026-05-12T18:21:06.895560+00:00"
-      },
-      {
-        "accountId": "1c88ddb79e17",
-        "attempts": 1,
-        "clone": 7,
-        "line": "Teresa.Brooks426@flowrevelde.com:qvfcfq2sB!",
-        "message": "Ejecucion FlowAgent no activa; estado revisado por el dashboard.",
-        "package": "com.spotify.musij",
-        "status": "review",
-        "updatedAt": "2026-05-12T18:21:06.903651+00:00"
-      },
-      {
-        "accountId": "7c28894b6190",
-        "attempts": 1,
-        "clone": 8,
-        "line": "Melinda.Rubio347@flowrevelde.com:ix4j&qhgBi",
-        "message": "Ejecucion FlowAgent no activa; estado revisado por el dashboard.",
-        "package": "com.spotify.musik",
-        "status": "review",
-        "updatedAt": "2026-05-12T18:21:06.912672+00:00"
-      },
-      {
-        "accountId": "ccedf68f7f72",
-        "attempts": 1,
-        "clone": 9,
-        "line": "Nicole.Lewis339@flowrevelde.com:jhb!Ctcs4r",
-        "message": "Ejecucion FlowAgent no activa; estado revisado por el dashboard.",
-        "package": "com.spotify.musil",
-        "status": "review",
-        "updatedAt": "2026-05-12T18:21:06.920086+00:00"
-      },
-      {
-        "accountId": "774b04b67a1c",
-        "attempts": 1,
-        "clone": 10,
-        "line": "Katie.Wolf458@flowrevelde.com:#qqila2Zjz",
-        "message": "Ejecucion FlowAgent no activa; estado revisado por el dashboard.",
-        "package": "com.spotify.musim",
-        "status": "review",
-        "updatedAt": "2026-05-12T18:21:06.920086+00:00"
-      }
-    ],
-    "name": "TEST",
-    "person": "Thomas.Rodriguez429@flowrevelde.com:yx2lnfZ!ad\nNancy.Mathis500@flowrevelde.com:p#yqxoA4cg\nMaria.Thomas399@flowrevelde.com:wq2yjyDp&w\nJeffrey.King344@flowrevelde.com:kbzm1Xnqu&\nDonald.Lee472@flowrevelde.com:&co3ifzjHr\nRonald.Carrillo373@flowrevelde.com:Zojx#hn0na\nTeresa.Brooks426@flowrevelde.com:qvfcfq2sB!\nMelinda.Rubio347@flowrevelde.com:ix4j&qhgBi\nNicole.Lewis339@flowrevelde.com:jhb!Ctcs4r\nKatie.Wolf458@flowrevelde.com:#qqila2Zjz"
-  },
-  "mac:00:E0:99:E2:14:F5": {
-    "accountStatuses": [
-      {
-        "accountId": "db35dfd60a29",
+        "accountId": "2a03bc60cf37",
         "attempts": 1,
         "clone": 1,
         "line": "Richard.Thompson400@flowrevelde.com:4ybYwqrr?n",
         "message": "Sesion ya iniciada",
         "package": "com.spotify.musid",
         "status": "already",
-        "updatedAt": "2026-05-12T19:30:32.018092+00:00"
+        "updatedAt": "2026-05-17T03:43:19.530671+00:00"
       },
       {
-        "accountId": "200a6ee9aaaf",
-        "attempts": 1,
+        "accountId": "91238dc20816",
+        "attempts": 2,
         "clone": 2,
         "line": "Keith.Lopez384@flowrevelde.com:vq?kbrfs0M",
-        "message": "Sesion ya iniciada",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musie",
-        "status": "already",
-        "updatedAt": "2026-05-12T19:30:41.252219+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:50:24.140307+00:00"
       },
       {
-        "accountId": "8caeba3f2718",
-        "attempts": 1,
+        "accountId": "cb6af71341cb",
+        "attempts": 2,
         "clone": 3,
         "line": "Lisa.Stevens326@flowrevelde.com:kbqm1!aAwk",
-        "message": "Sesion ya iniciada",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musif",
-        "status": "already",
-        "updatedAt": "2026-05-12T19:30:51.467254+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:52:07.032899+00:00"
       },
       {
-        "accountId": "d4f5e9d84214",
+        "accountId": "d95d89da2bdd",
         "attempts": 1,
         "clone": 4,
         "line": "Ralph.Williams453@flowrevelde.com:oNsoo0&hwb",
-        "message": "Sesion ya iniciada",
+        "message": "No se pudo limpiar cache/datos: Limpieza por socket fallo: No se encontro Clear data/Borrar datos en App info.",
         "package": "com.spotify.musig",
-        "status": "already",
-        "updatedAt": "2026-05-12T19:31:00.747755+00:00"
+        "status": "error",
+        "updatedAt": "2026-05-17T03:52:46.580124+00:00"
       },
       {
-        "accountId": "a24f082ea195",
-        "attempts": 1,
+        "accountId": "d11883406f2f",
+        "attempts": 2,
         "clone": 5,
         "line": "Nathaniel.House433@flowrevelde.com:ufbob#Et5j",
-        "message": "Sesion ya iniciada",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musih",
-        "status": "already",
-        "updatedAt": "2026-05-12T19:31:10.211737+00:00"
-      },
+        "status": "review",
+        "updatedAt": "2026-05-17T03:54:29.415966+00:00"
+      }
+    ],
+    "name": "TEST",
+    "person": "Richard.Thompson400@flowrevelde.com:4ybYwqrr?n\nKeith.Lopez384@flowrevelde.com:vq?kbrfs0M\nLisa.Stevens326@flowrevelde.com:kbqm1!aAwk\nRalph.Williams453@flowrevelde.com:oNsoo0&hwb\nNathaniel.House433@flowrevelde.com:ufbob#Et5j"
+  },
+  "mac:00:E0:99:E2:14:F5": {
+    "accountStatuses": [
       {
-        "accountId": "ce5724b9d8ab",
-        "attempts": 1,
-        "clone": 6,
+        "accountId": "f66efb9d49d7",
+        "attempts": 2,
+        "clone": 1,
         "line": "Elijah.Johnson324@flowrevelde.com:o7mzzrX!gt",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musii",
-        "status": "success",
-        "updatedAt": "2026-05-12T19:32:05.654165+00:00"
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musid",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:51:29.704576+00:00"
       },
       {
-        "accountId": "319c7f5fdd79",
-        "attempts": 1,
-        "clone": 7,
+        "accountId": "f10947057a4b",
+        "attempts": 2,
+        "clone": 2,
         "line": "Bonnie.Chapman367@flowrevelde.com:#crvw4jXdb",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musij",
-        "status": "success",
-        "updatedAt": "2026-05-12T19:33:00.700090+00:00"
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musie",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:53:11.514695+00:00"
       },
       {
-        "accountId": "d4d5da5eb4fa",
-        "attempts": 1,
-        "clone": 8,
+        "accountId": "f7b8f8ab7a80",
+        "attempts": 2,
+        "clone": 3,
         "line": "Brittany.Gomez331@flowrevelde.com:!Rbxhrdm1k",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musik",
-        "status": "success",
-        "updatedAt": "2026-05-12T19:33:56.100649+00:00"
+        "message": "Intento 2",
+        "package": "com.spotify.musif",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:53:35.530594+00:00"
       },
       {
-        "accountId": "80db38fea5b4",
+        "accountId": "cb024fac6969",
         "attempts": 1,
-        "clone": 9,
+        "clone": 4,
         "line": "Ryan.Hernandez377@flowrevelde.com:xfech!7soX",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musil",
-        "status": "success",
-        "updatedAt": "2026-05-12T19:34:52.000633+00:00"
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musig",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:48:26.829676+00:00"
       },
       {
-        "accountId": "072a083d14c0",
+        "accountId": "ac809c350722",
         "attempts": 1,
-        "clone": 10,
+        "clone": 5,
         "line": "Hailey.Salas493@flowrevelde.com:ksoVbt?f4o",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musim",
-        "status": "success",
-        "updatedAt": "2026-05-12T19:35:47.283872+00:00"
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musih",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:49:46.165331+00:00"
       }
     ],
     "name": "",
-    "person": "Richard.Thompson400@flowrevelde.com:4ybYwqrr?n\nKeith.Lopez384@flowrevelde.com:vq?kbrfs0M\nLisa.Stevens326@flowrevelde.com:kbqm1!aAwk\nRalph.Williams453@flowrevelde.com:oNsoo0&hwb\nNathaniel.House433@flowrevelde.com:ufbob#Et5j\nElijah.Johnson324@flowrevelde.com:o7mzzrX!gt\nBonnie.Chapman367@flowrevelde.com:#crvw4jXdb\nBrittany.Gomez331@flowrevelde.com:!Rbxhrdm1k\nRyan.Hernandez377@flowrevelde.com:xfech!7soX\nHailey.Salas493@flowrevelde.com:ksoVbt?f4o"
+    "person": "Elijah.Johnson324@flowrevelde.com:o7mzzrX!gt\nBonnie.Chapman367@flowrevelde.com:#crvw4jXdb\nBrittany.Gomez331@flowrevelde.com:!Rbxhrdm1k\nRyan.Hernandez377@flowrevelde.com:xfech!7soX\nHailey.Salas493@flowrevelde.com:ksoVbt?f4o"
   },
   "mac:00:E0:99:E2:23:79": {
     "accountStatuses": [
       {
-        "accountId": "911fcc652426",
-        "attempts": 1,
+        "accountId": "3b601ccce74d",
+        "attempts": 2,
         "clone": 1,
-        "line": "Diana.Johnson317@flowrevelde.com:ye8gK?kfzq",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Debra.Pace414@flowrevelde.com:&zdpdie6qM",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musid",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:22:58.735303+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:51:32.639277+00:00"
       },
       {
-        "accountId": "a5b7379bd1e0",
-        "attempts": 1,
+        "accountId": "0c25733c3eb6",
+        "attempts": 2,
         "clone": 2,
-        "line": "Jason.Perkins478@flowrevelde.com:sds7tmntK#",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Charles.Brown432@flowrevelde.com:7Bmbawdgx&",
+        "message": "Sin confirmacion segura",
         "package": "com.spotify.musie",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:23:53.916004+00:00"
+        "status": "review",
+        "updatedAt": "2026-05-17T03:53:15.092632+00:00"
       },
       {
-        "accountId": "82f487f19a67",
-        "attempts": 1,
+        "accountId": "4c50aeec35a6",
+        "attempts": 2,
         "clone": 3,
-        "line": "Vincent.Petty410@flowrevelde.com:clakEp?t3p",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Joann.Brown492@flowrevelde.com:hpa6g#ssUv",
+        "message": "Intento 2",
         "package": "com.spotify.musif",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:24:41.670321+00:00"
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:53:39.117216+00:00"
       },
       {
-        "accountId": "ad500c7b4d7c",
+        "accountId": "91bfd730200b",
         "attempts": 1,
         "clone": 4,
-        "line": "Paul.Santos399@flowrevelde.com:em7Vwx#ftb",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Jeremy.Patel451@flowrevelde.com:#j5kXiyxqp",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
         "package": "com.spotify.musig",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:25:36.646104+00:00"
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:48:28.383657+00:00"
       },
       {
-        "accountId": "f8bf312f2dd9",
-        "attempts": 2,
+        "accountId": "391aa5a8c1d4",
+        "attempts": 1,
         "clone": 5,
-        "line": "Emma.Brown307@flowrevelde.com:r3Z!oxsyqk",
-        "message": "Login confirmado por FlowAgent",
+        "line": "Sean.Schneider395@flowrevelde.com:#onMhmjq7j",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
         "package": "com.spotify.musih",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:27:18.640898+00:00"
-      },
-      {
-        "accountId": "e1b48b0e2d95",
-        "attempts": 1,
-        "clone": 6,
-        "line": "Alan.Sherman376@flowrevelde.com:gjZl8zbln&",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musii",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:56:13.088278+00:00"
-      },
-      {
-        "accountId": "f6b97b6ffe4b",
-        "attempts": 1,
-        "clone": 7,
-        "line": "Amanda.Cunningham464@flowrevelde.com:A&gydnasn7",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musij",
-        "status": "success",
-        "updatedAt": "2026-05-12T16:30:03.514699+00:00"
-      },
-      {
-        "accountId": "7209a74816e2",
-        "attempts": 1,
-        "clone": 8,
-        "line": "Carl.Wilson420@flowrevelde.com:8xbyYmnr#t",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musik",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:57:10.244671+00:00"
-      },
-      {
-        "accountId": "9f3fbba55d82",
-        "attempts": 1,
-        "clone": 9,
-        "line": "Steven.Jones388@flowrevelde.com:&zidL7njuu",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musil",
-        "status": "success",
-        "updatedAt": "2026-05-12T16:31:00.072955+00:00"
-      },
-      {
-        "accountId": "16975ba779bf",
-        "attempts": 1,
-        "clone": 10,
-        "line": "Jessica.Kidd351@flowrevelde.com:t0yOww!sbp",
-        "message": "Login confirmado por FlowAgent",
-        "package": "com.spotify.musim",
-        "status": "success",
-        "updatedAt": "2026-05-12T15:58:07.753309+00:00"
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:49:48.532256+00:00"
       }
     ],
     "name": "",
-    "person": "Diana.Johnson317@flowrevelde.com:ye8gK?kfzq\nJason.Perkins478@flowrevelde.com:sds7tmntK#\nVincent.Petty410@flowrevelde.com:clakEp?t3p\nPaul.Santos399@flowrevelde.com:em7Vwx#ftb\nEmma.Brown307@flowrevelde.com:r3Z!oxsyqk\nAlan.Sherman376@flowrevelde.com:gjZl8zbln&\nAmanda.Cunningham464@flowrevelde.com:A&gydnasn7\nCarl.Wilson420@flowrevelde.com:8xbyYmnr#t\nSteven.Jones388@flowrevelde.com:&zidL7njuu\nJessica.Kidd351@flowrevelde.com:t0yOww!sbp"
+    "person": "Debra.Pace414@flowrevelde.com:&zdpdie6qM\nCharles.Brown432@flowrevelde.com:7Bmbawdgx&\nJoann.Brown492@flowrevelde.com:hpa6g#ssUv\nJeremy.Patel451@flowrevelde.com:#j5kXiyxqp\nSean.Schneider395@flowrevelde.com:#onMhmjq7j"
   },
   "mac:00:E0:99:E2:33:35": {
-    "accountStatuses": [],
+    "accountStatuses": [
+      {
+        "accountId": "f8897d7884af",
+        "attempts": 2,
+        "clone": 1,
+        "line": "Jennifer.Jarvis346@flowrevelde.com:#u9xapfOpq",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musid",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:51:23.624160+00:00"
+      },
+      {
+        "accountId": "8ca705eb8ef7",
+        "attempts": 2,
+        "clone": 2,
+        "line": "Melissa.Sullivan470@flowrevelde.com:wl&qxw7wvJ",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musie",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:53:07.193680+00:00"
+      },
+      {
+        "accountId": "e9e39a5a62fd",
+        "attempts": 2,
+        "clone": 3,
+        "line": "Lauren.Nelson327@flowrevelde.com:rct0liC?cy",
+        "message": "Intento 2",
+        "package": "com.spotify.musif",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:53:31.281507+00:00"
+      },
+      {
+        "accountId": "5b04b5dda716",
+        "attempts": 1,
+        "clone": 4,
+        "line": "Bethany.Bowman405@flowrevelde.com:t#nyd1Yylp",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musig",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:48:27.841105+00:00"
+      },
+      {
+        "accountId": "e35df8869c55",
+        "attempts": 1,
+        "clone": 5,
+        "line": "Emily.Reynolds395@flowrevelde.com:b1sirqzu#Z",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musih",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:49:40.116313+00:00"
+      }
+    ],
     "name": "123111",
-    "person": ""
+    "person": "Jennifer.Jarvis346@flowrevelde.com:#u9xapfOpq\nMelissa.Sullivan470@flowrevelde.com:wl&qxw7wvJ\nLauren.Nelson327@flowrevelde.com:rct0liC?cy\nBethany.Bowman405@flowrevelde.com:t#nyd1Yylp\nEmily.Reynolds395@flowrevelde.com:b1sirqzu#Z"
+  },
+  "mac:00:E0:99:E2:3E:2D": {
+    "accountStatuses": [
+      {
+        "accountId": "4a791610f7cc",
+        "attempts": 2,
+        "clone": 1,
+        "line": "Johnathan.Rodriguez477@flowrevelde.com:cqkh!6pzaI",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musid",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:51:34.506306+00:00"
+      },
+      {
+        "accountId": "e896e38985b1",
+        "attempts": 2,
+        "clone": 2,
+        "line": "Caroline.Parrish320@flowrevelde.com:qingKy&4ls",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musie",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:53:16.708442+00:00"
+      },
+      {
+        "accountId": "99bfad9576e0",
+        "attempts": 2,
+        "clone": 3,
+        "line": "Alicia.Castro435@flowrevelde.com:9heubzgN&n",
+        "message": "Intento 2",
+        "package": "com.spotify.musif",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:53:40.727867+00:00"
+      },
+      {
+        "accountId": "7ba2bb0225e1",
+        "attempts": 1,
+        "clone": 4,
+        "line": "Mark.Marquez486@flowrevelde.com:!wtYx9uqok",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musig",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:48:29.930179+00:00"
+      },
+      {
+        "accountId": "b48a5775bb47",
+        "attempts": 1,
+        "clone": 5,
+        "line": "Justin.Bell355@flowrevelde.com:Nvy3v#dysb",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musih",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:49:50.459669+00:00"
+      }
+    ],
+    "name": "",
+    "person": "Johnathan.Rodriguez477@flowrevelde.com:cqkh!6pzaI\nCaroline.Parrish320@flowrevelde.com:qingKy&4ls\nAlicia.Castro435@flowrevelde.com:9heubzgN&n\nMark.Marquez486@flowrevelde.com:!wtYx9uqok\nJustin.Bell355@flowrevelde.com:Nvy3v#dysb"
+  },
+  "mac:00:E0:99:E2:60:1D": {
+    "accountStatuses": [
+      {
+        "accountId": "bc49269b9b03",
+        "attempts": 2,
+        "clone": 1,
+        "line": "Thomas.Weiss419@flowrevelde.com:q6yPikd!rf",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musid",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:51:24.173595+00:00"
+      },
+      {
+        "accountId": "2f6053c41329",
+        "attempts": 2,
+        "clone": 2,
+        "line": "Scott.Hill356@flowrevelde.com:nochp&nRs1",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musie",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:52:59.295777+00:00"
+      },
+      {
+        "accountId": "0bd866b8e43f",
+        "attempts": 2,
+        "clone": 3,
+        "line": "Heidi.Wells351@flowrevelde.com:l3yfGkn?iz",
+        "message": "Intento 2",
+        "package": "com.spotify.musif",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:53:23.360281+00:00"
+      },
+      {
+        "accountId": "0f53c4e1265d",
+        "attempts": 1,
+        "clone": 4,
+        "line": "David.Lewis395@flowrevelde.com:Xynpp9cy&h",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musig",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:48:19.774601+00:00"
+      },
+      {
+        "accountId": "505cd543949b",
+        "attempts": 1,
+        "clone": 5,
+        "line": "Laura.Johnson480@flowrevelde.com:oiYlb!ei7p",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musih",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:49:39.907361+00:00"
+      }
+    ],
+    "name": "",
+    "person": "Thomas.Weiss419@flowrevelde.com:q6yPikd!rf\nScott.Hill356@flowrevelde.com:nochp&nRs1\nHeidi.Wells351@flowrevelde.com:l3yfGkn?iz\nDavid.Lewis395@flowrevelde.com:Xynpp9cy&h\nLaura.Johnson480@flowrevelde.com:oiYlb!ei7p"
+  },
+  "mac:00:E0:99:E3:A8:CA": {
+    "accountStatuses": [
+      {
+        "accountId": "2bed3e4ea79e",
+        "attempts": 2,
+        "clone": 1,
+        "line": "Rachel.Clark350@flowrevelde.com:#C6ejtelsr",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musid",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:50:29.378912+00:00"
+      },
+      {
+        "accountId": "67b2e4d01a7c",
+        "attempts": 2,
+        "clone": 2,
+        "line": "Marcus.Carrillo459@flowrevelde.com:pDrsiz6#lw",
+        "message": "FlowAgent no pudo abrir el clon",
+        "package": "com.spotify.musie",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:51:09.707188+00:00"
+      },
+      {
+        "accountId": "b3118942ae70",
+        "attempts": 2,
+        "clone": 3,
+        "line": "Jennifer.Kent483@flowrevelde.com:!zsk8mjcaB",
+        "message": "Sin confirmacion segura",
+        "package": "com.spotify.musif",
+        "status": "review",
+        "updatedAt": "2026-05-17T03:52:52.769331+00:00"
+      },
+      {
+        "accountId": "b1961e6d6544",
+        "attempts": 2,
+        "clone": 4,
+        "line": "Erin.Gray375@flowrevelde.com:z6&mmhpgnZ",
+        "message": "Intento 2",
+        "package": "com.spotify.musig",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:53:16.862821+00:00"
+      },
+      {
+        "accountId": "d9688ff98cca",
+        "attempts": 1,
+        "clone": 5,
+        "line": "Katherine.Austin435@flowrevelde.com:jjyo0fYp?x",
+        "message": "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
+        "package": "com.spotify.musih",
+        "status": "retrying",
+        "updatedAt": "2026-05-17T03:48:46.254445+00:00"
+      }
+    ],
+    "name": "",
+    "person": "Rachel.Clark350@flowrevelde.com:#C6ejtelsr\nMarcus.Carrillo459@flowrevelde.com:pDrsiz6#lw\nJennifer.Kent483@flowrevelde.com:!zsk8mjcaB\nErin.Gray375@flowrevelde.com:z6&mmhpgnZ\nKatherine.Austin435@flowrevelde.com:jjyo0fYp?x"
   }
 }

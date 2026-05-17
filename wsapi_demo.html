@@ -3148,7 +3148,7 @@
       if (!agent || !agent.accessibility) return false;
       const [major, minor] = versionParts(agent.agentVersion);
       const [, , patch] = versionParts(agent.agentVersion);
-      return major > 0 || minor > 2 || (minor === 2 && patch >= 2);
+      return major > 0 || minor > 2 || (minor === 2 && patch >= 4);
     }
 
     function normalizeCountryCode(value) {
@@ -5406,7 +5406,7 @@
       if (!quiet) {
         appendOutput(
           'FlowAgent requiere atencion',
-          `${result}\n\nNo quedaron listos:\n${missing.map(getDeviceId).join('\n')}\n\nRevisa que el telefono siga conectado por ADB/WiFi y que Accesibilidad de FlowAgent este activa.`
+          `${result}\n\nNo quedaron listos:\n${missing.map(getDeviceId).join('\n')}\n\nRevisa que el telefono siga conectado por ADB/WiFi. Si Android dice que FlowAgent esta habilitado pero sigue pendiente, apaga y prende FlowAgent una vez en Accesibilidad.`
         );
       }
       return false;
@@ -5427,7 +5427,7 @@
         if (stillMissing.length && reason !== 'watchdog') {
           appendOutput(
             'Socket pendiente',
-            `FlowAgent se intento abrir automaticamente, pero aun falta activar Socket en:\n${stillMissing.join('\n')}\n\nNormalmente falta activar Accesibilidad o aceptar el telefono en ADB.`
+            `FlowAgent se intento abrir automaticamente, pero aun falta activar Socket en:\n${stillMissing.join('\n')}\n\nNormalmente falta activar Accesibilidad, aceptar el telefono en ADB o apagar/prender FlowAgent si Android lo dejo atascado.`
           );
         }
       } catch (error) {
@@ -5464,8 +5464,9 @@
       try {
         const [devices, result, agents] = await wsapi.setupFlowAgent({
           deviceIds,
-          install: true,
-          launch: true
+          install: 'auto',
+          launch: true,
+          openAccessibility: true
         });
         state.devices = devices;
         state.agents = agents;
