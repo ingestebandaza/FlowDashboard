@@ -4305,6 +4305,32 @@
       els.devicePersonInput.select();
     }
 
+    function getFlowMenuTargetDevices(deviceIds) {
+      return uniqueDeviceIds(deviceIds).map(deviceId => ({
+        deviceId,
+        device: getDeviceById(deviceId)
+      })).filter(item => item.device);
+    }
+
+    function getBulkEditableCountForDevices(deviceIds) {
+      return getFlowMenuTargetDevices(deviceIds)
+        .reduce((total, item) => total + getBulkEditableAccountItems(item.device).length, 0);
+    }
+
+    function getAddCapacityForDevices(deviceIds) {
+      const targets = getFlowMenuTargetDevices(deviceIds).filter(item => {
+        return !isDeviceActionBusy(item.deviceId) && !isDeviceLoginRunning(item.deviceId);
+      }).map(item => {
+        const freeSlots = Math.max(0, 10 - getDeviceAccountLines(item.device).length);
+        return { ...item, freeSlots };
+      }).filter(item => item.freeSlots > 0);
+      if (!targets.length) return { maxCount: 0, targets: [], freeAccounts: 0 };
+      const freeAccounts = getAvailableAccountRecordsForDeviceAdd('').length;
+      const perDeviceByAccounts = Math.floor(freeAccounts / targets.length);
+      const maxCount = Math.max(0, Math.min(10, perDeviceByAccounts, ...targets.map(item => item.freeSlots)));
+      return { maxCount, targets, freeAccounts };
+    }
+
     function openDeviceFlowMenu(device, x, y) {
       const deviceId = getDeviceId(device);
       if (!deviceId) return;
@@ -4318,28 +4344,30 @@
       const hasAccounts = targetDevices.some(item => getDeviceAccountLines(item).length);
       const anyActionBusy = targetIds.some(isDeviceActionBusy);
       const anyLoginRunning = targetIds.some(isDeviceLoginRunning);
+      const editableCount = getBulkEditableCountForDevices(targetIds);
+      const addCapacity = getAddCapacityForDevices(targetIds);
       state.flowMenuDeviceId = deviceId;
       state.flowMenuDeviceIds = targetIds;
       els.deviceFlowMenu.dataset.deviceId = deviceId;
       els.deviceFlowMenu.dataset.deviceIds = targetIds.join(',');
-      const lines = getDeviceAccountLines(device);
       const pendingItems = getPendingFlowLoginItems(device);
-      const editableItems = getBulkEditableAccountItems(device);
-      const freeSlots = Math.max(0, 10 - lines.length);
-      const freeAccounts = getAvailableAccountRecordsForDeviceAdd(deviceId).length;
-      const addMax = Math.min(freeSlots, freeAccounts);
       const actionBusy = isDeviceActionBusy(deviceId);
       els.deviceFlowPlay.disabled = anyActionBusy || anyLoginRunning || !hasPending || !hasAccounts;
       els.deviceFlowPlay.title = targetIds.length > 1 ? `Ejecutar pendientes en ${targetIds.length} seleccionados` : 'Ejecutar pendientes';
-      els.deviceFlowStop.disabled = !isDeviceLoginRunning(deviceId);
-      els.deviceFlowRetryAccounts.disabled = actionBusy || !editableItems.length;
-      els.deviceFlowReplaceAccounts.disabled = actionBusy || !editableItems.length;
-      els.deviceFlowAddAccounts.disabled = actionBusy || freeSlots <= 0;
-      els.deviceFlowClearAccounts.disabled = actionBusy || !lines.length;
+      els.deviceFlowStop.disabled = !anyLoginRunning;
+      els.deviceFlowStop.title = targetIds.length > 1 ? `Detener FlowLogin en ${targetIds.length} seleccionados` : 'Detener FlowLogin';
+      els.deviceFlowRetryAccounts.disabled = anyActionBusy || (targetIds.length <= 1 && !editableCount);
+      els.deviceFlowRetryAccounts.title = targetIds.length > 1 ? `Reintentar cuentas editables en ${targetIds.length} seleccionados` : 'Reintentar Cuentas';
+      els.deviceFlowReplaceAccounts.disabled = anyActionBusy || (targetIds.length <= 1 && !editableCount);
+      els.deviceFlowReplaceAccounts.title = targetIds.length > 1 ? `Reemplazar cuentas editables en ${targetIds.length} seleccionados` : 'Reemplazar Cuentas';
+      els.deviceFlowAddAccounts.disabled = anyActionBusy || addCapacity.maxCount <= 0;
+      els.deviceFlowAddAccounts.title = targetIds.length > 1 ? `Anadir cuentas a ${targetIds.length} seleccionados` : 'Anadir Cuentas';
+      els.deviceFlowClearAccounts.disabled = anyActionBusy || !hasAccounts;
+      els.deviceFlowClearAccounts.title = targetIds.length > 1 ? `Eliminar cuentas de ${targetIds.length} seleccionados` : 'Eliminar Cuentas';
       els.deviceFlowAddPanel.classList.remove('is-open');
-      els.deviceFlowAddCount.max = String(Math.max(1, addMax || freeSlots));
+      els.deviceFlowAddCount.max = String(Math.max(1, addCapacity.maxCount));
       els.deviceFlowAddCount.value = '1';
-      els.deviceFlowAddCount.placeholder = addMax > 0 ? `1-${addMax}` : `1-${freeSlots}`;
+      els.deviceFlowAddCount.placeholder = addCapacity.maxCount > 0 ? `1-${addCapacity.maxCount}` : '0';
       els.deviceFlowMenu.classList.add('is-open');
       const rect = els.deviceFlowMenu.getBoundingClientRect();
       const left = Math.min(Math.max(8, x), window.innerWidth - rect.width - 8);
@@ -5080,6 +5108,37 @@
       }
     }
 
+    async function retryDeviceAccountsForMenu(deviceIds) {
+      const targetIds = uniqueDeviceIds(deviceIds);
+      if (targetIds.length <= 1) {
+        if (targetIds[0]) await retryDeviceAccounts(targetIds[0]);
+        return;
+      }
+      closeDeviceFlowMenu();
+      const runnable = getFlowMenuTargetDevices(targetIds)
+        .filter(item => !isDeviceActionBusy(item.deviceId) && !isDeviceLoginRunning(item.deviceId))
+        .map(item => ({ ...item, items: getBulkEditableAccountItems(item.device) }))
+        .filter(item => item.items.length);
+      if (!runnable.length) {
+        appendOutput('Sin cuentas para reintentar', 'Los dispositivos seleccionados solo tienen cuentas funcionando o no tienen cuentas asignadas.');
+        return;
+      }
+      const runnableIds = runnable.map(item => item.deviceId);
+      runnableIds.forEach(deviceId => setDeviceActionBusy(deviceId, true));
+      try {
+        let started = 0;
+        for (const item of runnable) {
+          await runDeviceClones(item.deviceId, item.items.map(account => account.clone), 'Reintento masivo enviado', 'Reintento masivo');
+          started += 1;
+        }
+        appendOutput('Reintento multiple enviado', `${started} dispositivo${started === 1 ? '' : 's'} procesado${started === 1 ? '' : 's'}.`);
+      } catch (error) {
+        appendOutput('Error al reintentar cuentas', error.message);
+      } finally {
+        runnableIds.forEach(deviceId => setDeviceActionBusy(deviceId, false));
+      }
+    }
+
     async function replaceDeviceAccounts(deviceId) {
       closeDeviceFlowMenu();
       if (isDeviceActionBusy(deviceId) || isDeviceLoginRunning(deviceId)) return;
@@ -5121,18 +5180,82 @@
       }
     }
 
-    function openAddDeviceAccountsPanel(deviceId) {
-      const device = getDeviceById(deviceId);
-      if (!device) return;
-      const lines = getDeviceAccountLines(device);
-      const freeSlots = Math.max(0, 10 - lines.length);
-      const freeAccounts = getAvailableAccountRecordsForDeviceAdd(deviceId).length;
-      const maxCount = Math.min(freeSlots, freeAccounts);
+    async function replaceDeviceAccountsForMenu(deviceIds) {
+      const targetIds = uniqueDeviceIds(deviceIds);
+      if (targetIds.length <= 1) {
+        if (targetIds[0]) await replaceDeviceAccounts(targetIds[0]);
+        return;
+      }
+      closeDeviceFlowMenu();
+      const targets = getFlowMenuTargetDevices(targetIds)
+        .filter(item => !isDeviceActionBusy(item.deviceId) && !isDeviceLoginRunning(item.deviceId))
+        .map(item => ({ ...item, items: getBulkEditableAccountItems(item.device) }))
+        .filter(item => item.items.length);
+      if (!targets.length) {
+        appendOutput('Sin cuentas para reemplazar', 'Los dispositivos seleccionados solo tienen cuentas funcionando o no tienen cuentas asignadas.');
+        return;
+      }
+      const required = targets.reduce((total, item) => total + item.items.length, 0);
+      const freeRecords = getAvailableAccountRecords('total').slice(0, required);
+      if (freeRecords.length < required) {
+        appendOutput('Cuentas libres insuficientes', `Se necesitan ${required} cuentas libres en Total y solo hay ${freeRecords.length}.`);
+        return;
+      }
+
+      const targetBusyIds = targets.map(item => item.deviceId);
+      targetBusyIds.forEach(deviceId => setDeviceActionBusy(deviceId, true));
+      try {
+        let cursor = 0;
+        let changedDevices = 0;
+        for (const item of targets) {
+          const lines = getDeviceAccountLines(item.device);
+          const records = freeRecords.slice(cursor, cursor + item.items.length);
+          item.items.forEach((accountItem, index) => {
+            const clone = Number(accountItem.clone);
+            const record = records[index];
+            while (lines.length < clone) lines.push('');
+            clearAssignmentForDeviceClone(item.deviceId, clone);
+            lines[clone - 1] = record.line;
+          });
+          state.devices = await wsapi.updateDevicePerson({
+            serial: item.deviceId,
+            person: lines.slice(0, 10).join('\n')
+          });
+          item.items.forEach((accountItem, index) => {
+            assignAccountRecord(records[index], item.deviceId, accountItem.clone, 'assigned');
+          });
+          await runDeviceClones(item.deviceId, item.items.map(account => account.clone), 'Reemplazo masivo enviado', 'Cuenta reemplazada');
+          cursor += item.items.length;
+          changedDevices += 1;
+        }
+        state.devices = await wsapi.getDeviceListAll();
+        renderDevices();
+        updateAccountTrace();
+        appendOutput('Reemplazo multiple enviado', `${changedDevices} dispositivo${changedDevices === 1 ? '' : 's'} procesado${changedDevices === 1 ? '' : 's'} con ${required} cuenta${required === 1 ? '' : 's'} nueva${required === 1 ? '' : 's'}.`);
+      } catch (error) {
+        appendOutput('Error al reemplazar cuentas', error.message);
+      } finally {
+        targetBusyIds.forEach(deviceId => setDeviceActionBusy(deviceId, false));
+      }
+    }
+
+    function openAddDeviceAccountsPanel(deviceIds) {
+      const targetIds = uniqueDeviceIds(Array.isArray(deviceIds) ? deviceIds : [deviceIds]);
+      const capacity = getAddCapacityForDevices(targetIds);
+      const firstId = targetIds[0] || '';
+      const maxCount = capacity.maxCount;
+      if (!capacity.targets.length) {
+        appendOutput(
+          'Dispositivo completo',
+          targetIds.length > 1 ? 'Los dispositivos seleccionados estan completos o ocupados.' : `${shortDeviceId(firstId)} ya tiene 10 cuentas.`
+        );
+        return;
+      }
       if (maxCount <= 0) {
         appendOutput(
-          freeSlots <= 0 ? 'Dispositivo completo' : 'Sin cuentas libres',
-          freeSlots <= 0
-            ? `${shortDeviceId(deviceId)} ya tiene 10 cuentas.`
+          capacity.freeAccounts <= 0 ? 'Sin cuentas libres' : 'No alcanzan cuentas',
+          targetIds.length > 1
+            ? 'No hay suficientes cuentas libres para anadir esa cantidad a todos los seleccionados.'
             : 'Agrega cuentas nuevas en Total antes de anadir al dispositivo.'
         );
         return;
@@ -5194,6 +5317,69 @@
       }
     }
 
+    async function addDeviceAccountsForMenu(deviceIds, requestedCount) {
+      const targetIds = uniqueDeviceIds(deviceIds);
+      if (targetIds.length <= 1) {
+        if (targetIds[0]) await addDeviceAccounts(targetIds[0], requestedCount);
+        return;
+      }
+      closeDeviceFlowMenu();
+      const capacity = getAddCapacityForDevices(targetIds);
+      const count = Math.max(1, Math.min(Number(requestedCount) || 1, capacity.maxCount));
+      if (!capacity.targets.length) {
+        appendOutput('Dispositivos completos', 'Los dispositivos seleccionados no tienen espacio libre o estan ocupados.');
+        return;
+      }
+      if (capacity.maxCount <= 0) {
+        appendOutput('No alcanzan espacios o cuentas', 'No hay suficientes cuentas libres para anadir a todos los dispositivos seleccionados.');
+        return;
+      }
+      if (Number(requestedCount) > count || count <= 0) {
+        appendOutput('No alcanzan espacios o cuentas', `Solo se pueden anadir ${Math.max(0, capacity.maxCount)} cuenta${capacity.maxCount === 1 ? '' : 's'} por dispositivo ahora mismo.`);
+        return;
+      }
+
+      const freeRecords = getAvailableAccountRecordsForDeviceAdd('').slice(0, count * capacity.targets.length);
+      if (freeRecords.length < count * capacity.targets.length) {
+        appendOutput('Cuentas libres insuficientes', `Se necesitan ${count * capacity.targets.length} cuentas libres en Total y solo hay ${freeRecords.length}.`);
+        return;
+      }
+      const targetBusyIds = capacity.targets.map(item => item.deviceId);
+      targetBusyIds.forEach(deviceId => setDeviceActionBusy(deviceId, true));
+      try {
+        let cursor = 0;
+        const summaries = [];
+        for (const item of capacity.targets) {
+          const lines = getDeviceAccountLines(item.device);
+          const addedClones = [];
+          const startClone = lines.length + 1;
+          const records = freeRecords.slice(cursor, cursor + count);
+          records.forEach((record, index) => {
+            const clone = startClone + index;
+            lines.push(record.line);
+            addedClones.push(clone);
+          });
+          state.devices = await wsapi.updateDevicePerson({
+            serial: item.deviceId,
+            person: lines.slice(0, 10).join('\n')
+          });
+          records.forEach((record, index) => {
+            assignAccountRecord(record, item.deviceId, startClone + index, 'assigned');
+          });
+          summaries.push(`${shortDeviceId(item.deviceId)}: C${addedClones.join(', C')}`);
+          cursor += count;
+        }
+        state.devices = await wsapi.getDeviceListAll();
+        renderDevices();
+        updateAccountTrace();
+        appendOutput('Cuentas anadidas', `${capacity.targets.length} dispositivo${capacity.targets.length === 1 ? '' : 's'} recibieron ${count} cuenta${count === 1 ? '' : 's'} cada uno.\n\n${summaries.join('\n')}`);
+      } catch (error) {
+        appendOutput('Error al anadir cuentas', error.message);
+      } finally {
+        targetBusyIds.forEach(deviceId => setDeviceActionBusy(deviceId, false));
+      }
+    }
+
     async function clearDeviceAccountsFromMenu(deviceId) {
       closeDeviceFlowMenu();
       if (isDeviceActionBusy(deviceId) || isDeviceLoginRunning(deviceId)) return;
@@ -5218,6 +5404,40 @@
         appendOutput('Error al eliminar cuentas del dispositivo', error.message);
       } finally {
         setDeviceActionBusy(deviceId, false);
+      }
+    }
+
+    async function clearDeviceAccountsFromMenuForDevices(deviceIds) {
+      const targetIds = uniqueDeviceIds(deviceIds);
+      if (targetIds.length <= 1) {
+        if (targetIds[0]) await clearDeviceAccountsFromMenu(targetIds[0]);
+        return;
+      }
+      closeDeviceFlowMenu();
+      const targets = getFlowMenuTargetDevices(targetIds)
+        .filter(item => !isDeviceActionBusy(item.deviceId) && !isDeviceLoginRunning(item.deviceId))
+        .filter(item => getDeviceAccountLines(item.device).length);
+      if (!targets.length) {
+        appendOutput('Sin cuentas guardadas', 'Los dispositivos seleccionados no tienen cuentas para eliminar.');
+        return;
+      }
+      const confirmed = window.confirm(`Eliminar las cuentas guardadas en ${targets.length} dispositivos seleccionados? Las cuentas del menu izquierdo no se borraran.`);
+      if (!confirmed) return;
+
+      const targetBusyIds = targets.map(item => item.deviceId);
+      targetBusyIds.forEach(deviceId => setDeviceActionBusy(deviceId, true));
+      try {
+        for (const item of targets) {
+          await wsapi.updateDevicePerson({ serial: item.deviceId, person: '' });
+        }
+        clearAssignmentsForDevices(targetBusyIds);
+        state.devices = await wsapi.getDeviceListAll();
+        renderDevices();
+        appendOutput('Cuentas eliminadas del dispositivo', `${targets.length} dispositivo${targets.length === 1 ? '' : 's'} quedaron sin cuentas. Las listas del menu izquierdo se conservaron.`);
+      } catch (error) {
+        appendOutput('Error al eliminar cuentas del dispositivo', error.message);
+      } finally {
+        targetBusyIds.forEach(deviceId => setDeviceActionBusy(deviceId, false));
       }
     }
 
@@ -5717,6 +5937,33 @@
       }
     }
 
+    async function stopFlowLoginForDevices(deviceIds) {
+      const targetIds = uniqueDeviceIds(deviceIds);
+      if (targetIds.length <= 1) {
+        if (targetIds[0]) await stopFlowLoginForDevice(targetIds[0]);
+        return;
+      }
+      closeDeviceFlowMenu();
+      const stoppableIds = targetIds.filter(deviceId => !isDeviceActionBusy(deviceId));
+      if (!stoppableIds.length) return;
+      const loginPath = selectLoginScript();
+      stoppableIds.forEach(deviceId => setDeviceActionBusy(deviceId, true));
+      try {
+        const [devices, result] = await wsapi.stopAutoJs({
+          deviceIds: stoppableIds.join(','),
+          filePath: loginPath || els.scriptPath.value
+        });
+        state.devices = devices;
+        renderDevices();
+        removeLoginPollingDevices(stoppableIds);
+        appendOutput('FlowLogin detenido en seleccion', `${stoppableIds.length} dispositivo${stoppableIds.length === 1 ? '' : 's'}.\n\n${result}`);
+      } catch (error) {
+        appendOutput('Error al detener FlowLogin', error.message);
+      } finally {
+        stoppableIds.forEach(deviceId => setDeviceActionBusy(deviceId, false));
+      }
+    }
+
     async function stopFlowLogin() {
       if (state.runningFlow !== 'FlowLogin') return;
       const loginPath = selectLoginScript();
@@ -5879,7 +6126,8 @@
       const ids = state.flowMenuDeviceIds.length
         ? state.flowMenuDeviceIds
         : parseDeviceIdList(els.deviceFlowMenu.dataset.deviceIds || state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '');
-      return uniqueDeviceIds(ids);
+      const normalized = uniqueDeviceIds(ids);
+      return normalized.length ? normalized : uniqueDeviceIds(state.selectedDeviceIds);
     }
 
     els.deviceFlowPlay.addEventListener('click', event => {
@@ -5891,39 +6139,39 @@
     els.deviceFlowStop.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
-      const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
-      if (deviceId) stopFlowLoginForDevice(deviceId);
+      const deviceIds = getFlowMenuDeviceIds();
+      if (deviceIds.length) stopFlowLoginForDevices(deviceIds);
     });
     els.deviceFlowRetryAccounts.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
-      const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
-      if (deviceId) retryDeviceAccounts(deviceId);
+      const deviceIds = getFlowMenuDeviceIds();
+      if (deviceIds.length) retryDeviceAccountsForMenu(deviceIds);
     });
     els.deviceFlowReplaceAccounts.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
-      const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
-      if (deviceId) replaceDeviceAccounts(deviceId);
+      const deviceIds = getFlowMenuDeviceIds();
+      if (deviceIds.length) replaceDeviceAccountsForMenu(deviceIds);
     });
     els.deviceFlowAddAccounts.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
-      const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
-      if (deviceId) openAddDeviceAccountsPanel(deviceId);
+      const deviceIds = getFlowMenuDeviceIds();
+      if (deviceIds.length) openAddDeviceAccountsPanel(deviceIds);
     });
     els.deviceFlowAddConfirm.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
-      const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
-      if (deviceId) addDeviceAccounts(deviceId, Number(els.deviceFlowAddCount.value) || 1);
+      const deviceIds = getFlowMenuDeviceIds();
+      if (deviceIds.length) addDeviceAccountsForMenu(deviceIds, Number(els.deviceFlowAddCount.value) || 1);
     });
     els.deviceFlowAddCount.addEventListener('keydown', event => {
       if (event.key === 'Enter') {
         event.preventDefault();
         event.stopPropagation();
-        const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
-        if (deviceId) addDeviceAccounts(deviceId, Number(els.deviceFlowAddCount.value) || 1);
+        const deviceIds = getFlowMenuDeviceIds();
+        if (deviceIds.length) addDeviceAccountsForMenu(deviceIds, Number(els.deviceFlowAddCount.value) || 1);
       }
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -5934,8 +6182,8 @@
     els.deviceFlowClearAccounts.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
-      const deviceId = state.flowMenuDeviceId || els.deviceFlowMenu.dataset.deviceId || '';
-      if (deviceId) clearDeviceAccountsFromMenu(deviceId);
+      const deviceIds = getFlowMenuDeviceIds();
+      if (deviceIds.length) clearDeviceAccountsFromMenuForDevices(deviceIds);
     });
     els.accountTraceFilters.forEach(btn => {
       btn.addEventListener('click', () => {

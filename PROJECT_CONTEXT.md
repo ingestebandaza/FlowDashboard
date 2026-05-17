@@ -493,6 +493,8 @@ Actualizacion automatica:
 - El dashboard ahora tiene watchdog Auto Socket: al conectar o actualizar dispositivos y luego cada 30 segundos intenta preparar automaticamente FlowAgent para telefonos detectados en ADB que aun no esten en Socket, usando `install: "auto"` para no reinstalar si el APK ya esta actualizado.
 - `ensureFlowAgentsForDevices()` acepta modo silencioso para reparacion automatica: crea/recrea `adb reverse`, abre FlowAgent con `autoconnect=true`, refresca agentes y solo muestra aviso si la accion fue manual o no es watchdog.
 - El Play del menu contextual respeta seleccion multiple: si se hace clic derecho sobre una tarjeta ya seleccionada, Play ejecuta las cuentas pendientes de todos los dispositivos seleccionados; si se hace clic derecho sobre una tarjeta no seleccionada, opera solo sobre esa tarjeta.
+- Todas las acciones del menu contextual de FlowLogin respetan la misma regla de seleccion multiple: `Play`, `Stop`, `Reintentar Cuentas`, `Reemplazar Cuentas`, `Anadir Cuentas` y `Eliminar Cuentas` operan sobre todos los dispositivos seleccionados cuando el clic derecho cae sobre una tarjeta seleccionada; si cae sobre una tarjeta no seleccionada, operan solo sobre esa tarjeta.
+- En multi-seleccion, `Reintentar Cuentas` y `Reemplazar Cuentas` no deben quedar silenciosamente deshabilitados por un calculo previo de cuentas editables; el click debe entrar al handler y mostrar un aviso claro si no hay cuentas editables o faltan cuentas libres.
 - Version comercial preparada como `1.0.27` para publicar el ZIP de actualizacion con estos cambios.
 - La grilla ahora muestra la IP local del dispositivo en la tarjeta en lugar del `mac:...`, pero la identidad interna para nombres, cuentas, categorias y estados sigue siendo `deviceKey` basado en MAC cuando esta disponible.
 - `/devices` incluye `deviceIp`; para ADB WiFi se deriva del serial `IP:5555` y para USB puede consultarse desde Android como fallback.
@@ -513,3 +515,5 @@ Actualizacion automatica:
 - `/flowagent/setup` agrega diagnostico de Accesibilidad: detecta `enabled`, `binding`, `bound` y conexiones `DEAD` en `dumpsys`, y reporta cuando Android requiere apagar/prender FlowAgent en Accesibilidad. El boton manual usa `install: "auto"` y `openAccessibility: true`, asi no reinstala sin necesidad y lleva directo al ajuste cuando hace falta.
 - `launcher.py` y `abrir_dashboard.bat` exigen la feature `flowagent_accessibility_diagnostics` para reiniciar servidores viejos que no sepan diagnosticar este estado.
 - Version comercial preparada como `1.0.31` para publicar FlowAgent `0.2.4` y los diagnosticos de Accesibilidad.
+- Version comercial preparada como `1.0.32` para publicar la correccion del menu contextual multi-dispositivo.
+- Version comercial preparada como `1.0.33` para corregir el caso donde `Reemplazar Cuentas` en multi-seleccion no hacia nada porque el boton quedaba bloqueado antes de ejecutar el handler.
