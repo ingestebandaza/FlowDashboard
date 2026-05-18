@@ -170,7 +170,7 @@ SPOTIFY_CLONE_PACKAGES = [
 ]
 TERMINAL_LOGIN_STATUSES = {"success", "error", "already", "review", "notice14"}
 LOGIN_SUCCESS_STATUSES = {"success", "already"}
-LOGIN_RETRY_AFTER_CLEAR_STATUSES = {"error", "review"}
+LOGIN_RETRY_AFTER_CLEAR_STATUSES = {"error", "review", "notice14"}
 DEVICE_NAMES_LOCK = threading.Lock()
 FLOWLOGIN_JOBS = set()
 FLOWLOGIN_STOP_EVENTS = {}
