@@ -168,7 +168,7 @@ SPOTIFY_CLONE_PACKAGES = [
     "com.spotify.musil",
     "com.spotify.musim",
 ]
-TERMINAL_LOGIN_STATUSES = {"success", "error", "already", "review"}
+TERMINAL_LOGIN_STATUSES = {"success", "error", "already", "review", "notice14"}
 LOGIN_SUCCESS_STATUSES = {"success", "already"}
 LOGIN_RETRY_AFTER_CLEAR_STATUSES = {"error", "review"}
 DEVICE_NAMES_LOCK = threading.Lock()
@@ -576,7 +576,7 @@ def normalize_account_statuses(serial, person, statuses=None):
         package = SPOTIFY_CLONE_PACKAGES[index] if index < len(SPOTIFY_CLONE_PACKAGES) else ""
         prev = previous.get((clone, line), {})
         status = str(prev.get("status", "pending") or "pending").lower()
-        if status not in {"pending", "running", "retrying", "success", "error", "already", "review", "replaced"}:
+        if status not in {"pending", "running", "retrying", "success", "error", "already", "review", "notice14", "replaced"}:
             status = "pending"
         normalized.append({
             "accountId": str(prev.get("accountId") or account_id_for(serial, clone, line)),
@@ -817,7 +817,7 @@ def update_device_account_statuses(serial, status_payload):
             if incoming_line and incoming_line != target.get("line"):
                 continue
             status = str(incoming.get("status", target.get("status", "pending")) or "pending").lower()
-            if status not in {"pending", "running", "retrying", "success", "error", "already", "review", "replaced"}:
+            if status not in {"pending", "running", "retrying", "success", "error", "already", "review", "notice14", "replaced"}:
                 status = target.get("status", "pending")
             target["status"] = status
             target["message"] = str(incoming.get("message", "") or "")
@@ -848,7 +848,7 @@ def set_device_account_status(serial, clone, status, message="", attempts=0, lin
     key = resolve_device_profile_key(serial)
 
     status = str(status or "pending").lower()
-    if status not in {"pending", "running", "retrying", "success", "error", "already", "review", "replaced"}:
+    if status not in {"pending", "running", "retrying", "success", "error", "already", "review", "notice14", "replaced"}:
         status = "review"
 
     with DEVICE_NAMES_LOCK:
@@ -3073,6 +3073,24 @@ def agent_error_marker(agent, timeout=3):
     return ""
 
 
+def agent_notice14_marker(agent, timeout=3):
+    regex = re.compile(
+        r"(only use spotify abroad for 14 days|spotify abroad.*14 days|14 days.*spotify|update your location at spotify\.com|actualiza tu ubicaci.n.*spotify|14 d.as)",
+        re.I,
+    )
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            for node in agent_dump(agent, max_nodes=500, timeout=10):
+                label = agent_node_label(node)
+                if regex.search(label):
+                    return label
+        except Exception:
+            pass
+        time.sleep(0.45)
+    return ""
+
+
 def agent_has_logged_in_markers(agent, timeout=3):
     return agent_ui_has_marker(agent, r"^(Home|Search|Your Library|Library|Inicio|Buscar|Tu biblioteca|Biblioteca)$", timeout=timeout)
 
@@ -3263,6 +3281,9 @@ def confirm_flowlogin_agent_outcome(agent, package_name, wait_seconds=28):
     checks = 0
     last_error = ""
     while time.time() < deadline:
+        notice14 = agent_notice14_marker(agent, timeout=1.2)
+        if notice14:
+            return {"status": "notice14", "message": "Aviso 14 dias", "retry": False}
         if agent_confirm_logged_in(agent):
             return {"status": "success", "message": "Login confirmado por FlowAgent", "retry": False}
         error = agent_error_marker(agent, timeout=1.5)
@@ -3352,6 +3373,9 @@ def perform_flowlogin_agent(serial, item, account):
     error = agent_error_marker(agent, timeout=2)
     if error:
         return {"status": "error", "message": "Error visible antes de escribir", "retry": False}
+    notice14 = agent_notice14_marker(agent, timeout=1.5)
+    if notice14:
+        return {"status": "notice14", "message": "Aviso 14 dias", "retry": False}
     return {"status": "review", "message": f"C{clone}: FlowAgent no encontro campos de login", "retry": True}
 
 

@@ -497,6 +497,8 @@ Actualizacion automatica:
 - En multi-seleccion, `Reintentar Cuentas` y `Reemplazar Cuentas` no deben quedar silenciosamente deshabilitados por un calculo previo de cuentas editables; el click debe entrar al handler y mostrar un aviso claro si no hay cuentas editables o faltan cuentas libres.
 - En multi-seleccion, `Reintentar Cuentas` y `Reemplazar Cuentas` quedan clicables mientras exista al menos un dispositivo seleccionado disponible; el handler hace la validacion real y evita el caso donde el menu parecia no hacer nada por un estado previo/desactualizado.
 - `Reemplazar Cuentas` ahora usa una regla estricta de filtrado: solo reemplaza clones con bolita roja `error` o morada `review`, tomando cuentas libres desde la pestaña `Total`. Conserva intactas las cuentas verdes `success`, naranjas `already`, grises `pending`, azules `running` y amarillas `retrying`.
+- FlowLogin detecta el aviso de Spotify `You can only use Spotify abroad for 14 days / Update your location...` y lo guarda como estado terminal `notice14`, mostrado como bolita teal con etiqueta `Aviso 14 dias`. Este estado se distingue de `review` morado y no participa en `Reemplazar Cuentas`, que sigue limitado a rojas/moradas.
+- Los iconos manuales de cada bolita (`Reintentar` y `Reemplazar`) tienen una zona hover/click estable para evitar que desaparezcan o se muevan cuando el cursor pasa desde la bolita hacia el boton.
 - Version comercial preparada como `1.0.27` para publicar el ZIP de actualizacion con estos cambios.
 - La grilla ahora muestra la IP local del dispositivo en la tarjeta en lugar del `mac:...`, pero la identidad interna para nombres, cuentas, categorias y estados sigue siendo `deviceKey` basado en MAC cuando esta disponible.
 - `/devices` incluye `deviceIp`; para ADB WiFi se deriva del serial `IP:5555` y para USB puede consultarse desde Android como fallback.
@@ -521,3 +523,4 @@ Actualizacion automatica:
 - Version comercial preparada como `1.0.33` para corregir el caso donde `Reemplazar Cuentas` en multi-seleccion no hacia nada porque el boton quedaba bloqueado antes de ejecutar el handler.
 - Version comercial preparada como `1.0.34` para endurecer el menu contextual multi-seleccion: `Reemplazar Cuentas` ya no depende del conteo previo de editables para disparar la accion.
 - Version comercial preparada como `1.0.35` para publicar la regla correcta de reemplazo: solo cuentas rojas/moradas se sustituyen por cuentas libres de `Total`.
+- Version comercial preparada como `1.0.36` para publicar el estado `Aviso 14 dias` y estabilizar los botones de hover de las bolitas.

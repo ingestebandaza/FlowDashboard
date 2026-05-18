@@ -1167,9 +1167,17 @@
       animation: accountStatusPulse 1.6s ease-in-out infinite;
     }
 
+    .account-status-dot.is-notice14 {
+      background: #2dd4bf;
+      border-color: rgba(175, 255, 245, 0.58);
+      box-shadow: 0 0 10px rgba(45, 212, 191, 0.72);
+      animation: accountStatusPulse 1.6s ease-in-out infinite;
+    }
+
     .account-status-actions {
       position: absolute;
-      right: calc(100% + 4px);
+      right: calc(100% - 1px);
+      padding-right: 5px;
       display: inline-flex;
       gap: 2px;
       opacity: 0;
@@ -3358,9 +3366,9 @@
       return [...els.accountInputs].find(input => input.dataset.accountInput === tab) || els.accountInput;
     }
 
-    const ACCOUNT_ATTEMPT_STATUSES = new Set(['running', 'retrying', 'success', 'already', 'error', 'review']);
+    const ACCOUNT_ATTEMPT_STATUSES = new Set(['running', 'retrying', 'success', 'already', 'error', 'review', 'notice14']);
     const ACCOUNT_VALID_STATUSES = new Set(['success', 'already']);
-    const ACCOUNT_INVALID_STATUSES = new Set(['error', 'review']);
+    const ACCOUNT_INVALID_STATUSES = new Set(['error', 'review', 'notice14']);
 
     function normalizeAccountLine(line) {
       return String(line || '').trim();
@@ -3487,6 +3495,7 @@
         already: '#ff9f43',
         error: '#d45862',
         review: '#a78bfa',
+        notice14: '#2dd4bf',
         replaced: '#7c8ba5'
       }[status] || '#9fb0cc';
     }
@@ -3499,6 +3508,7 @@
       if (status === 'already') return place ? `Activo ${place}` : 'Activo';
       if (status === 'error') return place ? `Error ${place}` : 'Error';
       if (status === 'review') return place ? `Rev ${place}` : 'Rev';
+      if (status === 'notice14') return place ? `14d ${place}` : '14d';
       if (status === 'running') return place ? `Run ${place}` : 'Run';
       if (status === 'retrying') return place ? `Retry ${place}` : 'Retry';
       if (status === 'replaced') return 'Reempl.';
@@ -4487,6 +4497,7 @@
         already: 'Ya logueado',
         error: 'Error',
         review: 'Revision',
+        notice14: 'Aviso 14 dias',
         replaced: 'Reemplazada'
       }[status] || 'Pendiente';
     }
@@ -4504,6 +4515,7 @@
       if (counts.running) pieces.push(`RUN ${counts.running}`);
       if (counts.retrying) pieces.push(`TRY ${counts.retrying}`);
       if (counts.review) pieces.push(`REV ${counts.review}`);
+      if (counts.notice14) pieces.push(`14D ${counts.notice14}`);
       return pieces.join(' · ') || `${statuses.length} pendientes`;
     }
 
@@ -4900,7 +4912,7 @@
       if (!devices.length) return false;
       return devices.every(device => {
         const statuses = getDeviceAccountStatuses(device);
-        return !statuses.length || statuses.every(item => ['success', 'error', 'already', 'review', 'replaced'].includes(item.status));
+        return !statuses.length || statuses.every(item => ['success', 'error', 'already', 'review', 'notice14', 'replaced'].includes(item.status));
       });
     }
 
