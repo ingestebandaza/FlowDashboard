@@ -1,6 +1,6 @@
 # FlowLogin Project Context
 
-Ultima actualizacion: 2026-05-17
+Ultima actualizacion: 2026-05-18
 
 Este archivo es la memoria viva del proyecto. Cualquier agente de IA debe leerlo antes de modificar el programa y debe actualizarlo al terminar cambios relevantes.
 
@@ -214,6 +214,7 @@ success
 already
 error
 review
+notice14
 replaced
 ```
 
@@ -496,8 +497,8 @@ Actualizacion automatica:
 - Todas las acciones del menu contextual de FlowLogin respetan la misma regla de seleccion multiple: `Play`, `Stop`, `Reintentar Cuentas`, `Reemplazar Cuentas`, `Anadir Cuentas` y `Eliminar Cuentas` operan sobre todos los dispositivos seleccionados cuando el clic derecho cae sobre una tarjeta seleccionada; si cae sobre una tarjeta no seleccionada, operan solo sobre esa tarjeta.
 - En multi-seleccion, `Reintentar Cuentas` y `Reemplazar Cuentas` no deben quedar silenciosamente deshabilitados por un calculo previo de cuentas editables; el click debe entrar al handler y mostrar un aviso claro si no hay cuentas editables o faltan cuentas libres.
 - En multi-seleccion, `Reintentar Cuentas` y `Reemplazar Cuentas` quedan clicables mientras exista al menos un dispositivo seleccionado disponible; el handler hace la validacion real y evita el caso donde el menu parecia no hacer nada por un estado previo/desactualizado.
-- `Reemplazar Cuentas` ahora usa una regla estricta de filtrado: solo reemplaza clones con bolita roja `error` o morada `review`, tomando cuentas libres desde la pestaña `Total`. Conserva intactas las cuentas verdes `success`, naranjas `already`, grises `pending`, azules `running` y amarillas `retrying`.
-- FlowLogin detecta el aviso de Spotify `You can only use Spotify abroad for 14 days / Update your location...` como `notice14`, mostrado como bolita cafe con etiqueta `Aviso 14 dias`. En primer intento tambien dispara el flujo conservador de limpieza visual: App info -> Storage -> Clear cache/data -> Permissions/Storage Allow -> segundo intento. Durante el retry la cuenta se ve amarilla por `retrying`; si vuelve a salir despues del segundo intento, queda cafe como `Aviso 14 dias`. Este estado se distingue de `review` morado y no participa en `Reemplazar Cuentas`, que sigue limitado a rojas/moradas.
+- `Reemplazar Cuentas` ahora reemplaza clones con estados finales fallidos: rojo `error`, morado `review` o `notice14` con etiqueta `Aviso 14 dias`. Antes de poner la cuenta nueva en el mismo clon, mueve la cuenta anterior a `No validos`; luego toma cuentas libres desde `Total` y lanza el login de esos clones. Conserva intactas las cuentas verdes `success`, naranjas `already`, grises `pending`, azules `running` y amarillas `retrying`.
+- FlowLogin detecta el aviso de Spotify `You can only use Spotify abroad for 14 days / Update your location...` como `notice14`. En primer intento dispara el flujo conservador de limpieza visual: App info -> Storage -> Clear cache/data -> Permissions/Storage Allow -> segundo intento; durante ese retry la cuenta se ve amarilla por `retrying`. Si vuelve a salir despues del segundo intento, queda roja pero con texto/tooltip `Aviso 14 dias`, para distinguirla de un login correcto.
 - Los iconos manuales de cada bolita (`Reintentar` y `Reemplazar`) tienen una zona hover/click estable para evitar que desaparezcan o se muevan cuando el cursor pasa desde la bolita hacia el boton.
 - Version comercial preparada como `1.0.27` para publicar el ZIP de actualizacion con estos cambios.
 - La grilla ahora muestra la IP local del dispositivo en la tarjeta en lugar del `mac:...`, pero la identidad interna para nombres, cuentas, categorias y estados sigue siendo `deviceKey` basado en MAC cuando esta disponible.
@@ -526,3 +527,4 @@ Actualizacion automatica:
 - Version comercial preparada como `1.0.36` para publicar el estado `Aviso 14 dias` y estabilizar los botones de hover de las bolitas.
 - Version comercial preparada como `1.0.37` para que `Aviso 14 dias` vuelva a disparar limpieza/permisos y segundo intento, usando bolita amarilla.
 - Version comercial preparada como `1.0.38` para que el estado final `Aviso 14 dias` use bolita cafe en vez de amarilla.
+- Version comercial preparada como `1.0.39` para que el primer `Aviso 14 dias` entre a retry amarillo, el segundo quede rojo con etiqueta propia, y `Reemplazar Cuentas` cambie fallidas por libres moviendo las anteriores a `No validos`.

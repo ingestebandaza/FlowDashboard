@@ -1168,9 +1168,9 @@
     }
 
     .account-status-dot.is-notice14 {
-      background: #8b5a2b;
-      border-color: rgba(220, 180, 130, 0.62);
-      box-shadow: 0 0 10px rgba(139, 90, 43, 0.76);
+      background: #d45862;
+      border-color: rgba(255, 188, 196, 0.62);
+      box-shadow: 0 0 10px rgba(212, 88, 98, 0.76);
       animation: accountStatusPulse 1.1s ease-in-out infinite;
     }
 
@@ -3495,7 +3495,7 @@
         already: '#ff9f43',
         error: '#d45862',
         review: '#a78bfa',
-        notice14: '#8b5a2b',
+        notice14: '#d45862',
         replaced: '#7c8ba5'
       }[status] || '#9fb0cc';
     }
@@ -5085,12 +5085,17 @@
       });
     }
 
-    const REPLACEABLE_STATUSES = new Set(['error', 'review']);
+    const REPLACEABLE_STATUSES = new Set(['error', 'review', 'notice14']);
 
     function getReplaceableAccountItems(device) {
       return getDeviceAccountStatuses(device).filter(item => {
         return item.line && REPLACEABLE_STATUSES.has(item.status || 'pending');
       });
+    }
+
+    function markReplacedAccountInvalid(line, status = 'error') {
+      const normalizedStatus = ACCOUNT_INVALID_STATUSES.has(status) ? status : 'error';
+      return markAccountLineAttempted(line, normalizedStatus);
     }
 
     async function runDeviceClones(deviceId, clones, messageTitle, messagePrefix = '') {
@@ -5184,7 +5189,7 @@
       if (!device) return;
       const items = getReplaceableAccountItems(device);
       if (!items.length) {
-        appendOutput('Sin cuentas para reemplazar', `${shortDeviceId(deviceId)} no tiene cuentas rojas o moradas para reemplazar.`);
+        appendOutput('Sin cuentas para reemplazar', `${shortDeviceId(deviceId)} no tiene cuentas fallidas para reemplazar.`);
         return;
       }
       const freeRecords = getAvailableAccountRecords('total').slice(0, items.length);
@@ -5196,13 +5201,17 @@
       setDeviceActionBusy(deviceId, true);
       try {
         const lines = getDeviceAccountLines(device);
+        let listsChanged = false;
         items.forEach((item, index) => {
           const clone = Number(item.clone);
           const record = freeRecords[index];
           while (lines.length < clone) lines.push('');
+          const oldLine = lines[clone - 1] || item.line;
+          listsChanged = markReplacedAccountInvalid(oldLine, item.status) || listsChanged;
           clearAssignmentForDeviceClone(deviceId, clone);
           lines[clone - 1] = record.line;
         });
+        persistAccountListChanges(listsChanged);
         state.devices = await wsapi.updateDevicePerson({
           serial: deviceId,
           person: lines.slice(0, 10).join('\n')
@@ -5230,7 +5239,7 @@
         .map(item => ({ ...item, items: getReplaceableAccountItems(item.device) }))
         .filter(item => item.items.length);
       if (!targets.length) {
-        appendOutput('Sin cuentas para reemplazar', 'Los dispositivos seleccionados no tienen cuentas rojas o moradas para reemplazar.');
+        appendOutput('Sin cuentas para reemplazar', 'Los dispositivos seleccionados no tienen cuentas fallidas para reemplazar.');
         return;
       }
       const required = targets.reduce((total, item) => total + item.items.length, 0);
@@ -5245,6 +5254,7 @@
       try {
         let cursor = 0;
         let changedDevices = 0;
+        let listsChanged = false;
         for (const item of targets) {
           const lines = getDeviceAccountLines(item.device);
           const records = freeRecords.slice(cursor, cursor + item.items.length);
@@ -5252,9 +5262,12 @@
             const clone = Number(accountItem.clone);
             const record = records[index];
             while (lines.length < clone) lines.push('');
+            const oldLine = lines[clone - 1] || accountItem.line;
+            listsChanged = markReplacedAccountInvalid(oldLine, accountItem.status) || listsChanged;
             clearAssignmentForDeviceClone(item.deviceId, clone);
             lines[clone - 1] = record.line;
           });
+          persistAccountListChanges(listsChanged);
           state.devices = await wsapi.updateDevicePerson({
             serial: item.deviceId,
             person: lines.slice(0, 10).join('\n')
