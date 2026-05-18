@@ -1024,7 +1024,6 @@
     }
 
     .device-list.is-list .account-status-actions {
-      right: auto;
       bottom: calc(100% + 4px);
     }
 
@@ -1176,17 +1175,35 @@
 
     .account-status-actions {
       position: absolute;
-      right: calc(100% - 1px);
-      padding-right: 5px;
+      left: 50%;
+      bottom: calc(100% + 3px);
+      transform: translateX(-50%);
+      padding-bottom: 5px;
       display: inline-flex;
       gap: 2px;
       opacity: 0;
+      z-index: 4;
       transition: opacity 0.14s ease;
+      pointer-events: none;
+    }
+
+    .account-status-actions::after {
+      content: "";
+      position: absolute;
+      left: -3px;
+      right: -3px;
+      top: 100%;
+      height: 6px;
+    }
+
+    .account-status-item.is-action-open .account-status-actions {
+      opacity: 1;
       pointer-events: auto;
     }
 
-    .account-status-item:hover .account-status-actions {
-      opacity: 1;
+    .account-status-item.is-action-open .account-status-dot {
+      outline: 2px solid rgba(255, 255, 255, 0.72);
+      outline-offset: 2px;
     }
 
     .dot-action {
@@ -2571,6 +2588,9 @@
                   <button class="account-trace-btn js-account-trace-filter" type="button" data-trace-filter="free" style="--trace-btn-color: #22b86f;" aria-label="Mostrar disponibles" title="Disponibles">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7" /><path d="M9 12l2 2 4-4" /></svg>
                   </button>
+                  <button class="account-trace-btn js-account-trace-reset" type="button" style="--trace-btn-color: #ff5c7a;" aria-label="Eliminar lo recordado del mapa" title="Eliminar lo recordado">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M6 6l1 15h10l1-15" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
+                  </button>
                   <button class="account-trace-btn account-trace-toggle js-account-trace-toggle" type="button" aria-label="Contraer mapa de cuentas" title="Contraer">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
                   </button>
@@ -2939,7 +2959,9 @@
       activeAccountTab: 'total',
       accountTraceFilter: 'all',
       accountTraceCollapsed: false,
+      accountTraceMemoryReset: localStorage.getItem('flowlogin.accountTraceMemoryReset') === '1',
       accountAssignments: {},
+      selectedAccountAction: null,
       refreshingPublicIpDevices: new Set(),
       refreshingCountries: false,
       autoSocketTimer: null,
@@ -2991,6 +3013,7 @@
       accountTraceList: document.querySelector('.js-account-trace-list'),
       accountTraceMeta: document.querySelector('.js-account-trace-meta'),
       accountTraceFilters: document.querySelectorAll('.js-account-trace-filter'),
+      accountTraceReset: document.querySelector('.js-account-trace-reset'),
       accountTraceToggle: document.querySelector('.js-account-trace-toggle'),
       accountCount: document.querySelector('.js-account-count'),
       accountsMeta: document.querySelector('.js-accounts-meta'),
@@ -3434,7 +3457,7 @@
       const normalizedStatus = status || 'running';
       if (!normalized || !ACCOUNT_ATTEMPT_STATUSES.has(normalizedStatus)) return false;
       updateAccountAssignmentStatusByLine(normalized, normalizedStatus);
-      let changed = removeAccountLineFromTab('total', normalized);
+      let changed = false;
       if (ACCOUNT_VALID_STATUSES.has(normalizedStatus)) {
         changed = moveAccountLineToResultTab(normalized, 'valid') || changed;
       }
@@ -3473,6 +3496,15 @@
 
     function saveAccountAssignments() {
       localStorage.setItem('flowlogin.accountAssignments', JSON.stringify(state.accountAssignments));
+    }
+
+    function setAccountTraceMemoryReset(enabled) {
+      state.accountTraceMemoryReset = Boolean(enabled);
+      if (state.accountTraceMemoryReset) {
+        localStorage.setItem('flowlogin.accountTraceMemoryReset', '1');
+      } else {
+        localStorage.removeItem('flowlogin.accountTraceMemoryReset');
+      }
     }
 
     function loadAccountAssignments() {
@@ -3740,10 +3772,15 @@
         if (!signature || seen.has(signature) || reserved.has(signature)) return false;
         seen.add(signature);
         return true;
-      });
+      }).sort((a, b) => a.index - b.index);
+    }
+
+    function getOrderedAvailableTotalAccountRecords() {
+      return getAvailableAccountRecords('total').sort((a, b) => a.index - b.index);
     }
 
     function assignAccountRecord(record, deviceId, clone, status = 'assigned') {
+      setAccountTraceMemoryReset(false);
       state.accountAssignments[record.key] = {
         line: record.line,
         tab: record.tab,
@@ -3820,6 +3857,10 @@
       return getAvailableAccountRecords(tab)[0] || null;
     }
 
+    function findFreeTotalAccountRecord() {
+      return getOrderedAvailableTotalAccountRecords()[0] || null;
+    }
+
     function getAvailableAccountRecordsForDeviceAdd(deviceId) {
       const usedInConnectedDevices = new Set();
       state.devices.forEach(device => {
@@ -3846,6 +3887,10 @@
     }
 
     function syncAssignmentsFromDevices() {
+      if (state.accountTraceMemoryReset) {
+        updateAccountTrace();
+        return;
+      }
       const allRecords = [];
       els.accountInputs.forEach(input => {
         allRecords.push(...getAccountRecords(input.dataset.accountInput));
@@ -3879,6 +3924,16 @@
       const listsChanged = syncAccountListsFromDevices();
       saveAccountAssignments();
       if (!listsChanged) updateAccountTrace();
+    }
+
+    function resetRememberedAccountTrace() {
+      const confirmed = window.confirm('Eliminar lo recordado del Mapa de cuentas? Esto no borra las listas Total, Validos o No validos; solo limpia asignaciones e intentos guardados para que la lista actual vuelva a verse inicial.');
+      if (!confirmed) return;
+      state.accountAssignments = {};
+      saveAccountAssignments();
+      setAccountTraceMemoryReset(true);
+      updateAccountTrace();
+      appendOutput('Mapa de cuentas reiniciado', 'Se eliminaron las asignaciones e intentos recordados. Las listas del panel izquierdo no se borraron.');
     }
 
     function syncAccountListsFromDevices() {
@@ -4224,6 +4279,22 @@
       state.flowMenuDeviceIds = [];
       delete els.deviceFlowMenu.dataset.deviceId;
       delete els.deviceFlowMenu.dataset.deviceIds;
+    }
+
+    function accountActionKey(deviceId, clone) {
+      return `${String(deviceId || '')}::${Number(clone) || 0}`;
+    }
+
+    function closeAccountStatusActions(render = true) {
+      if (!state.selectedAccountAction) return;
+      state.selectedAccountAction = null;
+      if (render) renderDevices();
+    }
+
+    function toggleAccountStatusActions(deviceId, clone) {
+      const key = accountActionKey(deviceId, clone);
+      state.selectedAccountAction = state.selectedAccountAction === key ? null : key;
+      renderDevices();
     }
 
     function isDeviceLoginRunning(deviceId) {
@@ -4727,12 +4798,21 @@
         accountStatuses.forEach((statusItem, accountIndex) => {
           const statusRow = document.createElement('span');
           const dot = document.createElement('span');
+          const canActOnStatus = ['error', 'review', 'notice14'].includes(statusItem.status);
+          const isActionOpen = state.selectedAccountAction === accountActionKey(id, statusItem.clone);
           statusRow.className = 'account-status-item';
+          if (isActionOpen) statusRow.classList.add('is-action-open');
+          if (canActOnStatus) {
+            statusRow.tabIndex = 0;
+            statusRow.setAttribute('role', 'button');
+            statusRow.setAttribute('aria-expanded', isActionOpen ? 'true' : 'false');
+            statusRow.setAttribute('aria-label', `Opciones del clon ${statusItem.clone}`);
+          }
           dot.className = statusDotClass(statusItem.status);
           dot.style.animationDelay = `${accountIndex * 0.08}s`;
           dot.setAttribute('title', `Clon ${statusItem.clone}: ${statusLabel(statusItem.status)}${statusItem.message ? ` - ${statusItem.message}` : ''}`);
           statusRow.appendChild(dot);
-          if (['error', 'review'].includes(statusItem.status)) {
+          if (canActOnStatus) {
             const actions = document.createElement('span');
             const retryBtn = document.createElement('button');
             const replaceBtn = document.createElement('button');
@@ -4752,12 +4832,29 @@
             retryBtn.addEventListener('click', event => {
               event.preventDefault();
               event.stopPropagation();
+              closeAccountStatusActions(false);
               retryCloneLogin(id, statusItem.clone);
             });
             replaceBtn.addEventListener('click', event => {
               event.preventDefault();
               event.stopPropagation();
+              closeAccountStatusActions(false);
               replaceCloneAccount(id, statusItem.clone);
+            });
+            statusRow.addEventListener('pointerdown', event => {
+              event.preventDefault();
+              event.stopPropagation();
+            });
+            statusRow.addEventListener('click', event => {
+              event.preventDefault();
+              event.stopPropagation();
+              toggleAccountStatusActions(id, statusItem.clone);
+            });
+            statusRow.addEventListener('keydown', event => {
+              if (event.key !== 'Enter' && event.key !== ' ') return;
+              event.preventDefault();
+              event.stopPropagation();
+              toggleAccountStatusActions(id, statusItem.clone);
             });
             actions.append(retryBtn, replaceBtn);
             statusRow.appendChild(actions);
@@ -5030,7 +5127,7 @@
     async function replaceCloneAccount(deviceId, clone) {
       const device = state.devices.find(item => getDeviceId(item) === deviceId);
       if (!device) return;
-      const record = findFreeAccountRecord('total') || findFreeAccountRecord();
+      const record = findFreeTotalAccountRecord();
       if (!record) {
         els.accountsMeta.classList.add('is-warning');
         els.accountsMeta.textContent = 'No hay cuentas libres en Total para reemplazar.';
@@ -5040,8 +5137,12 @@
 
       const lines = getDeviceAccountLines(device);
       while (lines.length < clone) lines.push('');
+      const oldLine = lines[clone - 1];
+      const oldStatusItem = getDeviceAccountStatuses(device).find(item => Number(item.clone) === Number(clone));
+      const listsChanged = markReplacedAccountInvalid(oldLine, oldStatusItem?.status || 'error');
       clearAssignmentForDeviceClone(deviceId, clone);
       lines[clone - 1] = record.line;
+      persistAccountListChanges(listsChanged);
 
       setBusy(true);
       try {
@@ -5192,7 +5293,7 @@
         appendOutput('Sin cuentas para reemplazar', `${shortDeviceId(deviceId)} no tiene cuentas fallidas para reemplazar.`);
         return;
       }
-      const freeRecords = getAvailableAccountRecords('total').slice(0, items.length);
+      const freeRecords = getOrderedAvailableTotalAccountRecords().slice(0, items.length);
       if (freeRecords.length < items.length) {
         appendOutput('Cuentas libres insuficientes', `Se necesitan ${items.length} cuentas libres en Total y solo hay ${freeRecords.length}.`);
         return;
@@ -5243,7 +5344,7 @@
         return;
       }
       const required = targets.reduce((total, item) => total + item.items.length, 0);
-      const freeRecords = getAvailableAccountRecords('total').slice(0, required);
+      const freeRecords = getOrderedAvailableTotalAccountRecords().slice(0, required);
       if (freeRecords.length < required) {
         appendOutput('Cuentas libres insuficientes', `Se necesitan ${required} cuentas libres en Total y solo hay ${freeRecords.length}.`);
         return;
@@ -6246,6 +6347,7 @@
       state.accountTraceCollapsed = !state.accountTraceCollapsed;
       updateAccountTrace();
     });
+    els.accountTraceReset.addEventListener('click', resetRememberedAccountTrace);
     loadAccountAssignments();
     loadAccountsState();
     setAccountTab(state.activeAccountTab);
@@ -6315,6 +6417,9 @@
     });
 
     document.addEventListener('pointerdown', event => {
+      if (state.selectedAccountAction && !event.target.closest('.account-status-item')) {
+        closeAccountStatusActions();
+      }
       if (els.deviceNamePopover.classList.contains('is-open')) {
         if (!els.deviceNamePopover.contains(event.target) && !event.target.closest('.device-edit-btn')) {
           closeDeviceNamePopover();

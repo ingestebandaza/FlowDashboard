@@ -1,6 +1,6 @@
 # FlowLogin Project Context
 
-Ultima actualizacion: 2026-05-18
+Ultima actualizacion: 2026-05-19
 
 Este archivo es la memoria viva del proyecto. Cualquier agente de IA debe leerlo antes de modificar el programa y debe actualizarlo al terminar cambios relevantes.
 
@@ -193,6 +193,7 @@ Flujo activo actual:
 4. Si el script se llama `Login.js`, `local_adb_server.py` usa `start_flowlogin_agent_jobs`.
 5. FlowLogin usa solo FlowAgent por socket para lanzar clones, leer UI, escribir email/password y actualizar `accountStatuses`.
 6. Primera pasada: prueba cada cuenta asignada una vez.
+   Cada linea se enlaza por posicion fija: cuenta 1 -> clon 1 -> `com.spotify.musid`, cuenta 2 -> clon 2 -> `com.spotify.musie`, hasta cuenta/clon 10. El servidor recalcula el paquete desde el numero de clon antes de lanzar, limpiar o reintentar.
 7. Si una cuenta falla y no es bloqueo/captcha/verificacion, queda en `retrying`, se abre App info del paquete del clon, se intenta limpiar cache/datos visualmente y se hace un segundo intento al final de la pasada.
    El segundo intento espera el formulario fresco despues de limpiar datos y reconoce variantes como Log in/Iniciar sesion, Continue with email/Continuar con correo y Log in with a password/Iniciar sesion con contrasena.
 8. Despues del segundo intento, si vuelve a fallar, queda como `error`/`review` y se clasifica como no valida.
@@ -258,6 +259,7 @@ Inventario de cuentas del dashboard:
 - Estados `error` y `review` mueven la cuenta a `No validos`.
 - Ediciones manuales del perfil de un dispositivo bloquean cuentas que ya esten reservadas o probadas en otro lugar.
 - El `Mapa de cuentas` bajo el textarea muestra trazabilidad compacta con filtros de todas/asignadas/disponibles, conteos y numeracion por referencia real de la lista; las usadas/asignadas se resaltan con color.
+- El `Mapa de cuentas` incluye un boton para eliminar lo recordado: limpia `flowlogin.accountAssignments`, marca el mapa como reiniciado en `localStorage` y evita rehidratar asignaciones viejas desde estados de dispositivos hasta que se haga una nueva asignacion real. No borra los textareas `Total`, `Validos` ni `No validos`.
 - La pestana `No validos` tiene un boton compacto en la fila del titulo para borrar ese textarea y guardar inmediatamente el cambio persistente.
 
 ## Comandos de Validacion
@@ -294,8 +296,8 @@ Invoke-RestMethod -Uri http://127.0.0.1:8765/health -TimeoutSec 5 | ConvertTo-Js
 
 - Se agrego control de inventario de cuentas en `wsapi_demo.html`.
 - El boton de dividir ya no reutiliza las primeras cuentas de `Total`; ahora toma solo cuentas libres no asignadas a otros dispositivos.
-- Las cuentas asignadas quedan reservadas para evitar duplicados, pero permanecen en `Total` hasta que se ejecute FlowLogin/Login.js.
-- Al ejecutar FlowLogin/Login.js, las cuentas intentadas salen de `Total`.
+- Las cuentas asignadas quedan reservadas para evitar duplicados, pero permanecen visibles en `Total` hasta un resultado terminal.
+- Al ejecutar FlowLogin/Login.js, las cuentas en `running`/`retrying` siguen en `Total`; solo salen cuando se clasifican como `Validos` o `No validos`.
 - Los resultados terminales se clasifican automaticamente: `success`/`already` a `Validos`, `error`/`review` a `No validos`.
 - La edicion manual de cuentas por dispositivo bloquea una linea si ya esta reservada o probada en otro dispositivo.
 - Se agrego la propiedad CSS estandar `line-clamp` junto a `-webkit-line-clamp` en el ID de dispositivo para compatibilidad y evitar advertencias del linter.
@@ -500,6 +502,11 @@ Actualizacion automatica:
 - `Reemplazar Cuentas` ahora reemplaza clones con estados finales fallidos: rojo `error`, morado `review` o `notice14` con etiqueta `Aviso 14 dias`. Antes de poner la cuenta nueva en el mismo clon, mueve la cuenta anterior a `No validos`; luego toma cuentas libres desde `Total` y lanza el login de esos clones. Conserva intactas las cuentas verdes `success`, naranjas `already`, grises `pending`, azules `running` y amarillas `retrying`.
 - FlowLogin detecta el aviso de Spotify `You can only use Spotify abroad for 14 days / Update your location...` como `notice14`. En primer intento dispara el flujo conservador de limpieza visual: App info -> Storage -> Clear cache/data -> Permissions/Storage Allow -> segundo intento; durante ese retry la cuenta se ve amarilla por `retrying`. Si vuelve a salir despues del segundo intento, queda roja pero con texto/tooltip `Aviso 14 dias`, para distinguirla de un login correcto.
 - Los iconos manuales de cada bolita (`Reintentar` y `Reemplazar`) tienen una zona hover/click estable para evitar que desaparezcan o se muevan cuando el cursor pasa desde la bolita hacia el boton.
+- Las cuentas asignadas o en ejecucion ya no se eliminan de `Total` solo por pasar a `running`/`retrying`; quedan visibles y reservadas hasta que terminen como `Validas` o `No validas`.
+- Antes de cada intento de FlowLogin, el servidor cierra forzosamente el paquete del clon con `am force-stop` para empezar desde una app cerrada. Esta preparacion usa ADB solo para cerrar el paquete; el motor de login sigue siendo FlowAgent por socket.
+- Las acciones individuales de bolitas fallidas ya no se abren por hover: se selecciona la bolita con clic/Enter/Espacio y entonces aparecen `Reintentar`/`Reemplazar` solo para esa cuenta, evitando que el cursor active la bolita vecina.
+- `Reemplazar Cuentas` toma cuentas libres exclusivamente desde `Total` y respeta el orden visible de esa lista, usando siempre las primeras lineas libres no reservadas.
+- El runner FlowAgent ahora exige que `agent_current_package()` coincida exactamente con el paquete esperado del clon despues de `launchPackage`. Ya no acepta cualquier pantalla con formulario de login como apertura valida, evitando que una cuenta se escriba o limpie en el clon que quedo previamente en pantalla.
 - Version comercial preparada como `1.0.27` para publicar el ZIP de actualizacion con estos cambios.
 - La grilla ahora muestra la IP local del dispositivo en la tarjeta en lugar del `mac:...`, pero la identidad interna para nombres, cuentas, categorias y estados sigue siendo `deviceKey` basado en MAC cuando esta disponible.
 - `/devices` incluye `deviceIp`; para ADB WiFi se deriva del serial `IP:5555` y para USB puede consultarse desde Android como fallback.
@@ -528,3 +535,7 @@ Actualizacion automatica:
 - Version comercial preparada como `1.0.37` para que `Aviso 14 dias` vuelva a disparar limpieza/permisos y segundo intento, usando bolita amarilla.
 - Version comercial preparada como `1.0.38` para que el estado final `Aviso 14 dias` use bolita cafe en vez de amarilla.
 - Version comercial preparada como `1.0.39` para que el primer `Aviso 14 dias` entre a retry amarillo, el segundo quede rojo con etiqueta propia, y `Reemplazar Cuentas` cambie fallidas por libres moviendo las anteriores a `No validos`.
+- Version comercial preparada como `1.0.40` para mantener cuentas nuevas en `Total` hasta validacion final, cerrar clones forzosamente antes de cada intento y mostrar acciones por bolita roja/`Aviso 14 dias`.
+- Version comercial preparada como `1.0.41` para abrir acciones individuales por seleccion de bolita y hacer reemplazos en orden estricto desde `Total`.
+- Version comercial preparada como `1.0.42` para agregar el reset de memoria del `Mapa de cuentas` sin borrar las listas del panel izquierdo.
+- Version comercial preparada como `1.0.43` para asegurar que cada cuenta abra, limpie y reintente exclusivamente su clon/paquete correspondiente.

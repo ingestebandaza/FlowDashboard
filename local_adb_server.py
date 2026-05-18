@@ -175,6 +175,16 @@ DEVICE_NAMES_LOCK = threading.Lock()
 FLOWLOGIN_JOBS = set()
 FLOWLOGIN_STOP_EVENTS = {}
 FLOWLOGIN_CURRENT_ITEMS = {}
+
+
+def spotify_package_for_clone(clone):
+    try:
+        clone_number = int(clone)
+    except Exception:
+        clone_number = 0
+    if 1 <= clone_number <= len(SPOTIFY_CLONE_PACKAGES):
+        return SPOTIFY_CLONE_PACKAGES[clone_number - 1]
+    return ""
 FLOWLOGIN_JOBS_LOCK = threading.Lock()
 AGENT_CONNECTIONS = {}
 AGENT_CONNECTIONS_LOCK = threading.Lock()
@@ -573,7 +583,7 @@ def normalize_account_statuses(serial, person, statuses=None):
     normalized = []
     for index, line in enumerate(account_lines(person)):
         clone = index + 1
-        package = SPOTIFY_CLONE_PACKAGES[index] if index < len(SPOTIFY_CLONE_PACKAGES) else ""
+        package = spotify_package_for_clone(clone)
         prev = previous.get((clone, line), {})
         status = str(prev.get("status", "pending") or "pending").lower()
         if status not in {"pending", "running", "retrying", "success", "error", "already", "review", "notice14", "replaced"}:
@@ -2020,6 +2030,7 @@ def prepare_flowlogin_payload(serial, clone=None, clones=None, delimiter=":"):
         if clone_filter and item_clone not in clone_filter:
             continue
         pending = dict(item)
+        pending["package"] = spotify_package_for_clone(item_clone)
         pending["status"] = "pending"
         pending["message"] = ""
         pending["attempts"] = 0
@@ -2105,7 +2116,7 @@ def should_retry_after_cache_clear(result):
     if status not in LOGIN_RETRY_AFTER_CLEAR_STATUSES:
         return False
     message = str(result.get("message", "") or "")
-    if re.search(r"(captcha|verify|verification|2fa|two.factor|too many|detenido|flowagent no conectado|accesibilidad|actualizar)", message, re.I):
+    if re.search(r"(captcha|verify|verification|2fa|two.factor|too many|detenido|flowagent no conectado|accesibilidad|actualizar|cerrar el clon)", message, re.I):
         return False
     return True
 
@@ -2286,8 +2297,19 @@ def clear_clone_cache_data_visual(serial, package_name):
         raise RuntimeError(f"Limpieza por socket fallo: {exc}")
 
 
+def force_stop_flowlogin_clone(serial, package_name):
+    package_name = str(package_name or "").strip()
+    if not package_name:
+        return
+    adb_shell(serial, "am force-stop " + shlex.quote(package_name), timeout=15)
+    time.sleep(0.8)
+
+
 def run_flowlogin_agent_attempt(serial, item, account, attempt, status_label, line, stop_event):
     clone = int(item.get("clone", 0) or 0)
+    package_name = spotify_package_for_clone(clone) or str(item.get("package", "") or "").strip()
+    if package_name:
+        item["package"] = package_name
     if stop_event.is_set():
         return {"status": "review", "message": "Detenido por usuario", "retry": False}
     with FLOWLOGIN_JOBS_LOCK:
@@ -2296,10 +2318,15 @@ def run_flowlogin_agent_attempt(serial, item, account, attempt, status_label, li
         serial,
         clone,
         status_label,
-        f"Intento {attempt}",
+        f"C{clone} intento {attempt}: {package_name}",
         attempts=attempt,
         line=line,
     )
+    if package_name:
+        try:
+            force_stop_flowlogin_clone(serial, package_name)
+        except Exception as exc:
+            return {"status": "review", "message": f"No se pudo cerrar el clon antes de iniciar: {exc}", "retry": True}
     try:
         return perform_flowlogin_agent(serial, item, account)
     except Exception as exc:
@@ -2358,6 +2385,7 @@ def run_flowlogin_agent_job(serial, payload_path, delimiter=":", stop_event=None
             if not account:
                 set_device_account_status(serial, clone, "error", "Formato invalido: email:password", attempts=0, line=line)
                 continue
+            item["package"] = spotify_package_for_clone(clone) or str(item.get("package", "") or "").strip()
             if not item.get("package"):
                 set_device_account_status(serial, clone, "error", "Paquete del clon no definido", attempts=0, line=line)
                 continue
@@ -2422,7 +2450,9 @@ def run_flowlogin_agent_job(serial, payload_path, delimiter=":", stop_event=None
                 clone = int(item.get("clone", 0))
             except Exception:
                 clone = 0
-            package_name = str(item.get("package", "") or "").strip()
+            package_name = spotify_package_for_clone(clone) or str(item.get("package", "") or "").strip()
+            if package_name:
+                item["package"] = package_name
             if not clone or not package_name:
                 continue
             set_device_account_status(
@@ -3116,6 +3146,9 @@ def agent_has_password_prompt(agent, timeout=1):
 
 
 def agent_launch_package_and_wait(agent, package_name, wait_seconds=12):
+    package_name = str(package_name or "").strip()
+    if not package_name:
+        return False
     try:
         agent_result(agent, {"name": "launchPackage", "packageName": package_name}, timeout=12)
     except Exception:
@@ -3123,9 +3156,8 @@ def agent_launch_package_and_wait(agent, package_name, wait_seconds=12):
 
     deadline = time.time() + wait_seconds
     while time.time() < deadline:
-        if agent_current_package(agent) == package_name:
-            return True
-        if agent_has_login_markers(agent, timeout=1) or agent_has_logged_in_markers(agent, timeout=1):
+        current = agent_current_package(agent)
+        if current == package_name:
             return True
         time.sleep(0.8)
     return False
