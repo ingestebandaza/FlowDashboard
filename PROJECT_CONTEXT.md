@@ -1,56 +1,95 @@
-# FlowLogin Project Context
+# FlowDashboard Project Context
 
-Ultima actualizacion: 2026-05-19
+Ultima actualizacion: 2026-05-19 (1.0.45 - FlowRegister completo: limpieza visual, picker DOB, genero, nombre, captcha CapSolver)
 
-Este archivo es la memoria viva del proyecto. Cualquier agente de IA debe leerlo antes de modificar el programa y debe actualizarlo al terminar cambios relevantes.
+Este archivo es la memoria viva del proyecto. Cualquier persona o IA que vaya a modificar esta carpeta debe leer primero `AGENTS.md` y despues este archivo.
 
-## Objetivo
+Estado actual documentado: version `1.0.45` con flujo FlowRegister completo (limpieza visual del clon, picker de fecha, genero/nombre random, integracion CapSolver para captcha).
 
-Dashboard local para administrar muchos telefonos Android conectados por ADB WiFi/USB, repartir cuentas por dispositivo/clon, ejecutar FlowLogin, ver estados por cuenta y avanzar hacia automatizacion mas fluida usando FlowAgent APK por socket.
+## Resumen Ejecutivo
 
-El objetivo de arquitectura actual es `socket-first hybrid`:
+FlowDashboard es un dashboard local para administrar muchos telefonos Android conectados por ADB WiFi/USB, repartir cuentas por dispositivo/clon, ejecutar FlowLogin, ver estados por cuenta y usar FlowAgent APK por socket como motor rapido.
 
-- ADB queda para detectar dispositivos, instalar APK, crear `adb reverse`, abrir apps, recuperar telefonos y fallback.
-- FlowAgent APK queda como motor rapido por socket cuando esta conectado.
-- El dashboard debe ocultar configuraciones tecnicas siempre que sea posible.
+Arquitectura actual: `socket-first hybrid`.
+
+- ADB se usa para detectar telefonos, resolver identidades, instalar/abrir FlowAgent, crear `adb reverse`, abrir ajustes y recuperar dispositivos.
+- FlowAgent APK se usa como motor de UI por socket cuando esta conectado y con Accesibilidad activa.
+- FlowLogin no debe caer silenciosamente a ADB como motor de login. Si FlowAgent no esta listo, se omite el telefono o se avisa.
+- El estado actual `1.0.45` incorpora la seccion visual `Crear Cuentas` totalmente funcional y aislada, conectada a un motor nativo en Python (`FlowRegister`) con todos los pasos del registro de Spotify automatizados y captcha resuelto via CapSolver.
+
+## Version y Actualizacion
+
+Version actual del proyecto:
+
+```text
+APP_VERSION = 1.0.45
+```
+
+Archivos relacionados:
+
+- `app_meta.py`: define `APP_NAME` y `APP_VERSION`.
+- `update.json`: manifest publico que el updater consulta.
+- `release_packages/FlowDashboard-1.0.45.zip`: paquete de actualizacion mas reciente (generado por `CrearActualizacion.bat`).
+- `dist/FlowDashboard.exe`: EXE compilado de la version `1.0.45`.
+
+`update.json` actual debe apuntar a:
+
+```text
+version: 1.0.45
+package_url: https://github.com/ingestebandaza/FlowDashboard/releases/download/v1.0.45/FlowDashboard-1.0.45.zip
+sha256: <calculado por CrearActualizacion.bat al empaquetar>
+```
+
+Para crear una actualizacion nueva se usa:
+
+```powershell
+CrearActualizacion.bat
+```
+
+Ese `.bat` compila `launcher.py` con PyInstaller, crea el ZIP en `release_packages/`, calcula SHA256 y actualiza `update.json`.
+
+Importante: si se quiere que clientes que ya tienen una version mayor vuelvan a un estado viejo, el updater normal puede no instalar una version menor. En ese caso se debe publicar una version nueva mayor con contenido rollback, por ejemplo `2.0.1` con contenido de `1.0.42`.
 
 ## Archivos Principales
 
-- `wsapi_demo.html`: dashboard principal. Contiene UI, estilos y logica de dispositivos, cuentas, categorias, grilla, FlowLogin y FlowAgent.
-- `wsapi.js`: cliente HTTP usado por el dashboard para hablar con `local_adb_server.py` en `http://127.0.0.1:8765`.
-- `local_adb_server.py`: servidor local HTTP/ADB. Expone endpoints para dispositivos, comandos ADB, FlowLogin, nombres/cuentas persistentes, FlowAgent y socket APK.
-- `abrir_dashboard.bat`: lanzador Windows. Debe usarse para abrir el dashboard; reinicia servidor viejo si faltan features requeridas.
-- `Login.js`: runner AutoJS alternativo/legacy. Lee `/sdcard/Download/flowlogin_accounts.json` y escribe `/sdcard/Download/flowlogin_status.json`.
-- `device_names.json`: persistencia por identidad estable del telefono. Desde 2026-05-16 usa MAC cuando Android la expone (`mac:AA:BB:...`) y solo cae a `serial:<serial>` si no se puede detectar MAC. Guarda nombre, cuentas asignadas al telefono y `accountStatuses`. Puede contener datos sensibles.
-- `.flowlogin_payloads/`: payloads locales generados para FlowLogin. Puede contener datos sensibles.
-- `flow_agent_apk/`: proyecto Android del APK FlowAgent.
-- `flow_agent_apk/build/flowagent-debug.apk`: APK compilada actual que instala el dashboard.
-- `license_admin.html`: panel local privado para administrar licencias, dispositivos aprobados/bloqueados e intentos de acceso desde Supabase.
-- `supabase_admin_policies.sql`: SQL de politicas RLS y tabla `app_admins` para permitir CRUD administrativo solo a emails autorizados en Supabase Auth.
-- `app_meta.py`: version comercial visible para launcher/updater (`APP_VERSION`).
-- `launcher.py`: entrada empaquetable. Arranca el servidor local dentro del mismo proceso, abre `wsapi_demo.html` y comprueba actualizaciones si existe `update_config.json`.
-- `updater.py`: base de actualizacion automatica por manifest JSON remoto y paquete ZIP.
-- `update_config.example.json`: plantilla local para configurar URL del manifest de actualizaciones sin subir configuracion privada.
-- `supabase_license_rpc.sql`: SQL para validacion comercial gratis sin Edge Function. Crea RPC `validate_flowdashboard_license` con `SECURITY DEFINER`, ejecutable con anon key.
-- `Crearexe.bat`: lanzador de build para crear `dist/FlowDashboard.exe` sin comandos manuales. Cierra el EXE abierto, instala PyInstaller si falta, compila con `launcher.spec` y copia configuraciones locales necesarias a `dist`.
-- `CrearActualizacion.bat`: crea un paquete ZIP versionado para GitHub Releases, calcula SHA256 y actualiza `update.json`.
-- `update.json`: manifest publico de actualizaciones. Debe estar publicado en GitHub y apuntar al ZIP subido en Releases.
-- `update_config.json`: configuracion local ignorada por git; en la build de cliente apunta a `https://raw.githubusercontent.com/ingestebandaza/FlowDashboard/main/update.json`.
+- `wsapi_demo.html`: dashboard principal. Contiene UI, CSS y la mayor parte de la logica frontend.
+- `wsapi.js`: cliente HTTP para hablar con `local_adb_server.py` en `http://127.0.0.1:8765`.
+- `local_adb_server.py`: servidor local HTTP/ADB y servidor socket FlowAgent.
+- `abrir_dashboard.bat`: lanzador para desarrollo/uso local en Windows. Inicia servidor si hace falta y abre `wsapi_demo.html`.
+- `launcher.py`: entrada para EXE. Arranca servidor local, sirve dashboard estatico y revisa actualizaciones.
+- `launcher.spec`: configuracion PyInstaller.
+- `Login.js`: runner AutoJS legacy/alternativo. En el flujo actual, `local_adb_server.py` intercepta `Login.js` y usa runner FlowAgent socket.
+- `device_names.json`: persistencia local de nombres, perfiles/cuentas y estados por identidad estable del telefono. Puede contener datos sensibles.
+- `device_groups.json`: categorias visuales de dispositivos y asignaciones. Puede no existir hasta que el usuario cree categorias.
+- `.flowlogin_payloads/`: payloads locales para FlowLogin. Puede contener datos sensibles.
+- `flow_agent_apk/`: proyecto Android de FlowAgent.
+- `flow_agent_apk/build/flowagent-debug.apk`: APK incluida/instalada por el dashboard.
+- `license_admin.html`: panel admin local privado para licencias en Supabase.
+- `supabase_license_rpc.sql`: SQL de validacion comercial por RPC Supabase.
+- `supabase_admin_policies.sql`: politicas RLS/admin para panel de licencias.
+- `update_config.json`: configuracion local ignorada por git.
+- `update_config.example.json`: plantilla publica.
+- `Crearexe.bat`: build manual de EXE.
+- `CrearActualizacion.bat`: build de paquete ZIP versionado.
+
+No copiar cuentas, passwords, `.supabase_config.json`, payloads ni contenido sensible de `device_names.json` en documentacion, commits o respuestas.
 
 ## Servidor Local
 
 `local_adb_server.py` escucha:
 
-- HTTP dashboard: `127.0.0.1:8765`
-- Socket FlowAgent: `0.0.0.0:8766`
+```text
+HTTP dashboard/API: 127.0.0.1:8765
+Socket FlowAgent:  0.0.0.0:8766
+```
 
-Version actual esperada:
+Version interna actual del servidor:
 
 ```text
 2026-05-12-device-public-ip-refresh
 ```
 
-Features actuales esperadas en `/health`:
+Features esperadas en `/health` para el estado actual:
 
 ```text
 flowlogin_payload
@@ -68,6 +107,17 @@ flowlogin_retry_form_fix
 flowlogin_clone_list
 device_public_ip_flags
 device_public_ip_refresh
+static_dashboard
+client_info
+license_remember
+adb_path_probe
+adb_deep_probe
+client_network_info
+adb_env_path
+adb_diagnostics
+visual_update_check
+bundled_flowagent_apk
+device_categories
 device_mac_identity
 flowagent_auto_socket_watchdog
 device_visible_ip
@@ -75,54 +125,50 @@ flowagent_socket_app_info_permissions
 flowagent_accessibility_diagnostics
 ```
 
+No debe aparecer `flowagent_uninstall` en este estado `1.0.42`.
+
 Endpoints importantes:
 
-- `GET /health`: version, features y ruta ADB.
-  - Incluye `appVersion` desde `app_meta.py`.
-- `GET /devices`: lista dispositivos ADB, ahora incluye `androidId` cuando se puede leer.
-  - Desde 2026-05-16 incluye `deviceKey` como identidad estable para UI/persistencia: MAC si esta disponible y fallback por serial si no.
-- `GET /agents`: lista FlowAgent APKs conectadas por socket.
+- `GET /health`: estado del servidor, version, appVersion, features, ruta APK y existencia de APK.
+- `GET /client-info`: nombre PC, usuario Windows, hash local estable, version, ruta ADB, IP local/publica, pais y MAC del PC cuando se detecta.
+- `GET /adb-diagnostics`: diagnostico ADB desde el EXE/servidor.
+- `GET /update-status`: estado de actualizacion en curso.
+- `GET /devices`: lista dispositivos ADB, con identidad estable `deviceKey`, `legacyDeviceId`, `androidId`, IP visible, nombre, perfil y estados de cuentas.
+- `GET /device-names`: carga persistencia local de perfiles.
+- `GET /device-groups`: carga categorias visuales.
+- `GET /agents`: lista FlowAgent conectados por socket.
+- `GET /device-mac`: recupera MAC del primer dispositivo conectado cuando es posible.
 - `POST /adb`: ejecuta comandos ADB.
 - `POST /packages`: lista paquetes instalados.
-- `POST /autojs/run`: ejecuta script; si el script es `Login.js`, usa runner FlowAgent socket.
+- `POST /autojs/run`: ejecuta script. Si el script es `Login.js`, usa runner FlowAgent socket.
 - `POST /autojs/stop`: detiene FlowLogin/AutoJS.
-- `POST /login-status`: refresca estados locales del runner FlowAgent.
+- `POST /login-status`: refresca estados locales de FlowLogin.
+- `POST /flowagent/setup`: prepara FlowAgent por ADB.
+- `POST /device-public-ip`: fuerza refresco de IP publica/pais del dispositivo.
 - `POST /device-name`: guarda nombre persistente del telefono.
-- `POST /device-person`: guarda cuentas/perfil persistente del telefono.
-- `POST /device-public-ip`: fuerza reintento de IP publica/pais de un dispositivo y devuelve `/devices` actualizado.
-- `POST /agent/command`: envia comando JSON a FlowAgent conectado.
-- `POST /flowagent/setup`: prepara FlowAgent automatico por ADB.
+- `POST /device-person`: guarda perfil/cuentas del telefono.
+- `POST /device-groups`: guarda categorias y asignaciones.
+- `POST /agent/command`: envia comando JSON a FlowAgent.
+- `POST /validate-license`: valida licencia contra Supabase/RPC o modo local si aplica.
+- `POST /update-check`: inicia revision/descarga de actualizacion.
 
-## FlowAgent Automatico
+## ADB
 
-Implementado el 2026-05-11. Mejorado el 2026-05-12 para preparacion automatica sin reinstalar siempre.
+El servidor intenta encontrar ADB automaticamente. Fuentes conocidas:
 
-El boton visual del dashboard se llama `Instalar FlowAgent`, pero desde 2026-05-17 actua como preparacion inteligente: usa `install: "auto"` para no reinstalar si el APK ya esta en la version esperada, abre FlowAgent y puede abrir Accesibilidad cuando es una accion manual.
+- `PATH`
+- `FLOWDASHBOARD_ADB`
+- `ANDROID_HOME`
+- `ANDROID_SDK_ROOT`
+- carpeta de la app/EXE
+- `platform-tools` junto al EXE
+- rutas comunes del SDK Android
+- `%USERPROFILE%\adb.exe`
+- `%USERPROFILE%\Downloads\platform-tools\adb.exe`
+- `%USERPROFILE%\Desktop\platform-tools\adb.exe`
+- busqueda limitada dentro de la carpeta de usuario y LocalAppData
 
-Cuando se pulsa el boton manual, el servidor puede instalar/actualizar y abrir FlowAgent. Antes de ejecutar FlowLogin, el dashboard usa modo automatico:
-
-```text
-adb reverse tcp:8766 tcp:8766
-adb install -r flow_agent_apk/build/flowagent-debug.apk  # solo si falta o esta vieja en modo automatico
-adb shell am start -n com.flowlogin.agent/.MainActivity --es host 127.0.0.1 --ei port 8766 --ez autoconnect true
-```
-
-Resultado esperado:
-
-- Si el telefono no tiene APK, se instala.
-- Si ya la tiene, se actualiza.
-- En modo automatico, si ya tiene la version esperada, no se reinstala.
-- La APK se abre con `host=127.0.0.1` y `port=8766`.
-- Si Accesibilidad ya esta activa, reinicia el socket y conecta solo.
-- Si Accesibilidad no esta activa, el usuario solo debe activar el servicio FlowAgent en Android.
-- Si Android reporta FlowAgent habilitado pero lo deja en `binding/dead` y no aparece en `bound services`, el servidor lo informa como permiso atascado. La reparacion segura es apagar y prender FlowAgent una vez en Accesibilidad; reinstalar el APK no suele resolver ese estado.
-
-Importante:
-
-- En telefonos por WiFi, `127.0.0.1` funciona porque el dashboard crea `adb reverse`.
-- No hace falta poner IP del PC manualmente si el dispositivo ya esta conectado por ADB.
-- `Actualizar FlowAgent` en el dashboard no instala nada; solo consulta `/agents` y refresca contador/estado visual.
-- FlowLogin intenta preparar FlowAgent automaticamente antes de ejecutar, creando `adb reverse`, abriendo la APK con `autoconnect` y reinstalando solo si falta o esta vieja.
+`/client-info` y `/adb-diagnostics` existen para diagnosticar clientes donde el EXE con doble clic no hereda el mismo PATH que la terminal.
 
 ## FlowAgent APK
 
@@ -132,22 +178,42 @@ Paquete Android:
 com.flowlogin.agent
 ```
 
-Version actual:
+Version esperada por backend:
 
 ```text
 0.2.4
 ```
 
-Cambios clave:
+Ruta APK esperada:
 
-- `MainActivity` acepta extras por intent: `host`, `port`, `autoconnect`.
-- El dashboard puede forzar `127.0.0.1:8766` aunque antes se hubiera guardado otra IP.
-- Si `autoconnect=true` y el servicio de accesibilidad esta activo, reinicia el socket automaticamente.
-- Si Android muestra el permiso habilitado pero no enlaza el `AccessibilityService`, la pantalla del APK marca Accesibilidad como `Sin enlazar` para distinguirlo de un permiso realmente pendiente.
-- La interfaz visual del APK usa tarjetas oscuras, chips de estado, acciones compactas y un icono launcher propio.
-- `MainActivity` tambien acepta extra `serial` desde el dashboard y lo guarda para que el socket pueda vincularse con el dispositivo ADB correcto.
+```text
+flow_agent_apk/build/flowagent-debug.apk
+```
 
-Comandos soportados actualmente por `/agent/command`:
+El EXE incluye la APK empaquetada; el servidor tambien busca fallback junto al proyecto cuando corresponde.
+
+Preparacion manual/automatica:
+
+```text
+adb reverse tcp:8766 tcp:8766
+adb install -r flow_agent_apk/build/flowagent-debug.apk  # solo si falta o esta vieja en modo auto
+adb shell am start -n com.flowlogin.agent/.MainActivity --es host 127.0.0.1 --es serial <serial> --ei port 8766 --ez autoconnect true
+```
+
+Botones del estado actual `1.0.42`:
+
+- `Instalar FlowAgent`: preparacion inteligente. Usa `install: "auto"`, abre FlowAgent y puede abrir Accesibilidad si es accion manual.
+- `Actualizar FlowAgent`: en `1.0.42` solo consulta `/agents` y refresca contador/estado visual. No reinstala ni abre la app.
+
+No existe en `1.0.42` boton `Desinstalar FlowAgent`.
+
+Diagnostico de Accesibilidad:
+
+- `flow_agent_accessibility_state()` revisa si el servicio esta habilitado, enlazado o atascado.
+- Si Android marca FlowAgent habilitado pero no enlaza el `AccessibilityService`, el dashboard/servidor indica que hay que apagar/prender FlowAgent una vez en Accesibilidad.
+- Reinstalar APK no suele resolver un estado `binding/dead`; normalmente se resuelve desde ajustes de Accesibilidad del telefono.
+
+Comandos socket soportados actualmente por FlowAgent:
 
 - `ping`
 - `status`
@@ -164,46 +230,116 @@ Comandos soportados actualmente por `/agent/command`:
 - `back`
 - `recents`
 
-## Dashboard UI
+## Dashboard UI Actual
 
-Reglas visuales principales viven en `AGENTS.md`. No romperlas.
+Reglas visuales obligatorias viven en `AGENTS.md`.
 
-Estado actual:
+Estado actual del layout:
 
-- Panel izquierdo `Dispositivos` conserva solo titulo, contador y botones compactos.
-- Grilla real de dispositivos vive dentro del panel `Dispositivos Conectados`.
-- Grilla usa cuadros seleccionables con zoom.
-- Cada tarjeta tiene botones de editar nombre y editar cuentas.
-- Cada tarjeta muestra columna derecha de puntos por cuenta/clon.
-- Cada tarjeta muestra `Socket` si el `androidId` del dispositivo coincide con un `agentId` conectado en `/agents`; si no, muestra `ADB`.
-- Cada tarjeta puede mostrar una mini bandera junto al nombre cuando el servidor logra detectar IP publica y pais desde el propio dispositivo.
-- Debajo de la grilla hay controles compactos:
-  - `Agent N`
-  - `Instalar FlowAgent`
-  - `Actualizar FlowAgent`
-  - `Limpiar cuentas`
+- Panel izquierdo `Dispositivos`: solo titulo, contador, botones `Conectar` y `Actualizar`.
+- La lista/grilla real de dispositivos vive en el panel derecho `Dispositivos Conectados`.
+- El panel `Dispositivos Conectados` tiene herramientas superiores para seleccion, limpieza de seleccionados, deseleccion, refresco de pais/IP, cambio de vista y zoom.
+- Los dispositivos se ven como cuadros seleccionables o filas segun modo.
+- Cada tarjeta muestra nombre, IP local visible, estado de cuentas y badge `Socket`/`ADB`/`Actualizar`.
+- Cada tarjeta conserva boton de editar nombre y boton de persona/cuentas.
+- Las categorias de dispositivos pueden crearse desde el dashboard y usan `device_groups.json`.
+- Debajo de la grilla estan los controles de FlowAgent y `Limpiar cuentas`.
+
+Categorias de flujos visibles:
+
+- `FlowLogin`
+- `FlowTrack`
+- `FlowCache`
+- `FlowCast`
+- `FlowApple`
+- `Flowamazon`
+- `FlowGram`
+- `FlowTikTok`
+
+Solo `FlowLogin` ejecuta actualmente. Los demas quedan como pendientes/desactivados.
+
+Estado actual de `Cuentas`:
+
+- Tiene pestanas con iconos y contador: `Total`, `Validos`, `No validos`.
+- Cada pestana tiene su propio textarea.
+- `No validos` tiene boton compacto para limpiar esa lista.
+- `Delimitador` y `Dividir` estan lado a lado.
+- El boton verde de dividir reparte cuentas de la pestana activa entre dispositivos seleccionados.
+- `Dividir` no puede pasar de 10 cuentas por dispositivo.
+- Debajo del textarea esta `Mapa de cuentas`, con filtros, conteos y boton para limpiar lo recordado.
+- `Mapa de cuentas` puede contraerse/desplegarse.
+
+Importante: en el estado actual `1.0.42`, la seccion `Cuentas` completa no tiene boton propio para contraer/desplegar. Tampoco existe la seccion `Crear Cuentas`.
+
+## Persistencia Local
+
+`device_names.json` guarda por identidad estable del telefono:
+
+```json
+{
+  "mac:AA:BB:CC:DD:EE:FF": {
+    "name": "nombre opcional",
+    "person": "maximo 10 lineas de cuentas",
+    "accountStatuses": []
+  }
+}
+```
+
+Reglas:
+
+- Usar MAC como clave estable cuando Android la entrega.
+- Usar `serial:<serial>` solo como fallback temporal.
+- Si existe perfil viejo por serial/IP, `/devices` lo migra automaticamente a `mac:...` cuando detecta MAC.
+- `device_groups.json` tambien migra asignaciones desde serial/IP a `deviceKey`.
+- No exponer cuentas reales ni passwords de estos archivos.
+
+Persistencia frontend:
+
+- `flowlogin.accounts`: textareas de `Cuentas`, delimitador, dividir y pestana activa.
+- `flowlogin.accountAssignments`: mapa de asignaciones/intentos.
+- `flowlogin.accountTraceMemoryReset`: evita rehidratar asignaciones viejas despues de limpiar el mapa.
+- `flowdashboard.deviceViewMode`: modo grilla/filas.
+- Altura manual del panel de dispositivos y otros detalles visuales tambien pueden guardarse en `localStorage`.
+- `flowdashboard.license`: email/licencia guardados para revalidacion automatica.
+
+## Inventario de Cuentas
+
+La pestana `Total` funciona como cola de cuentas nuevas/disponibles.
+
+Reglas actuales:
+
+- Al dividir cuentas entre dispositivos, solo se usan cuentas libres no reservadas.
+- Dividir reserva cuentas en `flowlogin.accountAssignments`.
+- Las cuentas asignadas permanecen visibles en `Total` hasta resultado terminal.
+- Estados `success` y `already` mueven la cuenta a `Validos`.
+- Estados `error` y `review` mueven la cuenta a `No validos`.
+- Ediciones manuales del perfil de un telefono bloquean duplicados si esa cuenta ya esta reservada o probada en otro lugar.
+- `Mapa de cuentas` muestra trazabilidad: numero de cuenta, asignacion a dispositivo/clon y estado.
+- El boton de limpiar mapa borra asignaciones/intentos recordados, pero no borra los textareas `Total`, `Validos` ni `No validos`.
 
 ## FlowLogin
 
-Flujo activo actual:
+Flujo activo:
 
-1. Dashboard reparte cuentas entre telefonos y las guarda en `device_names.json`.
-2. Al ejecutar FlowLogin, se selecciona `Login.js`.
-3. `wsapi.js` llama `/autojs/run`.
-4. Si el script se llama `Login.js`, `local_adb_server.py` usa `start_flowlogin_agent_jobs`.
-5. FlowLogin usa solo FlowAgent por socket para lanzar clones, leer UI, escribir email/password y actualizar `accountStatuses`.
-6. Primera pasada: prueba cada cuenta asignada una vez.
-   Cada linea se enlaza por posicion fija: cuenta 1 -> clon 1 -> `com.spotify.musid`, cuenta 2 -> clon 2 -> `com.spotify.musie`, hasta cuenta/clon 10. El servidor recalcula el paquete desde el numero de clon antes de lanzar, limpiar o reintentar.
-7. Si una cuenta falla y no es bloqueo/captcha/verificacion, queda en `retrying`, se abre App info del paquete del clon, se intenta limpiar cache/datos visualmente y se hace un segundo intento al final de la pasada.
-   El segundo intento espera el formulario fresco despues de limpiar datos y reconoce variantes como Log in/Iniciar sesion, Continue with email/Continuar con correo y Log in with a password/Iniciar sesion con contrasena.
-8. Despues del segundo intento, si vuelve a fallar, queda como `error`/`review` y se clasifica como no valida.
-9. Si un telefono objetivo no tiene FlowAgent conectado, FlowLogin intenta prepararlo automaticamente; si no queda listo, se reporta que FlowAgent es requerido.
-10. El dashboard hace polling con `/login-status` y pinta las bolitas desde estados locales.
-11. En seleccion multiple, un dispositivo sin FlowAgent listo no debe bloquear a los demas: se omite ese telefono y FlowLogin se envia a los que si quedaron listos.
-12. Cada dispositivo puede iniciar/detener FlowLogin de forma independiente desde el menu contextual de la tarjeta, sin interrumpir otros telefonos en ejecucion.
-13. El menu contextual tambien permite reintentar o reemplazar todas las cuentas no protegidas de un dispositivo en una sola corrida, y anadir cuentas libres hasta completar 10 sin borrar cuentas funcionando.
+1. El usuario pega cuentas en `Cuentas`.
+2. El usuario selecciona dispositivos y reparte cuentas.
+3. Las cuentas se guardan en `device_names.json` por `deviceKey`.
+4. Al ejecutar FlowLogin, el dashboard selecciona `Login.js`.
+5. `wsapi.js` llama `/autojs/run`.
+6. Si el script es `Login.js`, `local_adb_server.py` usa `start_flowlogin_agent_jobs`.
+7. El motor de login usa solo FlowAgent por socket para lanzar clones, leer UI, escribir email/password y reportar estados.
+8. El dashboard hace polling con `/login-status` y pinta bolitas por clon/cuenta.
 
-ADB sigue permitido para preparar infraestructura: listar dispositivos, instalar APK, crear `adb reverse` y abrir FlowAgent. No debe usarse como motor de login.
+Asignacion clon/cuenta:
+
+```text
+cuenta 1 -> clon 1 -> com.spotify.musid
+cuenta 2 -> clon 2 -> com.spotify.musie
+...
+cuenta 10 -> clon 10
+```
+
+El backend recalcula paquete desde el numero de clon antes de lanzar, limpiar o reintentar.
 
 Estados de cuenta:
 
@@ -219,323 +355,213 @@ notice14
 replaced
 ```
 
-Regla de seguridad del flujo:
+Reglas de seguridad:
 
 - No marcar `success` sin confirmacion estable.
 - No intentar saltar captchas, 2FA ni verificaciones del servicio.
 - Captcha/verificacion debe terminar en `review` o `error`, no en exito falso.
+- En seleccion multiple, un telefono sin FlowAgent listo no debe bloquear a los demas.
+- El Play del menu contextual ejecuta solo cuentas `pending` (bolitas grises).
+- Cuentas finales como `success`, `already`, `error`, `review` no se vuelven a probar con Play normal.
 
-## Persistencia
+Reintentos:
 
-`device_names.json` guarda por identidad estable del telefono:
+- Fallos no protegidos pueden pasar a `retrying`.
+- El flujo conservador puede abrir App info por socket, entrar a Storage/Permisos, limpiar datos/cache visualmente y restaurar permisos antes del segundo intento.
+- `notice14` representa aviso de Spotify de 14 dias en el extranjero.
 
-```json
-{
-  "mac:AA:BB:CC:DD:EE:FF": {
-    "name": "nombre opcional",
-    "person": "maximo 10 lineas de cuentas",
-    "accountStatuses": []
-  }
-}
-```
+## FlowRegister (Crear Cuentas)
 
-Compatibilidad:
+Flujo nativo por socket dedicado a creacion de cuentas en Spotify, separado de FlowLogin.
 
-- Si existe un perfil viejo guardado por serial/IP, `/devices` lo migra automaticamente a `mac:...` cuando detecta la MAC del dispositivo.
-- Si Android no entrega MAC, se usa temporalmente `serial:<serial>` para no bloquear la operacion.
-- Las categorias de `device_groups.json` y las asignaciones locales del dashboard tambien migran de serial/IP a `deviceKey` cuando el dispositivo vuelve a aparecer.
+### Arquitectura
 
-No copiar cuentas reales ni passwords en documentacion o logs largos.
+- Endpoint: el dashboard lanza `Register.js` via `/autojs/run`. `local_adb_server.py` intercepta el nombre y reusa `start_flowlogin_agent_jobs(..., is_register=True, register_lines=...)`.
+- Motor: `perform_flowregister_agent(serial, item, account, stop_event)` en `local_adb_server.py`.
+- Cuerpo real: `_perform_flowregister_body(...)` que recibe `agent`, `serial`, etc. y usa una funcion helper `ga()` que devuelve siempre el agente mas reciente (`agent_for_serial(serial)` ordenado por `last_seen` desc).
+- Progreso: `FLOWREGISTER_PROGRESS[serial] = {"text", "progress"}` se publica en `/login-status` como `progress`.
+- Resultados: `FLOWREGISTER_RESULTS[serial][line] = status`. Se publican en `/login-status` como `registerResults`. NO se mezclan con `accountStatuses` de FlowLogin.
+- Cancelacion: `stop_event` por serial. Los waits largos respetan cancelacion en bloques cortos (<= 2.5s).
+- UI: panel izquierdo, pestana `Crear Cuentas`, tarjeta `.device-card.is-creating` muestra barra de progreso violeta durante la creacion.
 
-Los textareas de `Cuentas`, `Delimitador` y `Dividir` persisten en `localStorage`.
+### Origen de las cuentas (importante)
 
-Inventario de cuentas del dashboard:
+- Las cuentas vienen del textarea `Total` de la seccion `Crear Cuentas` (no de la seccion `Cuentas` de FlowLogin).
+- El frontend construye `plannedChunks = { serial: [lines...] }` en orden, y reparte segun `Cant. a crear por equipo`.
+- `prepare_flowlogin_payload` con `is_register=True` NO toca `profile["person"]` ni `profile["accountStatuses"]` para no contaminar FlowLogin. El payload se construye SOLO desde `register_lines`.
+- `start_flowlogin_agent_jobs` normaliza las claves de `register_lines` para que siempre coincidan con el serial ADB real (mapea desde `deviceKey`/`legacyDeviceId`/`deviceId` al serial real).
+- El frontend NO borra el textarea `Total` al iniciar el proceso. Las cuentas se mueven a `Validos` o `No validos` automaticamente segun el resultado en `registerResults`.
+- El delimitador del textarea `Cuentas` (FlowLogin) se reusa para parsear las lineas de Crear Cuentas (`getAccountDelimiter()`).
+- Asignacion clon-cuenta: linea 0 -> clon 1 (`com.spotify.musid`), linea 1 -> clon 2 (`com.spotify.musie`), etc.
 
-- `Total` funciona como cola de cuentas nuevas/disponibles.
-- Al dividir cuentas entre dispositivos, el dashboard solo usa cuentas libres no reservadas por otro dispositivo/clon.
-- Dividir reserva las cuentas en `flowlogin.accountAssignments`, pero no las quita de `Total` todavia.
-- Cuando `Login.js`/FlowLogin empieza a probar una cuenta, la linea se quita de `Total`.
-- Estados `success` y `already` mueven la cuenta a `Validos`.
-- Estados `error` y `review` mueven la cuenta a `No validos`.
-- Ediciones manuales del perfil de un dispositivo bloquean cuentas que ya esten reservadas o probadas en otro lugar.
-- El `Mapa de cuentas` bajo el textarea muestra trazabilidad compacta con filtros de todas/asignadas/disponibles, conteos y numeracion por referencia real de la lista; las usadas/asignadas se resaltan con color.
-- El `Mapa de cuentas` incluye un boton para eliminar lo recordado: limpia `flowlogin.accountAssignments`, marca el mapa como reiniciado en `localStorage` y evita rehidratar asignaciones viejas desde estados de dispositivos hasta que se haga una nueva asignacion real. No borra los textareas `Total`, `Validos` ni `No validos`.
-- La pestana `No validos` tiene un boton compacto en la fila del titulo para borrar ese textarea y guardar inmediatamente el cambio persistente.
+### Pasos del flujo
+
+1. **Cerrar clon** (`am force-stop` por ADB).
+2. **Limpieza visual** del clon via `clear_clone_cache_data_visual` (FlowAgent abre App Info, Storage, Clear Cache + Clear Data + dialogo de confirmacion, restaura permiso Storage, vuelve a Home). Si falla, fallback a `pm clear` por ADB.
+3. **Abrir Spotify** (`agent_launch_package_and_wait` con timeout de 25s).
+4. **Esperar pantalla inicial** y tocar `Sign up free`/`Registrarte`.
+5. Tocar `Continue with email` si aparece.
+6. **Pantalla de email**: esperar marker, escribir email, tocar `Next`. Verificar que avanzo (no sigue en pantalla de email).
+7. **Pantalla de password**: esperar marker, escribir password, tocar `Next`.
+8. **Pantalla de fecha de nacimiento**:
+   - Random mayor de edad: año entre `1975` y `2026 - 18`, dia 1-28, mes aleatorio.
+   - Picker de Spotify: 3 columnas con `EditText` en el medio (seleccionado) y `Button` arriba/abajo.
+   - **Geometria observada (1080x1794)**: mes cx≈320, dia cx≈530, año cx≈740. EditText centrado en y≈866. Swipe de 230px mueve exactamente 1 item.
+   - **Direccion confirmada por prueba**: swipe ARRIBA (start_y > end_y) AUMENTA el valor; swipe ABAJO DISMINUYE el valor.
+   - **Importante**: Spotify muestra dias < 10 con cero a la izquierda (`01`, `02`, ..., `09`). `day_list` debe usar el formato `"01"` para esos dias y `target_day_str` se formatea igual antes de buscarlo en la lista. Sin esto, el bot oscila infinitamente entre `09` y `10`.
+   - El centro X de cada columna se lee dinamicamente del dump (EditText ordenados por X), con fallback a `[320, 530, 740]`.
+   - Tras ajustar las 3 columnas, esperar 1.2s para que el picker termine la animacion antes de tocar `Next`.
+9. **Pantalla de genero**: random entre `Female` y `Male` solamente. El clic avanza automaticamente sin Next.
+10. **Pantalla de nombre**: nombre completo random segun genero (listas `_MALE_FIRST`/`_FEMALE_FIRST` + `_LAST_NAMES` con nombres reales latinoamericanos). `agent_set_text_index(0, ...)` reemplaza el nombre pre-llenado por Spotify.
+11. **Boton `Create account`**: hay dos elementos con ese texto (el titulo `TextView` y el boton real `Button`). Se busca el `Button` clickeable por scoring (Button=2, clickable=1, otro=0). Scroll suave hacia abajo antes para asegurar visibilidad. Si el primer tap no avanza, segundo intento.
+12. **Captcha de Spotify**: se detecta porque el paquete activo cambia a `com.sec.android.app.sbrowser` o `chrome`. Llama a `solve_recaptcha_capsolver` con sitekey `6LeO36obAAAAALSBZrY6RYM1hcAY7RLvpDDcJLy3` y URL `https://challenge.spotify.com`. Tras obtener token, tap en checkbox (x=200, y=690) y boton Continue (x=515, y=1005). Si el captcha muestra challenge de imagenes, marca `review` para completar manualmente.
+
+### Captcha y CapSolver
+
+- `CAPSOLVER_API_KEY` se lee de `.supabase_config.json` (no hardcodeado en codigo, no commitear con valor real).
+- Funcion `solve_recaptcha_capsolver(website_url, website_key, max_wait=120)` hace `createTask` + polling `getTaskResult` cada 4s.
+- Sitekey actual de Spotify: `6LeO36obAAAAALSBZrY6RYM1hcAY7RLvpDDcJLy3` (extraido del JSON `__NEXT_DATA__` de `https://challenge.spotify.com/c/.../recaptcha`).
+- Si CapSolver falla o no hay API key, fallback a tap directo en checkbox (puede no ser suficiente sin token valido).
+- Coordenadas del captcha confirmadas en pantalla 1080x1794: checkbox `[200, 690]`, boton Continue `[515, 1005]`.
+
+### Reglas y restricciones
+
+- Cada paso espera un **marker real** de la pantalla siguiente antes de tocar nada. NO usar `time.sleep` ciego.
+- Antes de tipear password, verificar que la pantalla del email ya no esta visible.
+- Buscar `Next/Siguiente` primero como match exacto; `contains` solo como fallback.
+- Si un marker no aparece en su timeout, devolver `review` con mensaje claro.
+- NO intentar saltar challenge de imagenes del captcha. Eso va a `review`.
+- El reverse `adb reverse tcp:8766` se mantiene activo durante todo el registro (no es necesario quitarlo; Spotify solo detecta proxy si hay VPN real o WiFi proxy configurado en el sistema).
+- Error visible en pantalla tipo "Your account wasn't created. Looks like your device is connected to a proxy or VPN service" -> revisar VPN del sistema operativo y configuracion proxy de la red WiFi del telefono.
+
+### Endpoint de diagnostico
+
+- `POST /debug/dump` con `{"serial": "..."}` devuelve los nodos visibles en pantalla con texto, clase, bounds, clickable, editable y centro. Usado para inspeccionar pantallas con `FLAG_SECURE` activo (donde Appium Inspector no funciona).
+
+### Frontend (Crear Cuentas)
+
+- Pestanas `Total` / `Validos` / `No validos` con icono y contador, cada una con su textarea propio.
+- Estado `flowdashboard.createAccountsCollapsed` y `flowdashboard.accountsCollapsed` en `localStorage` para colapsar/desplegar las dos secciones al hacer clic en su header.
+- Boton play violeta-rosa `js-start-creation-btn` en la seccion. Al tocarlo, lee del textarea `Total`, valida cantidad minima (`deviceIds.length * count`), construye `plannedChunks` y envia a `/autojs/run` con `filePath: 'Register.js'`.
+- Las cuentas se mueven automaticamente entre pestanas via `moveCreateAccountLineToResultTab` cuando `registerResults` reporta status terminal: `success`/`already` -> `valid`, `error`/`review`/`notice14` -> `invalid`.
+- `loginStatusesAreTerminal` ignora dispositivos en `state.creatingDevices` para que el polling no termine prematuramente. Solo terminan cuando `registerResults` llega o el timeout de 240s sin progreso.
+
+## Licencias
+
+Estado actual:
+
+- Identificador principal: email (`device_email`).
+- El dashboard puede detectar MAC automaticamente del dispositivo/PC y enviarla como dato adicional.
+- Validacion comercial recomendada: Supabase anon key + RPC `validate_flowdashboard_license`.
+- No incluir `service_role` en HTML, EXE distribuido ni archivos de cliente.
+
+Flujo:
+
+1. Usuario ingresa email y licencia.
+2. Dashboard llama `/client-info`.
+3. Dashboard intenta obtener MAC cuando hay dispositivo conectado.
+4. Dashboard llama `POST /validate-license`.
+5. Backend llama RPC o modo local segun configuracion.
+6. Si queda aprobado, guarda licencia en `localStorage`, cierra modal, carga dispositivos y revisa actualizaciones.
+
+Archivos:
+
+- `license_admin.html`: panel admin local.
+- `supabase_license_rpc.sql`: RPC para validacion comercial sin Edge Function.
+- `supabase_admin_policies.sql`: politicas/admin para gestion.
+- `.supabase_config.json`: configuracion local sensible. No documentar contenido ni subir claves privadas.
+
+## Actualizador
+
+`launcher.py` revisa actualizaciones y sirve archivos estaticos cuando se ejecuta como EXE.
+
+Recursos estaticos servidos:
+
+- `/wsapi_demo.html`
+- `/wsapi.js`
+- `/logo.png`
+
+Endpoints:
+
+- `POST /update-check`: inicia revision/descarga.
+- `GET /update-status`: consulta estado.
+
+`updater.py` usa `update_config.json` si existe y fallback interno al manifest publico de GitHub.
+
+El dashboard muestra modal visual de actualizacion despues de aprobar licencia.
+
+## Reglas para Futuras Modificaciones
+
+- Leer siempre `AGENTS.md` y este archivo antes de tocar.
+- No hacer cambios visuales grandes sin revisar desktop/mobile.
+- Si se modifica comportamiento, UI, backend, version o updater, actualizar este archivo en la misma tarea.
+- Mantener `wsapi_demo.html` compacto y respetando reglas visuales.
+- No agregar emojis nuevos al HTML.
+- No volver a depender de Laixi como backend principal.
+- No usar ADB como motor de login cuando el flujo es FlowLogin; ADB solo prepara infraestructura.
+- No copiar secretos ni cuentas reales en documentacion.
+- No borrar ni resetear cambios del usuario sin permiso explicito.
 
 ## Comandos de Validacion
 
-Antes de cerrar cambios de backend/frontend:
+Backend:
 
 ```powershell
 python -m py_compile local_adb_server.py
+```
+
+Cliente JS:
+
+```powershell
 node --check wsapi.js
 ```
 
-Para revisar el script inline de `wsapi_demo.html`:
+Script inline de `wsapi_demo.html`:
 
 ```powershell
 $html=Get-Content -Raw wsapi_demo.html; $script=[regex]::Matches($html,'(?s)<script>(.*?)</script>') | Select-Object -Last 1; $script.Groups[1].Value | node --check
 ```
 
-Para compilar la APK:
+APK FlowAgent:
 
 ```powershell
 cd flow_agent_apk
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build_apk.ps1
 ```
 
-Para comprobar servidor:
+Servidor:
 
 ```powershell
 Invoke-RestMethod -Uri http://127.0.0.1:8765/health -TimeoutSec 5 | ConvertTo-Json -Depth 5
 ```
 
-## Registro de Cambios
+## Changelog reciente
 
-### 2026-05-12
+### 1.0.45 (2026-05-19)
 
-- Se agrego control de inventario de cuentas en `wsapi_demo.html`.
-- El boton de dividir ya no reutiliza las primeras cuentas de `Total`; ahora toma solo cuentas libres no asignadas a otros dispositivos.
-- Las cuentas asignadas quedan reservadas para evitar duplicados, pero permanecen visibles en `Total` hasta un resultado terminal.
-- Al ejecutar FlowLogin/Login.js, las cuentas en `running`/`retrying` siguen en `Total`; solo salen cuando se clasifican como `Validos` o `No validos`.
-- Los resultados terminales se clasifican automaticamente: `success`/`already` a `Validos`, `error`/`review` a `No validos`.
-- La edicion manual de cuentas por dispositivo bloquea una linea si ya esta reservada o probada en otro dispositivo.
-- Se agrego la propiedad CSS estandar `line-clamp` junto a `-webkit-line-clamp` en el ID de dispositivo para compatibilidad y evitar advertencias del linter.
-- Reintentar o reemplazar una cuenta de un clon usa un intento fresco: el servidor marca `freshStart`, manda el clon a inicio y hace `am force-stop` del paquete antes de relanzarlo con FlowAgent.
-- El boton de reemplazar cuenta ahora toma la siguiente cuenta libre de `Total`, no de la pestana activa.
-- `abrir_dashboard.bat` ahora exige feature `flowlogin_fresh_retry` para reiniciar servidores viejos automaticamente.
-- Doble clic sobre una tarjeta de dispositivo abre el mismo popover visual de cuentas/perfil que el boton de persona.
-- El popover de cuentas guarda el serial del dispositivo en el dialogo como respaldo, muestra mensajes internos de guardado/error y sus botones detienen propagacion para evitar cierres o clics perdidos.
-- Guardar el popover de cuentas ya no bloquea una linea por estar en historial si esa misma linea sigue en el mismo dispositivo y clon; el bloqueo queda para duplicados en otro dispositivo/clon o cuentas probadas fuera de ese lugar.
-- Se agrego `flowagent_auto_ensure`: antes de ejecutar FlowLogin, reintentar o reemplazar cuenta, el dashboard intenta dejar listo FlowAgent sin reinstalar cuando ya esta actualizado.
-- `/flowagent/setup` acepta modo `install: "auto"` para instalar solo si el APK falta o su version es menor que la esperada.
+- **FlowRegister flujo completo de Spotify**: limpieza visual del clon (cache + datos + permiso Storage), apertura, Sign up, email, password, fecha de nacimiento aleatoria mayor de edad, genero (Female/Male), nombre real random segun genero, Create account.
+- **Picker de fecha** corregido: dias < 10 con cero a la izquierda (`01`-`09`) para evitar loop infinito que oscilaba entre `09` y `10`.
+- **Captcha resuelto via CapSolver**: integracion API REST con createTask + polling, sitekey de Spotify Android `6LeO36obAAAAALSBZrY6RYM1hcAY7RLvpDDcJLy3`. Tap en checkbox y Continue tras obtener token. Si aparece challenge de imagenes -> review.
+- **CAPSOLVER_API_KEY** se carga desde `.supabase_config.json`, no hardcodeado.
+- **Nombres reales** generados desde listas estaticas (50 masculinos + 50 femeninos + 50 apellidos hispanos). Funcion `generate_register_name(gender)`.
+- **Endpoint `/debug/dump`** (POST con `{serial}`) para inspeccionar pantallas con `FLAG_SECURE` desde terminal sin Appium.
+- **Bug critico corregido**: `agent_for_serial` devuelve la conexion mas reciente por `last_seen` desc, no la primera que itera. Antes podia devolver una conexion zombi muerta.
+- **`prepare_flowlogin_payload` con `is_register=True` no toca el perfil del telefono**. Las cuentas de Crear Cuentas son efimeras y no contaminan FlowLogin.
+- **Normalizacion de claves de `register_lines`**: el frontend puede mandar `deviceKey`/`legacyDeviceId` y Python las convierte al serial ADB real.
+- **Frontend**: paneles `Cuentas` y `Crear Cuentas` colapsables al hacer clic en el header (estado en `localStorage`). El textarea `Total` ya no se borra al iniciar.
+- **`loginStatusesAreTerminal`** ignora dispositivos en `creatingDevices` para que el polling no termine prematuramente.
+- **`execute_autojs`**: dedup de la firma duplicada que rompia el compile y causaba `unexpected keyword argument 'register_lines'`.
 
-### 2026-05-14
+### 1.0.44 (estado anterior)
 
-- Validacion de licencias cambiada de MAC a email: el dashboard ahora usa email como identificador principal, con deteccion automatica de MAC desde dispositivos Android
-- `local_adb_server.py` modificado para:
-  - `validate_device_license()` acepta `device_email` en lugar de `device_mac`
-  - `get_device_mac_address()` obtiene MAC automaticamente desde dispositivo Android usando ADB
-  - Endpoint `/device-mac` para recuperar MAC de dispositivos conectados
-  - `log_device_access()` usa `device_email` para registro
-  - `supabase_request()` corregido para construccion correcta de URLs
-- `wsapi.js` ya tenia `getDeviceMac()` implementado para recuperar MAC desde el dashboard
-- `wsapi_demo.html` modificado para mostrar campo de email y recuperar MAC automaticamente del primer dispositivo conectado
-- `.supabase_config.json` creado con `SUPABASE_URL` y `SUPABASE_API_KEY` (service_role key)
-- Tablas Supabase actualizadas: `app_device_registrations` y `app_access_logs` ahora usan columna `device_email` en lugar de `device_mac`
-- Permisos otorgados a `service_role` en tablas Supabase
-- `abrir_dashboard.bat` mantiene compatibilidad: inicia servidor si es necesario y abre dashboard
-- Al cargar `wsapi_demo.html`, el dashboard intenta conectar automaticamente al servidor ADB local para mostrar dispositivos sin pulsar "Conectar"
-- Flujo de validacion: usuario ingresa email y licencia, dashboard recupera MAC del primer dispositivo, servidor valida contra Supabase usando email, registra acceso con email y MAC detectado
+- Logica nativa por socket para Crear Cuentas (FlowRegister) inicial: pasos basicos sin limpieza visual ni captcha.
 
-## Licencias y Admin Supabase
+## Estado Actual
 
-Agregado el 2026-05-13 como preparacion comercial, actualizado el 2026-05-14 para validacion por email.
+Version activa: `1.0.45`. El flujo completo de FlowRegister esta operativo y probado en Samsung SM-G955U con Spotify. La unica parte que requiere intervencion humana es el challenge de imagenes de reCAPTCHA cuando aparece (raro segun la sesion); en esos casos la cuenta queda en `review` para completarla manualmente.
 
-Supabase usado para controlar acceso a la app:
-
-- Project URL base: `https://qcwvfeqyczkhmkhqicqi.supabase.co`
-- El dashboard admin usa publishable key publica y login de Supabase Auth; no debe usar `service_role` ni secretos dentro del HTML o del futuro EXE
-- Tablas esperadas: `app_licenses`, `app_devices`, `app_access_logs`, `app_device_registrations`
-- Columna principal: `device_email` (renombrada de `device_mac` el 2026-05-14)
-- `supabase_admin_policies.sql` agrega `app_admins`, funcion `is_app_admin()` y politicas RLS para que solo emails admin autenticados puedan ver/crear/editar licencias, dispositivos y logs
-- `license_admin.html` permite iniciar sesion, crear/editar licencias, aprobar/bloquear licencias, aprobar/bloquear PCs y consultar intentos de acceso
-- Antes de usar `license_admin.html`, crear un usuario en Supabase Auth y ejecutar `supabase_admin_policies.sql` reemplazando `admin@example.com` por el email real del administrador
-
-Flujo de validacion actual (2026-05-14):
-
-1. Usuario ingresa email y licencia en `wsapi_demo.html`
-2. Dashboard llama `wsapi.getDeviceMac()` para recuperar MAC del primer dispositivo conectado
-3. Servidor `local_adb_server.py` recibe `validate_device_license(device_email, license_key)`
-4. Servidor consulta Supabase tabla `app_device_registrations` por `device_email`
-5. Si estado es "approved", validacion exitosa; si no, rechazada
-6. Servidor registra acceso en `app_access_logs` con email y MAC detectado
-7. Dashboard muestra resultado al usuario
-
-Reglas de seguridad:
-
-- No poner `service_role`, contrasena de base de datos ni secretos en archivos del proyecto cliente
-- La anon key de Supabase puede ir en el cliente, siempre que las tablas esten protegidas por RLS y la validacion se haga por RPC controlada.
-- El panel admin es para uso privado del propietario; no se distribuye a clientes
-- La app comercial debe validar licencia contra Supabase antes de habilitar funciones de FlowLogin
-- Desde 2026-05-14, `local_adb_server.py` no permite modo local por defecto si falta Supabase. Solo se activa con `FLOWDASHBOARD_ALLOW_LOCAL_LICENSE=1`.
-
-Flujo gratuito sin Edge Function:
-
-1. Ejecutar `supabase_license_rpc.sql` en Supabase SQL Editor.
-2. Configurar `.supabase_config.json` con `SUPABASE_URL` y la anon key publica, no service_role.
-3. `validate_device_license()` llama `validate_license_with_supabase_rpc()`.
-4. La RPC valida `app_licenses`, crea/actualiza `app_device_registrations` y escribe `app_access_logs`.
-5. Si la RPC no existe o falla, el EXE muestra error claro y no entra en modo local salvo que `FLOWDASHBOARD_ALLOW_LOCAL_LICENSE=1`.
-6. El SQL tambien agrega columnas faltantes en `app_access_logs` y `app_device_registrations` (`device_email`, `timestamp`, `last_seen_at`, etc.) para migrar proyectos que aun tengan el esquema viejo.
-
-## Empaquetado y Actualizaciones
-
-Agregado el 2026-05-14 como base para distribucion comercial.
-
-Modelo recomendado:
-
-- Distribuir una carpeta/ZIP de app con `FlowDashboard.exe` como lanzador principal, no depender de que el cliente tenga Python.
-- Mantener los datos del cliente fuera del bundle temporal de PyInstaller:
-  - `device_names.json`
-  - `.flowlogin_payloads/`
-  - `.android/`
-  - `.supabase_config.json` si se usa en una instalacion privada
-- Para clientes finales, no incluir `service_role` dentro del EXE ni en archivos distribuidos. La opcion gratis actual usa anon key publica + RPC `validate_flowdashboard_license`; una Edge Function/API propia sigue siendo una mejora futura si se quiere mas control.
-- `launcher.py` establece:
-  - `FLOWDASHBOARD_BASE_DIR`: carpeta persistente junto al EXE.
-  - `FLOWDASHBOARD_RESOURCE_DIR`: carpeta temporal/bundled donde PyInstaller extrae recursos.
-- `launcher.py` evita instancias duplicadas consultando primero `/health` en `127.0.0.1:8765`. Si ya hay servidor, no inicia otro; solo abre el dashboard existente. Si no hay servidor, arranca `local_adb_server.py` en el hilo principal y abre el navegador desde un hilo auxiliar.
-- `local_adb_server.py` usa esas rutas para que la persistencia quede estable aunque el programa este empaquetado.
-- ADB usa por defecto las claves normales del usuario de Windows. No se debe sobrescribir `USERPROFILE` ni `HOME` para ADB porque en EXE puede crear carpetas raras y perder autorizaciones ya aceptadas. Solo usar carpeta ADB portable si se define explicitamente `FLOWDASHBOARD_ADB_HOME`.
-- `wsapi_demo.html` ya no debe contener rutas absolutas del equipo del desarrollador para `Login.js`; el servidor resuelve `Login.js` por nombre desde la carpeta persistente o recursos empaquetados.
-
-Actualizacion automatica:
-
-- `updater.py` no reemplaza directamente el EXE activo. En Windows eso falla con frecuencia porque el ejecutable esta bloqueado.
-- El flujo nuevo espera un `update_config.json` local, ignorado por git, con:
-
-```json
-{
-  "manifest_url": "https://tu-dominio.com/flowdashboard/update.json"
-}
-```
-
-- El manifest remoto debe devolver al menos:
-
-```json
-{
-  "version": "1.0.1",
-  "package_url": "https://tu-dominio.com/flowdashboard/FlowDashboard-1.0.1.zip",
-  "sha256": "hash-opcional-del-zip"
-}
-```
-
-- Si `version` es mayor que `APP_VERSION`, descarga el ZIP, valida `sha256` si existe, extrae en staging y crea un `.bat` temporal que espera a que cierre el proceso, copia la nueva version sobre la carpeta de app con `robocopy` y relanza el EXE.
-- El ZIP de actualizacion debe contener los archivos de programa, pero no debe incluir cuentas, perfiles, payloads ni secretos del cliente.
-- `launcher.spec` fue ajustado para generar `FlowDashboard.exe` e incluir `wsapi_demo.html`, `wsapi.js`, `Login.js` y `logo.png`.
-
-### 2026-05-14
-
-- Validacion de licencias cambiada de MAC a email: el dashboard ahora usa email como identificador principal, con deteccion automatica de MAC desde dispositivos Android.
-- `local_adb_server.py` modificado para:
-  - `validate_device_license()` acepta `device_email` en lugar de `device_mac`
-  - `get_device_mac_address()` obtiene MAC automaticamente desde dispositivo Android usando ADB
-  - Endpoint `/device-mac` para recuperar MAC de dispositivos conectados
-  - `log_device_access()` usa `device_email` para registro
-  - `supabase_request()` corregido para construccion correcta de URLs
-- `wsapi.js` ya tenia `getDeviceMac()` implementado para recuperar MAC desde el dashboard
-- `wsapi_demo.html` modificado para mostrar campo de email y recuperar MAC automaticamente del primer dispositivo conectado
-- `.supabase_config.json` creado con `SUPABASE_URL` y `SUPABASE_API_KEY` (service_role key)
-- Tablas Supabase actualizadas: `app_device_registrations` y `app_access_logs` ahora usan columna `device_email` en lugar de `device_mac`
-- Permisos otorgados a `service_role` en tablas Supabase
-- `abrir_dashboard.bat` mantiene compatibilidad: inicia servidor si es necesario y abre dashboard
-- Al cargar `wsapi_demo.html`, el dashboard intenta conectar automaticamente al servidor ADB local para mostrar dispositivos sin pulsar "Conectar"
-- Flujo de validacion: usuario ingresa email y licencia, dashboard recupera MAC del primer dispositivo, servidor valida contra Supabase usando email, registra acceso con email y MAC detectado
-- `abrir_dashboard.bat` ahora exige feature `flowagent_auto_ensure` para reiniciar servidores viejos automaticamente.
-- Se agrego `flowlogin_cache_retry`: FlowLogin hace una primera pasada, limpia cache/datos del clon fallido y hace un segundo intento solo para esos clones.
-
-### 2026-05-15
-
-- Empaquetado comercial ajustado para `FlowDashboard.exe`.
-- Se agrego `Crearexe.bat` para recompilar el EXE desde la carpeta principal con doble clic.
-- Se agrego `CrearActualizacion.bat` y `update.json` para publicar actualizaciones por GitHub Releases usando el repo `ingestebandaza/FlowDashboard`.
-- Licencias configuradas en modo gratis con anon key + RPC `validate_flowdashboard_license`; no usar `service_role` en builds de cliente.
-- `supabase_license_rpc.sql` agrega columnas faltantes antes de crear la RPC de validacion.
-- Se corrigio la UI para no mostrar errores de licencia como exito.
-- Se restauro helper `account_lines()` en `local_adb_server.py`; sin este helper `/devices` fallaba con 500 al cargar perfiles guardados.
-- `run_process()` ahora ejecuta subprocess/ADB con `CREATE_NO_WINDOW` en Windows para evitar muchas ventanas de consola fugaces al abrir el EXE y cargar dispositivos.
-- `wsapi_demo.html` muestra la version del programa debajo del logotipo; usa `v1.0.0` como fallback y actualiza desde `/health.appVersion`.
-- `launcher.py` abre el dashboard por `http://127.0.0.1:8765/wsapi_demo.html`, no por `file://.../_MEI...`; esto evita pantalla `ERR_FILE_NOT_FOUND` tras actualizaciones PyInstaller.
-- `local_adb_server.py` sirve archivos estaticos empaquetados (`wsapi_demo.html`, `wsapi.js`, `logo.png`) desde `/wsapi_demo.html`, `/wsapi.js` y `/logo.png`.
-- `SERVER_FEATURES` incluye `static_dashboard`.
-- `launcher.py` exige `static_dashboard` al reutilizar un servidor existente. Si detecta un servidor viejo en `127.0.0.1:8765`, cierra el proceso que escucha ese puerto y arranca el servidor de la build nueva.
-- `SERVER_FEATURES` incluye `client_info`, `license_remember` y `adb_path_probe`.
-- Desde `1.0.5`, `launcher.py` ejecuta `run_update_check()` antes de reutilizar un servidor existente y exige todas las features `static_dashboard`, `client_info`, `license_remember` y `adb_path_probe`. Esto evita quedarse atrapado reutilizando un servidor `1.0.3` que no tiene `/client-info`.
-- `/client-info` devuelve nombre de PC, usuario Windows, hash local estable, version y ruta ADB. El dashboard envia esos datos al validar licencia.
-- `wsapi_demo.html` recuerda email/licencia aprobados en `localStorage` y los revalida al abrir. Si Supabase devuelve bloqueo/error, borra la licencia guardada y deja el modal.
-- `supabase_license_rpc.sql` ahora registra/actualiza `app_devices` ademas de `app_device_registrations`, para que `license_admin.html` muestre PCs usadas como `1/1`, permita bloquearlas y registre logs con `decision`, `pc_name`, `device_hash`, `app_version`, etc.
-- La busqueda de ADB prueba rutas habituales de Android SDK (`LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe`, etc.) porque al abrir un EXE con doble clic puede no heredar el mismo PATH que una terminal.
-- Desde `1.0.6`, la busqueda de ADB tambien prueba `%USERPROFILE%\adb.exe`, porque algunas PCs tienen `adb.exe` directamente en la carpeta de usuario y `where adb` lo encuentra ahi.
-- Desde `1.0.7`, la busqueda de ADB es automatica en multiples ubicaciones: `PATH`, `FLOWDASHBOARD_ADB`, `ANDROID_HOME`, `ANDROID_SDK_ROOT`, carpeta de la app, `platform-tools` junto al EXE, rutas Android SDK comunes, `%USERPROFILE%\adb.exe`, `%USERPROFILE%\Downloads\platform-tools\adb.exe`, `%USERPROFILE%\Desktop\platform-tools\adb.exe` y una busqueda limitada con `rglob` dentro de la carpeta de usuario/local app data. `/client-info` incluye `adbCandidates` para diagnostico.
-- Los errores de Supabase guardan el detalle de la ultima respuesta fallida y lo muestran en la validacion para diagnosticar RPC/SQL sin consola.
-- `supabase_license_rpc.sql` convierte `app_devices.ip` y `app_access_logs.ip` a `text` si existian como `inet`, porque la app envia IP como texto opcional y Supabase fallaba con `column "ip" is of type inet but expression is of type text`.
-- Desde `1.0.9`, `launcher.py` exige que `/health.appVersion` coincida exactamente con `APP_VERSION`; si hay un servidor viejo escuchando en `127.0.0.1:8765`, lo cierra y arranca el servidor incluido en la build nueva.
-- `/client-info` ahora incluye IP local del PC, IP publica, codigo/nombre de pais, MAC del PC, ruta ADB y candidatos ADB probados.
-- `wsapi_demo.html` envia a la validacion de licencia `ip_public`, `local_ip`, `country_code`, `country_name` y `mac_address` para que el panel admin tenga datos de la PC cliente.
-- `supabase_license_rpc.sql` agrega y rellena `local_ip`, `mac_address` y `country_name` en `app_devices`, `app_access_logs` y `app_device_registrations`.
-- `license_admin.html` muestra IP publica, IP local, MAC, pais y version en dispositivos e intentos de acceso.
-- Desde `1.0.10`, ADB se ejecuta con la carpeta donde vive `adb.exe` al inicio de `PATH` y como `cwd`, para igualar mejor el entorno de la terminal del usuario.
-- Se agrego `/adb-diagnostics`, que devuelve `adb version`, `adb start-server`, salida cruda de `adb devices -l` y dispositivos parseados desde dentro del EXE.
-- `/devices` se hizo mas rapido: ya no intenta consultar IP publica/MAC de cada telefono durante la carga normal, solo usa cache y deja esas consultas para acciones explicitas. Esto evita que muchos telefonos o conexiones lentas bloqueen la deteccion inicial.
-- Desde `1.0.11`, `updater.py` trae como fallback interno el manifest publico `https://raw.githubusercontent.com/ingestebandaza/FlowDashboard/main/update.json`; asi el EXE puede actualizar aunque falte `update_config.json` junto al ejecutable.
-- Desde `1.0.12`, la actualizacion deja de ser silenciosa al arrancar: despues de aprobar licencia, `wsapi_demo.html` muestra una ventana visual de actualizacion, llama `/update-check`, consulta `/update-status`, descarga automaticamente y reinicia el EXE cuando la descarga queda lista.
-- Desde `1.0.13`, `flow_agent_apk/build/flowagent-debug.apk` queda incluido en `launcher.spec` y dentro del EXE, para que `Instalar FlowAgent` funcione en PCs de clientes sin depender de una carpeta externa.
-- `local_adb_server.py` tambien busca FlowAgent APK junto al proyecto padre como fallback y expone `flowAgentApkExists` en `/health` y `/client-info` para diagnostico.
-- En `Dispositivos Conectados` se agrego un boton compacto con icono de bandera para actualizar pais/IP de todos los dispositivos. Al conectar dispositivos, el dashboard intenta llenar automaticamente las banderitas faltantes en segundo plano.
-- Desde `1.0.14`, `updater.py` lee `update_config.json` y `update.json` remoto con `utf-8-sig`, para tolerar BOM. `CrearActualizacion.bat` escribe `update.json` en UTF-8 sin BOM para que las versiones anteriores tambien puedan leer el manifest.
-- Desde `1.0.15`, el `.bat` temporal de aplicacion de actualizacion espera a que cierre el PID actual y cualquier `FlowDashboard.exe`, copia con reintentos, registra log en `%TEMP%\FlowDashboard_apply_update.log` y espera antes de relanzar. Esto evita errores de PyInstaller `_MEI`/`python310.dll` por reiniciar demasiado pronto.
-- Desde `1.0.18`, el `.bat` temporal limpia variables internas de PyInstaller (`PYINSTALLER_RESET_ENVIRONMENT=1` y `_PYI_*`) antes de relanzar el EXE actualizado, para evitar que el nuevo proceso intente cargar `python310.dll` desde la carpeta temporal `_MEI` vieja.
-- Desde `1.0.19`, la grilla de dispositivos tiene modo alterno de filas, con puntos de cuentas horizontales en esa vista. Se agregan categorias visuales de dispositivos creadas desde el dashboard, con drag/drop de tarjetas entre categorias y persistencia local en `device_groups.json` mediante `/device-groups`.
-- Desde `1.0.20`, el panel de dispositivos se puede agrandar verticalmente de forma manual y recuerda su altura. El zoom tambien cambia el tamano de la vista en filas, las herramientas del encabezado quedan separadas por grupos visuales y cada categoria creada puede eliminarse desde su encabezado, devolviendo sus dispositivos a `Sin categoria`.
-- Desde `1.0.21`, el menu contextual de cada dispositivo permite eliminar solo las cuentas guardadas en ese telefono sin borrar las listas del panel izquierdo. La accion de anadir cuentas abre un campo numerico dentro del menu para elegir cuantas cuentas libres de `Total` se agregan, sin ejecutarlas automaticamente. La vista en filas queda compactada a una sola fila por dispositivo y, en vista de cuadros con categorias, las categorias aparecen como etiquetas laterales mientras los dispositivos mantienen una grilla de varias columnas.
-- Desde `1.0.22`, `Anadir Cuentas` en el menu contextual se habilita por espacio disponible en el dispositivo, aunque sus cuentas actuales sigan pendientes/bolitas grises. Al confirmar, toma cuentas de `Total` que no esten ya presentes en dispositivos conectados, evitando duplicar las cuentas existentes del telefono.
-- Desde `1.0.23`, `launcher.py` fuerza siempre `FLOWDASHBOARD_BASE_DIR` y `FLOWDASHBOARD_RESOURCE_DIR` al arrancar el servidor, en lugar de heredar rutas viejas de una actualizacion anterior. El `.bat` temporal del updater tambien limpia esas variables antes de relanzar. `CrearActualizacion.bat` incluye `wsapi_demo.html`, `wsapi.js`, `Login.js` y `logo.png` junto al EXE dentro del ZIP para que el servidor tenga fallback externo si los recursos empaquetados no se resuelven.
-- `license_admin.html` permite eliminar licencias desde la tabla de licencias. La accion pide confirmacion, elimina primero PCs vinculadas en `app_devices`, borra la fila de `app_licenses` y luego intenta limpiar registros relacionados por `license_key` en `app_device_registrations` y `app_access_logs`.
-- Desde `1.0.24`, el Play del menu contextual de un dispositivo ejecuta solo clones con estado `pending` (bolita gris). Las cuentas ya analizadas como `success`, `already`, `error` o `review` no se vuelven a probar con Play; para rojas/revision se mantiene la accion `Reintentar Cuentas`. Cada tarjeta de dispositivo muestra un boton Stop pequeno mientras ese dispositivo esta en ejecucion/polling de FlowLogin.
-- Desde `1.0.25`, la confirmacion de login espera mas tiempo antes de marcar revision/reintento para evitar falsos amarillos cuando Spotify tarda en cargar la pantalla principal. El detector de sesion iniciada reconoce tambien marcadores en espanol (`Inicio`, `Buscar`, `Tu biblioteca`, `Biblioteca`) ademas de `Home`, `Search` y `Your Library`.
-- Desde `1.0.26`, las acciones del menu contextual por dispositivo usan bloqueo por telefono y no `state.busy` global. Esto permite iniciar Play, reintentar, reemplazar, anadir o detener en un dispositivo libre mientras otros dispositivos siguen ejecutando FlowLogin. Solo se bloquea el mismo dispositivo si ya esta arrancando una accion o ya esta corriendo.
-
-### 2026-05-16
-
-- La identidad persistente de dispositivos cambio de serial/IP a MAC cuando esta disponible.
-- `/devices` ahora calcula `deviceKey`, `legacyDeviceId` y `macAddress`; ordena la grilla por `deviceKey` para que el orden no dependa de la IP WiFi.
-- `device_names.json` migra automaticamente perfiles viejos por serial/IP a claves `mac:...` al detectar la MAC, conservando nombre, perfil/cuentas y estados.
-- `device_groups.json` migra asignaciones de categoria desde serial/IP a `deviceKey` junto con el perfil del telefono.
-- El frontend usa `deviceKey` para seleccion, categorias, trazabilidad de cuentas y acciones visuales; el backend resuelve esa clave al serial ADB actual antes de ejecutar comandos.
-- El dashboard ahora tiene watchdog Auto Socket: al conectar o actualizar dispositivos y luego cada 30 segundos intenta preparar automaticamente FlowAgent para telefonos detectados en ADB que aun no esten en Socket, usando `install: "auto"` para no reinstalar si el APK ya esta actualizado.
-- `ensureFlowAgentsForDevices()` acepta modo silencioso para reparacion automatica: crea/recrea `adb reverse`, abre FlowAgent con `autoconnect=true`, refresca agentes y solo muestra aviso si la accion fue manual o no es watchdog.
-- El Play del menu contextual respeta seleccion multiple: si se hace clic derecho sobre una tarjeta ya seleccionada, Play ejecuta las cuentas pendientes de todos los dispositivos seleccionados; si se hace clic derecho sobre una tarjeta no seleccionada, opera solo sobre esa tarjeta.
-- Todas las acciones del menu contextual de FlowLogin respetan la misma regla de seleccion multiple: `Play`, `Stop`, `Reintentar Cuentas`, `Reemplazar Cuentas`, `Anadir Cuentas` y `Eliminar Cuentas` operan sobre todos los dispositivos seleccionados cuando el clic derecho cae sobre una tarjeta seleccionada; si cae sobre una tarjeta no seleccionada, operan solo sobre esa tarjeta.
-- En multi-seleccion, `Reintentar Cuentas` y `Reemplazar Cuentas` no deben quedar silenciosamente deshabilitados por un calculo previo de cuentas editables; el click debe entrar al handler y mostrar un aviso claro si no hay cuentas editables o faltan cuentas libres.
-- En multi-seleccion, `Reintentar Cuentas` y `Reemplazar Cuentas` quedan clicables mientras exista al menos un dispositivo seleccionado disponible; el handler hace la validacion real y evita el caso donde el menu parecia no hacer nada por un estado previo/desactualizado.
-- `Reemplazar Cuentas` ahora reemplaza clones con estados finales fallidos: rojo `error`, morado `review` o `notice14` con etiqueta `Aviso 14 dias`. Antes de poner la cuenta nueva en el mismo clon, mueve la cuenta anterior a `No validos`; luego toma cuentas libres desde `Total` y lanza el login de esos clones. Conserva intactas las cuentas verdes `success`, naranjas `already`, grises `pending`, azules `running` y amarillas `retrying`.
-- FlowLogin detecta el aviso de Spotify `You can only use Spotify abroad for 14 days / Update your location...` como `notice14`. En primer intento dispara el flujo conservador de limpieza visual: App info -> Storage -> Clear cache/data -> Permissions/Storage Allow -> segundo intento; durante ese retry la cuenta se ve amarilla por `retrying`. Si vuelve a salir despues del segundo intento, queda roja pero con texto/tooltip `Aviso 14 dias`, para distinguirla de un login correcto.
-- Los iconos manuales de cada bolita (`Reintentar` y `Reemplazar`) tienen una zona hover/click estable para evitar que desaparezcan o se muevan cuando el cursor pasa desde la bolita hacia el boton.
-- Las cuentas asignadas o en ejecucion ya no se eliminan de `Total` solo por pasar a `running`/`retrying`; quedan visibles y reservadas hasta que terminen como `Validas` o `No validas`.
-- Antes de cada intento de FlowLogin, el servidor cierra forzosamente el paquete del clon con `am force-stop` para empezar desde una app cerrada. Esta preparacion usa ADB solo para cerrar el paquete; el motor de login sigue siendo FlowAgent por socket.
-- Las acciones individuales de bolitas fallidas ya no se abren por hover: se selecciona la bolita con clic/Enter/Espacio y entonces aparecen `Reintentar`/`Reemplazar` solo para esa cuenta, evitando que el cursor active la bolita vecina.
-- `Reemplazar Cuentas` toma cuentas libres exclusivamente desde `Total` y respeta el orden visible de esa lista, usando siempre las primeras lineas libres no reservadas.
-- El runner FlowAgent ahora exige que `agent_current_package()` coincida exactamente con el paquete esperado del clon despues de `launchPackage`. Ya no acepta cualquier pantalla con formulario de login como apertura valida, evitando que una cuenta se escriba o limpie en el clon que quedo previamente en pantalla.
-- Version comercial preparada como `1.0.27` para publicar el ZIP de actualizacion con estos cambios.
-- La grilla ahora muestra la IP local del dispositivo en la tarjeta en lugar del `mac:...`, pero la identidad interna para nombres, cuentas, categorias y estados sigue siendo `deviceKey` basado en MAC cuando esta disponible.
-- `/devices` incluye `deviceIp`; para ADB WiFi se deriva del serial `IP:5555` y para USB puede consultarse desde Android como fallback.
-- Se corrigio el emparejamiento visual de FlowAgent: el frontend compara agentes tambien contra `device.serial`/`legacyDeviceId`, no solo contra `deviceKey`, para que las tarjetas muestren `Socket` cuando FlowAgent ya esta conectado.
-- `agent_for_serial()` acepta claves `mac:...`/`serial:...` y las resuelve al serial ADB actual antes de buscar el socket, manteniendo el runner compatible con la identidad estable por MAC.
-- `launcher.py` y `abrir_dashboard.bat` exigen la feature `device_visible_ip` para no reutilizar un servidor viejo que todavia muestre MAC en tarjetas o falle al emparejar Socket con `deviceKey`.
-- Version comercial preparada como `1.0.28` para publicar el ZIP de actualizacion con la IP visible en tarjetas y el arreglo de deteccion Socket.
-- FlowAgent APK subio a `0.2.2`: agrega comandos socket `openAppInfo` y `swipe`, y el dump de accesibilidad ahora expone `checkable`, `checked`, `selected` y `enabled` para decidir switches/radios sin ADB.
-- `FLOW_AGENT_EXPECTED_VERSION` ahora exige `0.2.4`; el dashboard y el launcher no consideran listo un agente viejo para el flujo actual, obligando a reinstalar/actualizar antes de FlowLogin.
-- La limpieza visual previa al segundo intento de login ahora es socket-only: FlowAgent abre App info, entra a Storage/Almacenamiento, pulsa Clear cache, Clear data y confirma; luego vuelve a App info, entra a Permissions/Permisos, revisa Storage/Almacenamiento y activa Allow/Permitir segun flujo de switch (Android 9) o radio/Allow (Android 10+).
-- `clear_clone_cache_data_visual()` ya no cae a `pm clear` ni abre App info con ADB durante este flujo; si la limpieza por socket falla, la cuenta queda con error/revision del intento de limpieza en lugar de usar ADB como motor alterno.
-- `reset_flowlogin_clone_start()` ya no hace `adb shell am force-stop`; despues de restaurar permisos, el segundo intento vuelve a `home` y lanza el clon por FlowAgent.
-- Se copio el proyecto fuente de `flow_agent_apk` dentro de esta carpeta para que futuras modificaciones del APK queden visibles junto al dashboard. La APK compilada incluida en `flow_agent_apk/build/flowagent-debug.apk` corresponde a FlowAgent `0.2.4`.
-- Version comercial preparada como `1.0.29` para publicar una nueva actualizacion con limpieza App info y restauracion de permiso Storage por socket.
-- FlowAgent `0.2.3` corrige el badge visual de la app, que seguia mostrando `0.2.1` aunque el socket ya reportara la version nueva. Se subio el `versionCode` a 9 para forzar actualizacion sobre telefonos que ya tuvieran `0.2.2`.
-- Version comercial preparada como `1.0.30` para publicar el APK FlowAgent `0.2.3` y evitar confusion visual con versiones anteriores.
-- FlowAgent `0.2.4` distingue visualmente `Accesibilidad Sin enlazar` cuando Android tiene el permiso en ajustes pero el `AccessibilityService` no fue enlazado. Esto evita confundir un permiso atascado con una version vieja del APK.
-- `/flowagent/setup` agrega diagnostico de Accesibilidad: detecta `enabled`, `binding`, `bound` y conexiones `DEAD` en `dumpsys`, y reporta cuando Android requiere apagar/prender FlowAgent en Accesibilidad. El boton manual usa `install: "auto"` y `openAccessibility: true`, asi no reinstala sin necesidad y lleva directo al ajuste cuando hace falta.
-- `launcher.py` y `abrir_dashboard.bat` exigen la feature `flowagent_accessibility_diagnostics` para reiniciar servidores viejos que no sepan diagnosticar este estado.
-- Version comercial preparada como `1.0.31` para publicar FlowAgent `0.2.4` y los diagnosticos de Accesibilidad.
-- Version comercial preparada como `1.0.32` para publicar la correccion del menu contextual multi-dispositivo.
-- Version comercial preparada como `1.0.33` para corregir el caso donde `Reemplazar Cuentas` en multi-seleccion no hacia nada porque el boton quedaba bloqueado antes de ejecutar el handler.
-- Version comercial preparada como `1.0.34` para endurecer el menu contextual multi-seleccion: `Reemplazar Cuentas` ya no depende del conteo previo de editables para disparar la accion.
-- Version comercial preparada como `1.0.35` para publicar la regla correcta de reemplazo: solo cuentas rojas/moradas se sustituyen por cuentas libres de `Total`.
-- Version comercial preparada como `1.0.36` para publicar el estado `Aviso 14 dias` y estabilizar los botones de hover de las bolitas.
-- Version comercial preparada como `1.0.37` para que `Aviso 14 dias` vuelva a disparar limpieza/permisos y segundo intento, usando bolita amarilla.
-- Version comercial preparada como `1.0.38` para que el estado final `Aviso 14 dias` use bolita cafe en vez de amarilla.
-- Version comercial preparada como `1.0.39` para que el primer `Aviso 14 dias` entre a retry amarillo, el segundo quede rojo con etiqueta propia, y `Reemplazar Cuentas` cambie fallidas por libres moviendo las anteriores a `No validos`.
-- Version comercial preparada como `1.0.40` para mantener cuentas nuevas en `Total` hasta validacion final, cerrar clones forzosamente antes de cada intento y mostrar acciones por bolita roja/`Aviso 14 dias`.
-- Version comercial preparada como `1.0.41` para abrir acciones individuales por seleccion de bolita y hacer reemplazos en orden estricto desde `Total`.
-- Version comercial preparada como `1.0.42` para agregar el reset de memoria del `Mapa de cuentas` sin borrar las listas del panel izquierdo.
-- Version comercial preparada como `1.0.43` para asegurar que cada cuenta abra, limpie y reintente exclusivamente su clon/paquete correspondiente.
+Para publicar una nueva version, ejecutar `CrearActualizacion.bat` que:
+1. Compila `launcher.py` con PyInstaller.
+2. Empaqueta `FlowDashboard.exe`, `wsapi_demo.html`, `wsapi.js`, `Login.js`, `Register.js`, `logo.png`, `.supabase_config.json` y `update_config.json` en un ZIP versionado.
+3. Calcula SHA256 y actualiza `update.json`.
+4. Imprime la URL de GitHub Release esperada (tag `v<version>`).

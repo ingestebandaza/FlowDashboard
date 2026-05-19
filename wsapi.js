@@ -187,7 +187,7 @@ class Wsapi {
       throw new Error('Los parametros deben enviarse como objeto.');
     }
 
-    const { deviceIds = 'all', filePath = '', clone = null, clones = null, delimiter = ':' } = options;
+    const { deviceIds = 'all', filePath = '', clone = null, clones = null, delimiter = ':', registerLines = null } = options;
     if (!filePath.trim()) {
       throw new Error('Escribe la ruta del script .js antes de ejecutar.');
     }
@@ -203,6 +203,9 @@ class Wsapi {
     if (Array.isArray(clones) && clones.length) {
       comm.clones = clones;
     }
+    if (registerLines) {
+      comm.registerLines = registerLines;
+    }
 
     return await this.sendWsApi(
       JSON.stringify({
@@ -216,7 +219,7 @@ class Wsapi {
     const { deviceIds = 'all' } = options;
     const data = await this._post('/login-status', { deviceIds });
     const deviceList = Array.isArray(data.devices) ? data.devices : await this.getDeviceListAll();
-    return [deviceList, this._formatResult(data.result || '')];
+    return [deviceList, this._formatResult(data.result || ''), data.progress || {}, data.registerResults || {}, data.runningJobs || []];
   }
 
   async getAgents() {

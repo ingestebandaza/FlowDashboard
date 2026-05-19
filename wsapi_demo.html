@@ -361,6 +361,42 @@
       padding: 18px;
     }
 
+    /* --- Colapso de paneles Cuentas / Crear Cuentas --- */
+    .accounts-panel .panel-header,
+    .create-accounts-panel .panel-header {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .accounts-panel .panel-header:hover,
+    .create-accounts-panel .panel-header:hover {
+      background: linear-gradient(90deg, rgba(79, 141, 255, 0.22), rgba(34, 184, 111, 0.14));
+    }
+
+    .accounts-panel.is-collapsed .panel-body,
+    .create-accounts-panel.is-collapsed .panel-body {
+      display: none;
+    }
+
+    .accounts-panel .panel-header::after,
+    .create-accounts-panel .panel-header::after {
+      content: '';
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%234f8dff' stroke-width='2.2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      transition: transform 0.22s ease;
+    }
+
+    .accounts-panel.is-collapsed .panel-header::after,
+    .create-accounts-panel.is-collapsed .panel-header::after {
+      transform: rotate(-90deg);
+    }
+
     .device-header-actions .btn {
       width: 30px;
       min-width: 30px;
@@ -2377,6 +2413,48 @@
       color: #ffd166;
     }
 
+    /* --- ESTILOS MODO CREACION --- */
+    .device-card.is-creating {
+      border-color: rgba(167, 139, 250, 0.65);
+      box-shadow: 0 8px 24px rgba(167, 139, 250, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      background: linear-gradient(145deg, rgba(30, 20, 48, 0.96), rgba(18, 12, 32, 0.96));
+    }
+    .device-card.is-creating .account-status-column,
+    .device-card.is-creating .device-login-summary {
+      display: none;
+    }
+    .creation-progress-container {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+      margin-bottom: 2px;
+    }
+    .device-card.is-creating .creation-progress-container {
+      display: flex;
+    }
+    .creation-status-text {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #e9ddff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .creation-progress-bar {
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(167, 139, 250, 0.18);
+      overflow: hidden;
+    }
+    .creation-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #a78bfa, #ec4899);
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
     @media (max-width: 860px) {
       .shell {
         width: min(100% - 10px, 1180px);
@@ -2611,6 +2689,67 @@
             <p class="accounts-meta js-accounts-meta">0 cuentas detectadas.</p>
           </div>
         </section>
+
+      <section class="panel create-accounts-panel" style="margin-top: 14px;">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-8 0v2" />
+                <circle cx="12" cy="7" r="4" />
+                <path d="M19 8v6" />
+                <path d="M22 11h-6" />
+              </svg>
+            </span>
+            Crear Cuentas
+          </h2>
+          <span class="counter js-create-account-count">0</span>
+        </div>
+        <div class="panel-body">
+          <div class="accounts-tabs" role="tablist" aria-label="Listas de crear cuentas">
+            <button class="account-tab js-create-account-tab is-selected" type="button" role="tab" aria-label="Total" title="Total" aria-selected="true" aria-controls="createAccountsPanelTotal" data-create-tab="total" style="--tab-color: #4f8dff;">
+              <span class="account-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 6h13" /><path d="M8 12h13" /><path d="M8 18h13" /><path d="M3 6h.01" /><path d="M3 12h.01" /><path d="M3 18h.01" /></svg></span>
+              <span class="account-tab-count js-create-account-tab-count" data-create-count-for="total">0</span>
+            </button>
+            <button class="account-tab js-create-account-tab" type="button" role="tab" aria-label="Validos" title="Validos" aria-selected="false" aria-controls="createAccountsPanelValid" data-create-tab="valid" style="--tab-color: #22b86f;">
+              <span class="account-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /><circle cx="12" cy="12" r="9" /></svg></span>
+              <span class="account-tab-count js-create-account-tab-count" data-create-count-for="valid">0</span>
+            </button>
+            <button class="account-tab js-create-account-tab" type="button" role="tab" aria-label="No validos" title="No validos" aria-selected="false" aria-controls="createAccountsPanelInvalid" data-create-tab="invalid" style="--tab-color: #d45862;">
+              <span class="account-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m15 9-6 6" /><path d="m9 9 6 6" /><circle cx="12" cy="12" r="9" /></svg></span>
+              <span class="account-tab-count js-create-account-tab-count" data-create-count-for="invalid">0</span>
+            </button>
+          </div>
+
+          <div id="createAccountsPanelTotal" class="field account-panel is-active js-create-account-panel" role="tabpanel" data-create-panel="total">
+            <label for="createAccountsInput">Total</label>
+            <textarea id="createAccountsInput" class="accounts-input js-create-accounts-input" data-create-input="total" placeholder="Cuentas para crear, una por linea"></textarea>
+          </div>
+          <div id="createAccountsPanelValid" class="field account-panel js-create-account-panel" role="tabpanel" data-create-panel="valid">
+            <label for="createValidAccountsInput">Validos</label>
+            <textarea id="createValidAccountsInput" class="accounts-input js-create-accounts-input" data-create-input="valid" placeholder="Cuentas creadas, una por linea"></textarea>
+          </div>
+          <div id="createAccountsPanelInvalid" class="field account-panel js-create-account-panel" role="tabpanel" data-create-panel="invalid">
+            <div class="account-panel-header">
+              <label for="createInvalidAccountsInput">No validos</label>
+              <button class="account-panel-action js-clear-create-invalid-accounts" type="button" aria-label="Limpiar No validos" title="Limpiar No validos">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M6 6l1 15h10l1-15" /><path d="m9 11 6 6" /><path d="m15 11-6 6" /></svg>
+              </button>
+            </div>
+            <textarea id="createInvalidAccountsInput" class="accounts-input js-create-accounts-input" data-create-input="invalid" placeholder="Fallos al crear, una por linea"></textarea>
+          </div>
+          <div class="field delimiter-field" style="margin-top: 14px; grid-template-columns: minmax(0, 1fr) auto; align-items: flex-end; padding: 10px; background: rgba(167, 139, 250, 0.08); border-radius: 12px; border: 1px solid rgba(167, 139, 250, 0.2);">
+            <div class="field" style="gap: 4px;">
+              <label for="createCountPerDevice" style="color: #e9ddff; font-size: 0.76rem;">Cant. a crear por equipo</label>
+              <input id="createCountPerDevice" class="js-create-count-per-device" type="number" min="1" max="10" value="1" placeholder="Ej: 1" aria-label="Cantidad a crear por equipo" style="border-color: rgba(167, 139, 250, 0.3);" />
+            </div>
+            <button class="split-accounts-btn js-start-creation-btn" type="button" aria-label="Iniciar Creacion" title="Iniciar Creacion" style="background: linear-gradient(135deg, #a78bfa, #ec4899); box-shadow: 0 8px 20px rgba(167, 139, 250, 0.28); width: 42px; height: 42px;" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 18px; height: 18px;"><path d="m8 5 11 7-11 7V5Z" /></svg>
+            </button>
+          </div>
+          <p class="accounts-meta js-create-accounts-meta" style="margin-bottom: 0; margin-top: 6px;">0 cuentas detectadas.</p>
+        </div>
+      </section>
       </div>
 
       <div class="right-column">
@@ -2959,8 +3098,12 @@
       activeAccountTab: 'total',
       accountTraceFilter: 'all',
       accountTraceCollapsed: false,
+      accountsCollapsed: localStorage.getItem('flowdashboard.accountsCollapsed') === '1',
+      createAccountsCollapsed: localStorage.getItem('flowdashboard.createAccountsCollapsed') === '1',
       accountTraceMemoryReset: localStorage.getItem('flowlogin.accountTraceMemoryReset') === '1',
       accountAssignments: {},
+      creatingDevices: new Set(),
+      activeCreateAccountTab: 'total',
       selectedAccountAction: null,
       refreshingPublicIpDevices: new Set(),
       refreshingCountries: false,
@@ -3017,11 +3160,22 @@
       accountTraceToggle: document.querySelector('.js-account-trace-toggle'),
       accountCount: document.querySelector('.js-account-count'),
       accountsMeta: document.querySelector('.js-accounts-meta'),
+      accountsPanel: document.querySelector('.accounts-panel'),
+      createAccountsPanel: document.querySelector('.create-accounts-panel'),
       accountDelimiter: document.querySelector('.js-account-delimiter'),
       accountSplit: document.querySelector('.js-account-split'),
       splitAccountsBtn: document.querySelector('.js-split-accounts-btn'),
       clearInvalidAccountsBtn: document.querySelector('.js-clear-invalid-accounts'),
       clearDeviceAccountsBtn: document.querySelector('.js-clear-device-accounts-btn'),
+      createAccountTabs: document.querySelectorAll('.js-create-account-tab'),
+      createAccountPanels: document.querySelectorAll('.js-create-account-panel'),
+      createAccountInputs: document.querySelectorAll('.js-create-accounts-input'),
+      createAccountTabCounts: document.querySelectorAll('.js-create-account-tab-count'),
+      createAccountCount: document.querySelector('.js-create-account-count'),
+      clearCreateInvalidAccountsBtn: document.querySelector('.js-clear-create-invalid-accounts'),
+      createAccountsMeta: document.querySelector('.js-create-accounts-meta'),
+      createCountPerDevice: document.querySelector('.js-create-count-per-device'),
+      startCreationBtn: document.querySelector('.js-start-creation-btn'),
       targetLabel: document.querySelector('.js-target-label'),
       sendBtn: document.querySelector('.js-send-btn'),
       commandInput: document.querySelector('.js-command-input'),
@@ -4048,6 +4202,85 @@
       getAccountInput(tab).focus();
     }
 
+    function updateCreateAccountsCount() {
+      const counts = {};
+      if (els.createAccountInputs) {
+        els.createAccountInputs.forEach(input => {
+          counts[input.dataset.createInput] = countAccountLines(input.value);
+        });
+      }
+      if (els.createAccountTabCounts) {
+        els.createAccountTabCounts.forEach(counter => {
+          counter.textContent = counts[counter.dataset.createCountFor] || 0;
+        });
+      }
+      const activeCount = counts[state.activeCreateAccountTab] || 0;
+      if (els.createAccountCount) {
+        els.createAccountCount.textContent = activeCount;
+      }
+      if (els.createAccountsMeta) {
+        const activeLabel = state.activeCreateAccountTab === 'total' ? 'Total' : state.activeCreateAccountTab === 'valid' ? 'Validos' : 'No validos';
+        els.createAccountsMeta.textContent = `${activeLabel}: ${activeCount} ${activeCount === 1 ? 'cuenta detectada' : 'cuentas detectadas'}.`;
+      }
+      saveCreateAccountsState();
+    }
+
+    function saveCreateAccountsState() {
+      const data = {
+        activeTab: state.activeCreateAccountTab,
+        lists: {}
+      };
+      if (els.createAccountInputs) {
+        els.createAccountInputs.forEach(input => {
+          data.lists[input.dataset.createInput] = input.value;
+        });
+      }
+      localStorage.setItem('flowlogin.createAccounts', JSON.stringify(data));
+    }
+
+    function loadCreateAccountsState() {
+      try {
+        const data = JSON.parse(localStorage.getItem('flowlogin.createAccounts') || '{}');
+        if (els.createAccountInputs) {
+          els.createAccountInputs.forEach(input => {
+            input.value = data.lists && data.lists[input.dataset.createInput] ? data.lists[input.dataset.createInput] : '';
+          });
+        }
+        if (data.activeTab) {
+          state.activeCreateAccountTab = data.activeTab;
+        }
+      } catch (_) {}
+    }
+
+    function setCreateAccountTab(tab) {
+      state.activeCreateAccountTab = tab;
+      if (els.createAccountTabs) {
+        els.createAccountTabs.forEach(btn => {
+          const selected = btn.dataset.createTab === tab;
+          btn.classList.toggle('is-selected', selected);
+          btn.setAttribute('aria-selected', selected ? 'true' : 'false');
+        });
+      }
+      if (els.createAccountPanels) {
+        els.createAccountPanels.forEach(panel => {
+          panel.classList.toggle('is-active', panel.dataset.createPanel === tab);
+        });
+      }
+      updateCreateAccountsCount();
+    }
+
+    function clearCreateInvalidAccounts() {
+      if (els.createAccountInputs) {
+        const input = [...els.createAccountInputs].find(inp => inp.dataset.createInput === 'invalid');
+        if (input) {
+          input.value = '';
+          saveCreateAccountsState();
+          updateCreateAccountsCount();
+          appendOutput('No validos borrado', 'La lista de Crear Cuentas no validas quedo vacia y guardada.');
+        }
+      }
+    }
+
     function clearInvalidAccounts() {
       const input = getAccountInput('invalid');
       if (!input) return;
@@ -4772,13 +5005,15 @@
         const agent = getAgentForDevice(device);
         const agentReady = isFlowAgentReady(agent);
         const isLoginRunning = isDeviceLoginRunning(id);
+        
+        const isCreating = state.creatingDevices.has(id);
 
         card.tabIndex = 0;
         card.setAttribute('role', 'button');
         card.setAttribute('aria-label', `Seleccionar ${getDeviceName(device, index)}`);
         card.dataset.deviceId = id;
         card.draggable = true;
-        card.className = `device-card${isMultiSelected ? ' is-selected' : ''}${isLoginRunning ? ' is-login-running' : ''}`;
+        card.className = `device-card${isMultiSelected ? ' is-selected' : ''}${isLoginRunning ? ' is-login-running' : ''}${isCreating ? ' is-creating' : ''}`;
         stopBtn.type = 'button';
         stopBtn.className = 'device-action-btn device-stop-btn';
         stopBtn.setAttribute('aria-label', `Detener FlowLogin de ${getDeviceName(device, index)}`);
@@ -4906,12 +5141,22 @@
         deviceId.textContent = getDeviceDisplayIp(device);
         deviceId.title = `IP: ${getDeviceDisplayIp(device)}\nID interno: ${id}`;
 
+        // Estructura del Modo Creacion
+        const creationContainer = document.createElement('div');
+        creationContainer.className = 'creation-progress-container';
+        creationContainer.innerHTML = `
+          <span class="creation-status-text js-creation-text">Preparando creacion...</span>
+          <div class="creation-progress-bar">
+            <div class="creation-progress-fill js-creation-fill" style="width: 0%;"></div>
+          </div>
+        `;
+
         nameLine.append(name);
         nameRow.append(nameLine, badge);
         if (isLoginRunning) {
           card.appendChild(stopBtn);
         }
-        card.append(personBtn, editBtn, accountStatusColumn, nameRow, loginSummary, deviceId);
+        card.append(personBtn, editBtn, accountStatusColumn, nameRow, loginSummary, creationContainer, deviceId);
         stopBtn.addEventListener('pointerdown', event => {
           event.stopPropagation();
         });
@@ -4997,6 +5242,7 @@
       state.loginLastProgressAt = 0;
       state.loginLastStatusSignature = '';
       state.runningFlow = '';
+      state.creatingDevices.clear();
       updateFlowRunControls();
       renderDevices();
     }
@@ -5008,6 +5254,10 @@
         : state.devices;
       if (!devices.length) return false;
       return devices.every(device => {
+        // Dispositivos en modo creacion no terminan por accountStatuses normales
+        // sino por registerResults — no los consideramos terminales hasta que
+        // state.creatingDevices los quite.
+        if (state.creatingDevices.has(getDeviceId(device))) return false;
         const statuses = getDeviceAccountStatuses(device);
         return !statuses.length || statuses.every(item => ['success', 'error', 'already', 'review', 'notice14', 'replaced'].includes(item.status));
       });
@@ -5038,6 +5288,7 @@
     function removeLoginPollingDevices(deviceIds) {
       const targets = new Set(normalizePollingDeviceIds(deviceIds));
       const nextIds = parseDeviceIdList(state.loginPollingDeviceIds).filter(id => !targets.has(id));
+      targets.forEach(id => state.creatingDevices.delete(id));
       if (!nextIds.length) {
         stopLoginStatusPolling();
         return;
@@ -5067,8 +5318,42 @@
       renderDevices();
       const poll = async () => {
         try {
-          const [devices] = await wsapi.refreshLoginStatus({ deviceIds: state.loginPollingDeviceIds });
+        const [devices, result, progress, registerResults, runningJobs] = await wsapi.refreshLoginStatus({ deviceIds: state.loginPollingDeviceIds });
           state.devices = devices;
+        
+        if (registerResults) {
+          let listsChanged = false;
+          Object.keys(registerResults).forEach(serial => {
+            if (state.creatingDevices.has(serial)) {
+              const resDict = registerResults[serial];
+              Object.entries(resDict).forEach(([line, status]) => {
+                if (status === 'success' || status === 'already') {
+                  listsChanged = moveCreateAccountLineToResultTab(line, 'valid') || listsChanged;
+                } else if (['error', 'review', 'notice14'].includes(status)) {
+                  listsChanged = moveCreateAccountLineToResultTab(line, 'invalid') || listsChanged;
+                }
+              });
+            }
+          });
+          if (listsChanged) {
+            saveCreateAccountsState();
+            updateCreateAccountsCount();
+          }
+        }
+        
+        if (progress) {
+          Object.keys(progress).forEach(serial => {
+            if (state.creatingDevices.has(serial)) {
+              const card = [...els.deviceList.querySelectorAll('.device-card')].find(c => c.dataset.deviceId === serial);
+              if (card) {
+                const textEl = card.querySelector('.js-creation-text');
+                const fillEl = card.querySelector('.js-creation-fill');
+                if (textEl) textEl.textContent = progress[serial].text;
+                if (fillEl) fillEl.style.width = `${progress[serial].progress}%`;
+              }
+            }
+          });
+        }
           renderDevices();
           const signature = loginStatusSignature(state.loginPollingDeviceIds);
           if (signature !== state.loginLastStatusSignature) {
@@ -5076,9 +5361,11 @@
             state.loginLastProgressAt = Date.now();
           }
           if (loginStatusesAreTerminal(state.loginPollingDeviceIds)) {
+          state.creatingDevices.clear();
             stopLoginStatusPolling();
           } else if (Date.now() - state.loginLastProgressAt > 240000) {
             appendOutput('FlowLogin sin progreso', 'No hubo cambios recientes en los estados durante varios minutos. Revisa que FlowAgent siga conectado y que el clon este respondiendo.');
+          state.creatingDevices.clear();
             stopLoginStatusPolling();
           }
         } catch (error) {
@@ -5631,6 +5918,92 @@
       }
       if (els.deviceCategoryAddBtn) {
         els.deviceCategoryAddBtn.disabled = !enabled;
+      }
+      if (els.startCreationBtn) {
+        els.startCreationBtn.disabled = !enabled || !state.selectedDeviceIds.length;
+      }
+    }
+
+    function moveCreateAccountLineToResultTab(line, targetTab) {
+      if (targetTab !== 'valid' && targetTab !== 'invalid') return false;
+      const normalized = normalizeAccountLine(line);
+      if (!normalized) return false;
+      
+      const getLines = (tab) => {
+        const input = [...els.createAccountInputs].find(inp => inp.dataset.createInput === tab);
+        return input ? input.value.split('\n').map(normalizeAccountLine).filter(Boolean) : [];
+      };
+      const setLines = (tab, lines) => {
+        const input = [...els.createAccountInputs].find(inp => inp.dataset.createInput === tab);
+        if (!input) return false;
+        const nextValue = lines.filter(Boolean).join('\n');
+        if (input.value === nextValue) return false;
+        input.value = nextValue;
+        return true;
+      };
+      
+      const oppositeTab = targetTab === 'valid' ? 'invalid' : 'valid';
+      let changed = false;
+      ['total', oppositeTab].forEach(tab => {
+        const lines = getLines(tab);
+        if (lines.includes(normalized)) {
+          setLines(tab, lines.filter(l => l !== normalized));
+          changed = true;
+        }
+      });
+      const targetLines = getLines(targetTab);
+      if (!targetLines.includes(normalized)) {
+        setLines(targetTab, [...targetLines, normalized]);
+        changed = true;
+      }
+      return changed;
+    }
+
+    // --- INICIAR PROCESO DE CREACION ---
+    async function startCreationProcess() {
+      if (!state.selectedDeviceIds.length || state.busy) return;
+      
+      const deviceIds = [...state.selectedDeviceIds];
+      const count = Number(els.createCountPerDevice.value) || 1;
+
+      const input = [...els.createAccountInputs].find(inp => inp.dataset.createInput === 'total');
+      let totalLines = input.value.split('\n').map(l => l.trim()).filter(Boolean);
+      
+      if (totalLines.length < deviceIds.length * count) {
+        appendOutput("Cuentas insuficientes", `Necesitas al menos ${deviceIds.length * count} cuentas en la pestaña Total de Crear Cuentas.`);
+        return;
+      }
+
+      setBusy(true);
+      try {
+        const plannedChunks = {};
+        deviceIds.forEach(serial => {
+          plannedChunks[serial] = totalLines.splice(0, count);
+        });
+
+        // NO borrar el textarea Total: las cuentas se quedan hasta que
+        // el proceso confirme resultado y se muevan a Validos/No validos.
+        saveCreateAccountsState();
+        updateCreateAccountsCount();
+
+        deviceIds.forEach(id => state.creatingDevices.add(id));
+        renderDevices();
+
+        await wsapi.executeAutoJs({
+          deviceIds: deviceIds.join(','),
+          filePath: 'Register.js',
+          delimiter: getAccountDelimiter(),
+          registerLines: plannedChunks
+        });
+        
+        startLoginStatusPolling(deviceIds.join(','));
+        appendOutput('Creacion iniciada', `Se envio la creacion a ${deviceIds.length} dispositivo(s).`);
+      } catch (e) {
+        appendOutput('Error al crear cuentas', e.message);
+        deviceIds.forEach(id => state.creatingDevices.delete(id));
+        renderDevices();
+      } finally {
+        setBusy(false);
       }
     }
 
@@ -6269,6 +6642,61 @@
       btn.addEventListener('click', () => setAccountTab(btn.dataset.accountTab));
     });
     els.clearInvalidAccountsBtn.addEventListener('click', clearInvalidAccounts);
+    
+    if (els.createAccountTabs) {
+      els.createAccountTabs.forEach(btn => {
+        btn.addEventListener('click', () => setCreateAccountTab(btn.dataset.createTab));
+      });
+    }
+    if (els.createAccountInputs) {
+      els.createAccountInputs.forEach(input => {
+        input.addEventListener('input', updateCreateAccountsCount);
+      });
+    }
+    if (els.clearCreateInvalidAccountsBtn) {
+      els.clearCreateInvalidAccountsBtn.addEventListener('click', clearCreateInvalidAccounts);
+    }
+    loadCreateAccountsState();
+    setCreateAccountTab(state.activeCreateAccountTab);
+    
+    if (els.startCreationBtn) {
+      els.startCreationBtn.addEventListener('click', startCreationProcess);
+    }
+
+    // --- Colapso de paneles Cuentas / Crear Cuentas al hacer clic en el header ---
+    function applyPanelCollapse() {
+      if (els.accountsPanel) {
+        els.accountsPanel.classList.toggle('is-collapsed', state.accountsCollapsed);
+      }
+      if (els.createAccountsPanel) {
+        els.createAccountsPanel.classList.toggle('is-collapsed', state.createAccountsCollapsed);
+      }
+    }
+
+    if (els.accountsPanel) {
+      const hdr = els.accountsPanel.querySelector('.panel-header');
+      if (hdr) {
+        hdr.addEventListener('click', () => {
+          state.accountsCollapsed = !state.accountsCollapsed;
+          localStorage.setItem('flowdashboard.accountsCollapsed', state.accountsCollapsed ? '1' : '0');
+          applyPanelCollapse();
+        });
+      }
+    }
+
+    if (els.createAccountsPanel) {
+      const hdr = els.createAccountsPanel.querySelector('.panel-header');
+      if (hdr) {
+        hdr.addEventListener('click', () => {
+          state.createAccountsCollapsed = !state.createAccountsCollapsed;
+          localStorage.setItem('flowdashboard.createAccountsCollapsed', state.createAccountsCollapsed ? '1' : '0');
+          applyPanelCollapse();
+        });
+      }
+    }
+
+    applyPanelCollapse();
+
     [els.deviceFlowPlay, els.deviceFlowStop, els.deviceFlowRetryAccounts, els.deviceFlowReplaceAccounts, els.deviceFlowAddAccounts, els.deviceFlowAddPanel, els.deviceFlowAddCount, els.deviceFlowAddConfirm, els.deviceFlowClearAccounts].forEach(btn => {
       btn.addEventListener('pointerdown', event => {
         event.stopPropagation();

@@ -9,6 +9,7 @@ a = Analysis(
         ('wsapi_demo.html', '.'),
         ('wsapi.js', '.'),
         ('Login.js', '.'),
+        ('Register.js', '.'),
         ('logo.png', '.'),
         ('flow_agent_apk/build/flowagent-debug.apk', 'flow_agent_apk/build'),
     ],

@@ -29,5 +29,13 @@ release_packages/
 update_config.json
 device_registrations.json
 device_groups.json
+device_names.json
 .android/
 .flowlogin_payloads/
+
+# Archivos temporales de diagnostico
+ui.xml
+dump.json
+_dump_*.txt
+test_*.ps1
+_check_*.ps1

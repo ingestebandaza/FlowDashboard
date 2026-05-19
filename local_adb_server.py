@@ -175,6 +175,8 @@ DEVICE_NAMES_LOCK = threading.Lock()
 FLOWLOGIN_JOBS = set()
 FLOWLOGIN_STOP_EVENTS = {}
 FLOWLOGIN_CURRENT_ITEMS = {}
+FLOWREGISTER_PROGRESS = {}
+FLOWREGISTER_RESULTS = {}
 
 
 def spotify_package_for_clone(clone):
@@ -219,6 +221,7 @@ STATIC_FILES = {
 SUPABASE_CONFIG_FILE = BASE_DIR / ".supabase_config.json"
 SUPABASE_URL = ""
 SUPABASE_API_KEY = ""
+CAPSOLVER_API_KEY = ""
 ALLOW_LOCAL_LICENSE_MODE = os.getenv("FLOWDASHBOARD_ALLOW_LOCAL_LICENSE", "").strip().lower() in {"1", "true", "yes"}
 
 if SUPABASE_CONFIG_FILE.exists():
@@ -227,12 +230,14 @@ if SUPABASE_CONFIG_FILE.exists():
             config = json.load(fh)
             SUPABASE_URL = config.get("SUPABASE_URL", "")
             SUPABASE_API_KEY = config.get("SUPABASE_API_KEY", "")
+            CAPSOLVER_API_KEY = config.get("CAPSOLVER_API_KEY", "")
     except Exception:
         pass
 
 # Fallback a variables de entorno si no hay archivo de config
 SUPABASE_URL = os.getenv("SUPABASE_URL", SUPABASE_URL)
 SUPABASE_API_KEY = os.getenv("SUPABASE_API_KEY", os.getenv("SUPABASE_ANON_KEY", SUPABASE_API_KEY))
+CAPSOLVER_API_KEY = os.getenv("CAPSOLVER_API_KEY", CAPSOLVER_API_KEY)
 
 SUPABASE_HEADERS = {
     "apikey": SUPABASE_API_KEY,
@@ -2014,12 +2019,48 @@ def resolve_local_script_path(file_path):
     return script
 
 
-def prepare_flowlogin_payload(serial, clone=None, clones=None, delimiter=":"):
+def prepare_flowlogin_payload(serial, clone=None, clones=None, delimiter=":", is_register=False, register_lines=None):
     key = resolve_device_profile_key(serial)
     names = load_device_names()
     names, migrated = migrate_device_profile_key(names, serial, key)
     profile = names.get(key, {"name": "", "person": "", "accountStatuses": []})
+
+    if is_register and register_lines and serial in register_lines:
+        # FlowRegister: las cuentas vienen directamente del frontend.
+        # NO tocar profile["person"] ni profile["accountStatuses"]: esos
+        # pertenecen exclusivamente a FlowLogin y no deben mezclarse.
+        lines = [str(l).strip() for l in register_lines[serial] if str(l).strip()]
+        statuses = []
+        for index, line in enumerate(lines):
+            clone_num = index + 1
+            statuses.append({
+                "accountId": account_id_for(serial, clone_num, line),
+                "clone": clone_num,
+                "package": spotify_package_for_clone(clone_num),
+                "line": line,
+                "status": "pending",
+                "message": "",
+                "attempts": 0,
+                "updatedAt": ""
+            })
+        # Solo guardar migracion de clave si ocurrio; no tocar el perfil.
+        if migrated:
+            save_device_names(names)
+        payload = {
+            "device": serial,
+            "maxClones": 10,
+            "delimiter": str(delimiter or ":"),
+            "statusPath": FLOWLOGIN_STATUS_REMOTE,
+            "accounts": [dict(s, isRegister=True, freshStart=False) for s in statuses],
+        }
+        local_path = FLOWLOGIN_PAYLOAD_DIR / f"{safe_payload_name(serial)}_accounts.json"
+        with local_path.open("w", encoding="utf-8") as fh:
+            json.dump(payload, fh, ensure_ascii=False, indent=2)
+        return local_path, len(statuses)
+
+    # --- FlowLogin normal: lee perfil guardado del telefono ---
     statuses = normalize_account_statuses(key, profile.get("person", ""), profile.get("accountStatuses", []))
+        
     clone_filter = normalize_clone_filter(clone=clone, clones=clones)
     accounts = []
     for item in statuses:
@@ -2035,6 +2076,7 @@ def prepare_flowlogin_payload(serial, clone=None, clones=None, delimiter=":"):
         pending["message"] = ""
         pending["attempts"] = 0
         pending["freshStart"] = bool(clone_filter)
+        pending["isRegister"] = is_register
         accounts.append(pending)
 
     for item in statuses:
@@ -2314,21 +2356,25 @@ def run_flowlogin_agent_attempt(serial, item, account, attempt, status_label, li
         return {"status": "review", "message": "Detenido por usuario", "retry": False}
     with FLOWLOGIN_JOBS_LOCK:
         FLOWLOGIN_CURRENT_ITEMS[serial] = item
-    set_device_account_status(
-        serial,
-        clone,
-        status_label,
-        f"C{clone} intento {attempt}: {package_name}",
-        attempts=attempt,
-        line=line,
-    )
+    if not item.get("isRegister"):
+        set_device_account_status(
+            serial,
+            clone,
+            status_label,
+            f"C{clone} intento {attempt}: {package_name}",
+            attempts=attempt,
+            line=line,
+        )
     if package_name:
         try:
             force_stop_flowlogin_clone(serial, package_name)
         except Exception as exc:
             return {"status": "review", "message": f"No se pudo cerrar el clon antes de iniciar: {exc}", "retry": True}
     try:
-        return perform_flowlogin_agent(serial, item, account)
+        if item.get("isRegister"):
+            return perform_flowregister_agent(serial, item, account, stop_event)
+        else:
+            return perform_flowlogin_agent(serial, item, account)
     except Exception as exc:
         return {"status": "review", "message": f"FlowAgent runner: {exc}", "retry": True}
 
@@ -2358,14 +2404,20 @@ def run_flowlogin_agent_job(serial, payload_path, delimiter=":", stop_event=None
                 except Exception:
                     clone = 0
                 if clone:
-                    set_device_account_status(
-                        serial,
-                        clone,
-                        "review",
-                        message,
-                        attempts=0,
-                        line=item.get("line"),
-                    )
+                    if item.get("isRegister"):
+                        with FLOWLOGIN_JOBS_LOCK:
+                            if serial not in FLOWREGISTER_RESULTS:
+                                FLOWREGISTER_RESULTS[serial] = {}
+                            FLOWREGISTER_RESULTS[serial][item.get("line")] = "review"
+                    else:
+                        set_device_account_status(
+                            serial,
+                            clone,
+                            "review",
+                            message,
+                            attempts=0,
+                            line=item.get("line"),
+                        )
             return
 
         retry_after_clear = []
@@ -2374,6 +2426,17 @@ def run_flowlogin_agent_job(serial, payload_path, delimiter=":", stop_event=None
                 break
             if not isinstance(item, dict):
                 continue
+                
+            is_register = item.get("isRegister")
+            def update_status(c, st, msg, att, ln):
+                if is_register:
+                    with FLOWLOGIN_JOBS_LOCK:
+                        if serial not in FLOWREGISTER_RESULTS:
+                            FLOWREGISTER_RESULTS[serial] = {}
+                        FLOWREGISTER_RESULTS[serial][ln] = st
+                else:
+                    set_device_account_status(serial, c, st, msg, attempts=att, line=ln)
+                    
             try:
                 clone = int(item.get("clone", 0))
             except Exception:
@@ -2383,11 +2446,11 @@ def run_flowlogin_agent_job(serial, payload_path, delimiter=":", stop_event=None
             if not clone:
                 continue
             if not account:
-                set_device_account_status(serial, clone, "error", "Formato invalido: email:password", attempts=0, line=line)
+                update_status(clone, "error", "Formato invalido: email:password", 0, line)
                 continue
             item["package"] = spotify_package_for_clone(clone) or str(item.get("package", "") or "").strip()
             if not item.get("package"):
-                set_device_account_status(serial, clone, "error", "Paquete del clon no definido", attempts=0, line=line)
+                update_status(clone, "error", "Paquete del clon no definido", 0, line)
                 continue
 
             final_result = run_flowlogin_agent_attempt(serial, item, account, 1, "running", line, stop_event)
@@ -2395,14 +2458,7 @@ def run_flowlogin_agent_job(serial, payload_path, delimiter=":", stop_event=None
                 final_result = {"status": "review", "message": "Detenido por usuario", "retry": False}
 
             if final_result and final_result.get("status") in LOGIN_SUCCESS_STATUSES:
-                set_device_account_status(
-                    serial,
-                    clone,
-                    final_result.get("status"),
-                    final_result.get("message", ""),
-                    attempts=1,
-                    line=line,
-                )
+                update_status(clone, final_result.get("status"), final_result.get("message", ""), 1, line)
             elif final_result and should_retry_after_cache_clear(final_result):
                 retry_after_clear.append({
                     "item": dict(item),
@@ -2410,23 +2466,9 @@ def run_flowlogin_agent_job(serial, payload_path, delimiter=":", stop_event=None
                     "line": line,
                     "firstResult": final_result,
                 })
-                set_device_account_status(
-                    serial,
-                    clone,
-                    "retrying",
-                    "Primer intento fallo; limpiando cache/datos antes del segundo intento.",
-                    attempts=1,
-                    line=line,
-                )
+                update_status(clone, "retrying", "Primer intento fallo; limpiando cache/datos antes del segundo intento.", 1, line)
             elif final_result:
-                set_device_account_status(
-                    serial,
-                    clone,
-                    final_result.get("status", "review"),
-                    final_result.get("message", ""),
-                    attempts=1,
-                    line=line,
-                )
+                update_status(clone, final_result.get("status", "review"), final_result.get("message", ""), 1, line)
             with FLOWLOGIN_JOBS_LOCK:
                 if FLOWLOGIN_CURRENT_ITEMS.get(serial) is item:
                     FLOWLOGIN_CURRENT_ITEMS.pop(serial, None)
@@ -2446,6 +2488,17 @@ def run_flowlogin_agent_job(serial, payload_path, delimiter=":", stop_event=None
             item = retry_item["item"]
             account = retry_item["account"]
             line = retry_item["line"]
+            is_register = item.get("isRegister")
+            
+            def update_status(c, st, msg, att, ln):
+                if is_register:
+                    with FLOWLOGIN_JOBS_LOCK:
+                        if serial not in FLOWREGISTER_RESULTS:
+                            FLOWREGISTER_RESULTS[serial] = {}
+                        FLOWREGISTER_RESULTS[serial][ln] = st
+                else:
+                    set_device_account_status(serial, c, st, msg, attempts=att, line=ln)
+                    
             try:
                 clone = int(item.get("clone", 0))
             except Exception:
@@ -2455,25 +2508,11 @@ def run_flowlogin_agent_job(serial, payload_path, delimiter=":", stop_event=None
                 item["package"] = package_name
             if not clone or not package_name:
                 continue
-            set_device_account_status(
-                serial,
-                clone,
-                "retrying",
-                "Abriendo App info y limpiando cache/datos del clon antes del segundo intento.",
-                attempts=1,
-                line=line,
-            )
+            update_status(clone, "retrying", "Abriendo App info y limpiando cache/datos del clon antes del segundo intento.", 1, line)
             try:
                 clear_clone_cache_data_visual(serial, package_name)
             except Exception as exc:
-                set_device_account_status(
-                    serial,
-                    clone,
-                    "error",
-                    f"No se pudo limpiar cache/datos: {exc}",
-                    attempts=1,
-                    line=line,
-                )
+                update_status(clone, "error", f"No se pudo limpiar cache/datos: {exc}", 1, line)
                 continue
 
             item["freshStart"] = True
@@ -2481,14 +2520,7 @@ def run_flowlogin_agent_job(serial, payload_path, delimiter=":", stop_event=None
             if stop_event.is_set():
                 final_result = {"status": "review", "message": "Detenido por usuario", "retry": False}
             if final_result:
-                set_device_account_status(
-                    serial,
-                    clone,
-                    final_result.get("status", "review"),
-                    final_result.get("message", ""),
-                    attempts=2,
-                    line=line,
-                )
+                update_status(clone, final_result.get("status", "review"), final_result.get("message", ""), 2, line)
             with FLOWLOGIN_JOBS_LOCK:
                 if FLOWLOGIN_CURRENT_ITEMS.get(serial) is item:
                     FLOWLOGIN_CURRENT_ITEMS.pop(serial, None)
@@ -2523,7 +2555,33 @@ def run_flowlogin_agent_job(serial, payload_path, delimiter=":", stop_event=None
             FLOWLOGIN_CURRENT_ITEMS.pop(serial, None)
 
 
-def start_flowlogin_agent_jobs(serials, clone=None, clones=None, delimiter=":"):
+def start_flowlogin_agent_jobs(serials, clone=None, clones=None, delimiter=":", is_register=False, register_lines=None):
+    # Normalizar claves de register_lines: el frontend puede mandar deviceKey
+    # (mac:...) o legacyDeviceId en vez del serial ADB real. Construimos un
+    # mapa inverso para que serial in register_lines siempre funcione.
+    if is_register and isinstance(register_lines, dict) and register_lines:
+        devices = list_devices()
+        key_to_serial = {}
+        for device in devices:
+            adb_serial = str(device.get("serial", "") or "").strip()
+            if not adb_serial:
+                continue
+            for alias in (
+                device.get("deviceKey"),
+                device.get("deviceId"),
+                device.get("id"),
+                device.get("legacyDeviceId"),
+                adb_serial,
+            ):
+                alias = str(alias or "").strip()
+                if alias:
+                    key_to_serial[alias] = adb_serial
+        normalized_rl = {}
+        for k, v in register_lines.items():
+            real_serial = key_to_serial.get(str(k).strip(), str(k).strip())
+            normalized_rl[real_serial] = v
+        register_lines = normalized_rl
+
     outputs = []
     for serial in serials:
         lines = [f"[{serial}]"]
@@ -2535,7 +2593,12 @@ def start_flowlogin_agent_jobs(serials, clone=None, clones=None, delimiter=":"):
                     continue
                 FLOWLOGIN_JOBS.add(serial)
 
-            payload_path, account_count = prepare_flowlogin_payload(serial, clone=clone, clones=clones, delimiter=delimiter)
+            if is_register:
+                with FLOWLOGIN_JOBS_LOCK:
+                    FLOWREGISTER_RESULTS.pop(serial, None)
+                    FLOWREGISTER_PROGRESS.pop(serial, None)
+
+            payload_path, account_count = prepare_flowlogin_payload(serial, clone=clone, clones=clones, delimiter=delimiter, is_register=is_register, register_lines=register_lines)
             if account_count <= 0:
                 with FLOWLOGIN_JOBS_LOCK:
                     FLOWLOGIN_JOBS.discard(serial)
@@ -2597,17 +2660,20 @@ def start_flowlogin_agent_jobs(serials, clone=None, clones=None, delimiter=":"):
     return "\n\n".join(outputs)
 
 
-def execute_autojs(file_path, device_ids="all", clone=None, clones=None, delimiter=":"):
-    script = resolve_local_script_path(file_path)
-    if not script.exists() or not script.is_file():
-        raise RuntimeError(f"No se encontro el script: {script}")
-
+def execute_autojs(file_path, device_ids="all", clone=None, clones=None, delimiter=":", register_lines=None):
     serials = get_target_serials(device_ids)
     if not serials:
         raise RuntimeError("No hay dispositivos conectados.")
 
-    if script.name.lower() == "login.js":
+    script_name = str(file_path).strip().replace("\\", "/").split("/")[-1].lower()
+    if script_name == "login.js":
         return start_flowlogin_agent_jobs(serials, clone=clone, clones=clones, delimiter=delimiter)
+    if script_name == "register.js":
+        return start_flowlogin_agent_jobs(serials, clone=clone, clones=clones, delimiter=delimiter, is_register=True, register_lines=register_lines)
+
+    script = resolve_local_script_path(file_path)
+    if not script.exists() or not script.is_file():
+        raise RuntimeError(f"No se encontro el script: {script}")
 
     for serial in serials:
         lock_device_portrait(serial)
@@ -2861,10 +2927,17 @@ def agent_for_serial(serial):
         serials = get_target_serials(serial)
         if serials:
             serial = serials[0]
+    # Buscar todas las conexiones con ese serial y devolver la mas reciente
+    # (lastSeen mas alto). Asi evitamos usar conexiones zombi/muertas que
+    # quedaron en AGENT_CONNECTIONS antes de un reconectar.
     with AGENT_CONNECTIONS_LOCK:
-        for agent in AGENT_CONNECTIONS.values():
-            if str(agent.meta.get("serial", "") or "").strip() == serial:
-                return agent
+        candidates = [
+            a for a in AGENT_CONNECTIONS.values()
+            if str(a.meta.get("serial", "") or "").strip() == serial
+        ]
+    if candidates:
+        candidates.sort(key=lambda a: getattr(a, "last_seen", 0), reverse=True)
+        return candidates[0]
     android_id = get_device_android_id(serial)
     if not android_id:
         return None
@@ -3334,6 +3407,564 @@ def confirm_flowlogin_agent_outcome(agent, package_name, wait_seconds=28):
     return {"status": "review", "message": "Sin confirmacion segura", "retry": True}
 
 
+def remove_adb_reverse(serial):
+    """Quita el tunnel adb reverse tcp:8766 del dispositivo antes de registrar."""
+    try:
+        adb(["-s", serial, "reverse", "--remove", f"tcp:{AGENT_PORT}"], timeout=10)
+    except Exception:
+        pass
+
+
+def restore_adb_reverse(serial):
+    """Repone el tunnel adb reverse tcp:8766 despues de registrar."""
+    try:
+        adb(["-s", serial, "reverse", f"tcp:{AGENT_PORT}", f"tcp:{AGENT_PORT}"], timeout=10)
+    except Exception:
+        pass
+
+
+def disconnect_flowagent_for_register(serial, agent):
+    """
+    Cierra el socket de FlowAgent antes del registro para que Spotify no detecte
+    la conexion activa en 127.0.0.1:8766 como proxy.
+    El agente se reconectara automaticamente cuando se llame a reconnect_flowagent.
+    """
+    try:
+        unregister_agent(agent)
+        agent.close()
+    except Exception:
+        pass
+
+
+def reconnect_flowagent_for_register(serial):
+    """
+    Reabre FlowAgent en el dispositivo para que se reconecte al socket del servidor.
+    Se llama despues de completar el registro.
+    """
+    try:
+        android_id = get_android_id(serial)
+        adb([
+            "-s", serial, "shell", "am", "start",
+            "-n", "com.flowlogin.agent/.MainActivity",
+            "--es", "host", "127.0.0.1",
+            "--es", "serial", android_id or serial,
+            "--ei", "port", str(AGENT_PORT),
+            "--ez", "autoconnect", "true",
+        ], timeout=15)
+    except Exception:
+        pass
+
+
+def solve_recaptcha_capsolver(website_url, website_key, max_wait=120):
+    """
+    Resuelve un reCAPTCHA v2 usando la API de CapSolver.
+    Devuelve el token gRecaptchaResponse o None si falla.
+    La API key se lee de CAPSOLVER_API_KEY (cargada desde .supabase_config.json).
+    """
+    api_key = CAPSOLVER_API_KEY
+    if not api_key:
+        print("[CapSolver] No hay CAPSOLVER_API_KEY configurada.")
+        return None
+
+    capsolver_url = "https://api.capsolver.com"
+    headers = {"Content-Type": "application/json"}
+
+    # 1. Crear tarea
+    try:
+        create_body = json.dumps({
+            "clientKey": api_key,
+            "task": {
+                "type": "ReCaptchaV2TaskProxyless",
+                "websiteURL": website_url,
+                "websiteKey": website_key,
+            }
+        }).encode("utf-8")
+        req = Request(f"{capsolver_url}/createTask", data=create_body, headers=headers, method="POST")
+        with urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+    except Exception as exc:
+        print(f"[CapSolver] Error al crear tarea: {exc}")
+        return None
+
+    task_id = result.get("taskId")
+    if not task_id or result.get("errorId", 0) != 0:
+        print(f"[CapSolver] Error en createTask: {result.get('errorDescription', result)}")
+        return None
+
+    print(f"[CapSolver] Tarea creada: {task_id}")
+
+    # 2. Polling hasta obtener resultado
+    deadline = time.time() + max_wait
+    while time.time() < deadline:
+        time.sleep(4)
+        try:
+            poll_body = json.dumps({
+                "clientKey": api_key,
+                "taskId": task_id,
+            }).encode("utf-8")
+            req = Request(f"{capsolver_url}/getTaskResult", data=poll_body, headers=headers, method="POST")
+            with urlopen(req, timeout=30) as resp:
+                poll = json.loads(resp.read().decode("utf-8"))
+        except Exception as exc:
+            print(f"[CapSolver] Error en polling: {exc}")
+            continue
+
+        status = poll.get("status", "")
+        if status == "ready":
+            token = poll.get("solution", {}).get("gRecaptchaResponse", "")
+            if token:
+                print(f"[CapSolver] Token obtenido ({len(token)} chars)")
+                return token
+            print(f"[CapSolver] Status ready pero sin token: {poll}")
+            return None
+        if status == "failed" or poll.get("errorId", 0) != 0:
+            print(f"[CapSolver] Tarea fallida: {poll.get('errorDescription', poll)}")
+            return None
+        # status == "processing" -> seguir esperando
+
+    print(f"[CapSolver] Timeout esperando solucion ({max_wait}s)")
+    return None
+
+
+def inject_recaptcha_token_adb(serial, token):
+    """
+    Inyecta el token de reCAPTCHA en el WebView via JavaScript por ADB.
+    Funciona cuando el WebView esta en Samsung Browser (Custom Tab).
+    """
+    # Escapar el token para uso en shell
+    safe_token = token.replace("'", "\\'").replace('"', '\\"')
+    js = (
+        f"document.getElementById('g-recaptcha-response').innerHTML='{safe_token}';"
+        f"document.getElementById('g-recaptcha-response').style.display='';"
+        f"___grecaptcha_cfg.clients[0].aa.l.callback('{safe_token}');"
+    )
+    # Intentar via input keyevent no funciona para JS; usamos am broadcast si hay receptor,
+    # o simplemente tapeamos el checkbox por coordenadas conocidas como fallback.
+    # La inyeccion JS directa en Custom Tab no es posible sin debugging habilitado.
+    # Retornamos False para indicar que hay que usar el fallback de tap.
+    return False
+
+
+FLOWREGISTER_WELCOME_PATTERN = r"(Sign up free|Reg.strate gratis|Sign up|Reg.strate|Crear cuenta gratis|Crear una cuenta)"
+FLOWREGISTER_EMAIL_SCREEN_PATTERN = r"(What.?s your email|Cu.l es tu correo|enter.*email|email address|correo electr.nico|your email|tu correo)"
+FLOWREGISTER_PASSWORD_SCREEN_PATTERN = r"(Create a password|Crea una contrase.a|Choose a password|Set a password|Elige una contrase.a|password.{0,40}(letter|number|character)|contrase.a.{0,40}(letra|n.mero|car.cter))"
+FLOWREGISTER_DOB_SCREEN_PATTERN = r"(When.?s your date of birth|When were you born|Cu.ndo naciste|fecha de nacimiento|date of birth|your birthday|tu cumplea.os)"
+FLOWREGISTER_GENDER_SCREEN_PATTERN = r"(What.?s your gender|Cu.l es tu g.nero|your gender|tu g.nero)"
+FLOWREGISTER_NAME_SCREEN_PATTERN = r"(What.?s your name|Cu.l es tu nombre|your name|tu nombre)"
+FLOWREGISTER_NEXT_PATTERNS = [r"^Next$", r"^Siguiente$", r"^Continuar$", r"^Continue$"]
+
+# Nombres reales por genero para registro de cuentas
+_MALE_FIRST = [
+    "Santiago", "Mateo", "Sebastian", "Nicolas", "Alejandro", "Andres", "Diego",
+    "Carlos", "Daniel", "David", "Felipe", "Gabriel", "Ivan", "Jorge", "Juan",
+    "Luis", "Manuel", "Miguel", "Pablo", "Ricardo", "Roberto", "Sergio", "Victor",
+    "Adrian", "Alberto", "Antonio", "Cristian", "Eduardo", "Emilio", "Ernesto",
+    "Fernando", "Francisco", "Gustavo", "Hector", "Ignacio", "Javier", "Jonathan",
+    "Leonardo", "Marco", "Mario", "Martin", "Mauricio", "Oscar", "Pedro", "Rafael",
+    "Raul", "Rodrigo", "Ruben", "Tomas", "Xavier",
+]
+_FEMALE_FIRST = [
+    "Sofia", "Valentina", "Isabella", "Camila", "Lucia", "Gabriela", "Daniela",
+    "Mariana", "Andrea", "Natalia", "Paola", "Laura", "Ana", "Maria", "Paula",
+    "Alejandra", "Carolina", "Diana", "Elena", "Fernanda", "Gloria", "Isabel",
+    "Jessica", "Karen", "Lorena", "Monica", "Patricia", "Rosa", "Sandra", "Silvia",
+    "Adriana", "Alicia", "Beatriz", "Claudia", "Cristina", "Esperanza", "Eva",
+    "Irene", "Julia", "Liliana", "Luisa", "Magdalena", "Marcela", "Miriam",
+    "Nora", "Olga", "Pilar", "Rebeca", "Teresa", "Veronica",
+]
+_LAST_NAMES = [
+    "Garcia", "Martinez", "Lopez", "Gonzalez", "Rodriguez", "Hernandez", "Perez",
+    "Sanchez", "Ramirez", "Torres", "Flores", "Rivera", "Gomez", "Diaz", "Cruz",
+    "Morales", "Reyes", "Gutierrez", "Ortiz", "Vargas", "Castillo", "Jimenez",
+    "Moreno", "Romero", "Herrera", "Medina", "Aguilar", "Vega", "Castro", "Ruiz",
+    "Alvarez", "Ramos", "Mendoza", "Rios", "Soto", "Guerrero", "Delgado", "Navarro",
+    "Fuentes", "Molina", "Suarez", "Ortega", "Silva", "Rojas", "Nunez", "Salazar",
+    "Cabrera", "Espinoza", "Campos", "Acosta",
+]
+
+def generate_register_name(gender):
+    import random
+    first = random.choice(_MALE_FIRST if gender == "Male" else _FEMALE_FIRST)
+    last  = random.choice(_LAST_NAMES)
+    return f"{first} {last}"
+
+
+def perform_flowregister_agent(serial, item, account, stop_event=None):
+    agent = agent_for_serial(serial)
+    if not agent:
+        return {"status": "review", "message": "FlowAgent no conectado", "retry": False}
+
+    package_name = str(item.get("package", "") or "").strip()
+    if not package_name:
+        return {"status": "error", "message": "Paquete del clon no definido", "retry": False}
+
+    clone = int(item.get("clone", 0) or 0)
+    email = str(account.get("user", "") or "").strip()
+    password = str(account.get("pass", "") or "")
+    if not email or "@" not in email:
+        return {"status": "error", "message": "Cuenta sin email valido", "retry": False}
+    if not password:
+        return {"status": "error", "message": "Cuenta sin password", "retry": False}
+
+    def check_stop():
+        if stop_event and stop_event.is_set():
+            raise RuntimeError("Detenido por usuario")
+
+    def set_prog(text, pct):
+        check_stop()
+        with FLOWLOGIN_JOBS_LOCK:
+            FLOWREGISTER_PROGRESS[serial] = {"text": text, "progress": pct}
+
+    # El registro se ejecuta con FlowAgent conectado normalmente.
+    return _perform_flowregister_body(serial, agent, item, account, stop_event,
+                                      package_name, clone, email, password,
+                                      check_stop, set_prog)
+
+
+def _perform_flowregister_body(serial, agent, item, account, stop_event,
+                                package_name, clone, email, password,
+                                check_stop, set_prog):
+
+    # ga() siempre devuelve el agente mas reciente para este serial.
+    # Esto evita usar un objeto obsoleto si FlowAgent se reconecto durante
+    # la limpieza visual del clon.
+    def ga():
+        return agent_for_serial(serial) or agent
+
+    def wait_marker(pattern, total_timeout):
+        deadline = time.time() + total_timeout
+        chunk = 2.5
+        while time.time() < deadline:
+            check_stop()
+            remaining = deadline - time.time()
+            if agent_ui_has_marker(ga(), pattern, timeout=min(chunk, max(0.5, remaining))):
+                return True
+        return False
+
+    def click_next():
+        if agent_click_text_patterns(ga(), FLOWREGISTER_NEXT_PATTERNS, timeout=6, contains=False):
+            return True
+        return agent_click_text_patterns(ga(), [r"Next", r"Siguiente", r"Continuar", r"Continue"], timeout=4, contains=True)
+
+    set_prog(f"C{clone}: Cerrando clon...", 3)
+    try:
+        adb_shell(serial, "am force-stop " + shlex.quote(package_name), timeout=15)
+    except Exception:
+        pass
+    time.sleep(0.5)
+
+    set_prog(f"C{clone}: Limpiando cache y datos del clon...", 8)
+    try:
+        clear_clone_cache_data_visual(serial, package_name)
+    except Exception:
+        try:
+            adb_shell(serial, "pm clear " + shlex.quote(package_name), timeout=25)
+        except Exception:
+            pass
+    time.sleep(0.8)
+
+    set_prog(f"C{clone}: Abriendo Spotify...", 18)
+    if not agent_launch_package_and_wait(ga(), package_name, wait_seconds=25):
+        return {"status": "review", "message": "FlowAgent no pudo abrir el clon", "retry": True}
+
+    set_prog(f"C{clone}: Esperando pantalla inicial...", 20)
+    if not wait_marker(FLOWREGISTER_WELCOME_PATTERN, 35):
+        return {"status": "review", "message": "No aparecio Sign up", "retry": True}
+
+    set_prog(f"C{clone}: Tocando Sign up...", 25)
+    if not agent_click_text_patterns(
+        ga(),
+        [r"Sign up free", r"Reg.strate gratis", r"Sign up", r"Reg.strate", r"Crear cuenta"],
+        timeout=10,
+        contains=True,
+    ):
+        return {"status": "error", "message": "No encontro Sign up", "retry": True}
+
+    time.sleep(1.5)
+    agent_click_text_patterns(
+        ga(),
+        [r"Continue with email", r"Continuar con correo", r"Use email", r"Usar correo"],
+        timeout=6,
+        contains=True,
+    )
+
+    set_prog(f"C{clone}: Esperando campo email...", 35)
+    if not wait_marker(FLOWREGISTER_EMAIL_SCREEN_PATTERN, 25):
+        if not agent_wait_for_edit_texts(ga(), min_count=1, timeout=8):
+            return {"status": "review", "message": "No aparecio pantalla de email", "retry": True}
+
+    inputs = agent_wait_for_edit_texts(ga(), min_count=1, timeout=12)
+    if not inputs:
+        return {"status": "review", "message": "No encontro campo de email", "retry": True}
+
+    set_prog(f"C{clone}: Ingresando email...", 45)
+    agent_set_text_index(ga(), 0, email)
+    time.sleep(0.8)
+
+    set_prog(f"C{clone}: Confirmando email...", 52)
+    if not click_next():
+        return {"status": "review", "message": "No encontro Next tras email", "retry": True}
+
+    set_prog(f"C{clone}: Esperando pantalla de password...", 60)
+    if not wait_marker(FLOWREGISTER_PASSWORD_SCREEN_PATTERN, 25):
+        if agent_ui_has_marker(ga(), FLOWREGISTER_EMAIL_SCREEN_PATTERN, timeout=2):
+            return {"status": "review", "message": "Email no avanzo a password", "retry": True}
+        if not agent_wait_for_edit_texts(ga(), min_count=1, timeout=8):
+            return {"status": "review", "message": "No aparecio pantalla de password", "retry": True}
+
+    inputs = agent_wait_for_edit_texts(ga(), min_count=1, timeout=12)
+    if not inputs:
+        return {"status": "review", "message": "No encontro campo de password", "retry": True}
+
+    set_prog(f"C{clone}: Ingresando password...", 68)
+    pass_index = max(0, len(inputs) - 1)
+    agent_set_text_index(ga(), pass_index, password)
+    time.sleep(0.8)
+
+    set_prog(f"C{clone}: Confirmando password...", 74)
+    if not click_next():
+        return {"status": "review", "message": "No encontro Next tras password", "retry": True}
+
+    set_prog(f"C{clone}: Esperando fecha de nacimiento...", 80)
+    if not wait_marker(FLOWREGISTER_DOB_SCREEN_PATTERN, 25):
+        return {"status": "review", "message": "No aparecio pantalla de fecha", "retry": True}
+
+    import random
+
+    current_year = 2026
+    target_year  = random.randint(1975, current_year - 18)
+    target_day   = random.randint(1, 28)
+    MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    target_month = random.choice(MONTHS)
+
+    set_prog(f"C{clone}: Fecha {target_month} {target_day} {target_year}", 85)
+
+    def get_picker_col_center_x(col_index):
+        try:
+            nodes = agent_dump(ga(), max_nodes=300, timeout=10)
+            edit_nodes = [n for n in nodes
+                          if str(n.get("className", "")).endswith("EditText")
+                          and agent_bounds(n) is not None]
+            edit_nodes.sort(key=lambda n: agent_bounds(n)["centerX"])
+            if len(edit_nodes) > col_index:
+                return agent_bounds(edit_nodes[col_index])["centerX"]
+        except Exception:
+            pass
+        return [320, 530, 740][col_index]
+
+    def get_current_picker_value(col_index):
+        try:
+            nodes = agent_dump(ga(), max_nodes=300, timeout=10)
+            edit_nodes = [n for n in nodes
+                          if str(n.get("className", "")).endswith("EditText")
+                          and agent_bounds(n) is not None]
+            edit_nodes.sort(key=lambda n: agent_bounds(n)["centerX"])
+            if len(edit_nodes) > col_index:
+                return agent_node_label(edit_nodes[col_index]).strip()
+        except Exception:
+            pass
+        return ""
+
+    def scroll_picker_to(col_index, target_text, value_list):
+        cx = get_picker_col_center_x(col_index)
+        swipe_center = 866
+        swipe_step   = 230
+        for attempt in range(60):
+            check_stop()
+            current = get_current_picker_value(col_index)
+            if current == target_text:
+                return True
+            try:
+                cur_idx = value_list.index(current)
+                tgt_idx = value_list.index(target_text)
+                need_increase = tgt_idx > cur_idx
+            except ValueError:
+                need_increase = True
+            try:
+                if need_increase:
+                    agent_swipe(ga(), cx, swipe_center + swipe_step // 2,
+                                cx, swipe_center - swipe_step // 2, duration=250)
+                else:
+                    agent_swipe(ga(), cx, swipe_center - swipe_step // 2,
+                                cx, swipe_center + swipe_step // 2, duration=250)
+            except Exception:
+                pass
+            time.sleep(0.5)
+        return False
+
+    # Listas de valores en orden ascendente tal como aparecen en el picker
+    month_list = MONTHS                                          # Jan … Dec
+    # Spotify muestra los dias < 10 con cero a la izquierda (01, 02, ..., 09)
+    day_list   = [f"{d:02d}" if d < 10 else str(d) for d in range(1, 32)]
+    year_list  = [str(y) for y in range(1900, current_year + 1)]  # 1900 … 2026
+
+    set_prog(f"C{clone}: Ajustando mes...", 87)
+    scroll_picker_to(0, target_month, month_list)
+    time.sleep(0.3)
+
+    set_prog(f"C{clone}: Ajustando dia...", 88)
+    # Formatear target_day igual que Spotify lo muestra (01-09 con cero a la izquierda)
+    target_day_str = f"{target_day:02d}" if target_day < 10 else str(target_day)
+    scroll_picker_to(1, target_day_str, day_list)
+    time.sleep(0.3)
+
+    set_prog(f"C{clone}: Ajustando año...", 91)
+    scroll_picker_to(2, str(target_year), year_list)
+    time.sleep(0.5)
+
+    set_prog(f"C{clone}: Confirmando fecha...", 93)
+    # Esperar que el picker termine de animarse antes de buscar Next
+    time.sleep(1.2)
+    if not click_next():
+        # Fallback: buscar el Button Next por dump y tapearlo por sus bounds reales
+        try:
+            width, height = agent_screen_size_from_dump(ga())
+            nodes = agent_dump(ga(), max_nodes=200, timeout=8)
+            next_btn = next(
+                (n for n in nodes
+                 if re.search(r"^(Next|Siguiente|Continue|Continuar)$", agent_node_label(n).strip(), re.I)
+                 and agent_bounds(n)),
+                None
+            )
+            if next_btn:
+                b = agent_bounds(next_btn)
+                agent_tap(ga(), b["centerX"], b["centerY"])
+            else:
+                # Ultimo fallback: tap en zona inferior central donde suele estar Next
+                agent_tap(ga(), width // 2, int(height * 0.78))
+        except Exception:
+            pass
+    time.sleep(1.5)
+
+    # --- PANTALLA DE GENERO ---
+    set_prog(f"C{clone}: Esperando pantalla de genero...", 94)
+    wait_marker(FLOWREGISTER_GENDER_SCREEN_PATTERN, 20)
+
+    import random as _random
+    chosen_gender = _random.choice(["Female", "Male"])
+    set_prog(f"C{clone}: Eligiendo genero {chosen_gender}...", 95)
+    if not agent_click_text_patterns(ga(), [f"^{chosen_gender}$"], timeout=10, contains=False):
+        # Fallback contains por si el texto tiene espacios o variacion
+        agent_click_text_patterns(ga(), [chosen_gender], timeout=6, contains=True)
+    # El clic en genero avanza automaticamente sin Next
+    time.sleep(1.5)
+
+    # --- PANTALLA DE NOMBRE ---
+    set_prog(f"C{clone}: Esperando pantalla de nombre...", 96)
+    if not wait_marker(FLOWREGISTER_NAME_SCREEN_PATTERN, 20):
+        # Intentamos continuar si hay un EditText disponible
+        if not agent_wait_for_edit_texts(ga(), min_count=1, timeout=8):
+            return {"status": "review", "message": "No aparecio pantalla de nombre", "retry": True}
+
+    inputs = agent_wait_for_edit_texts(ga(), min_count=1, timeout=12)
+    if not inputs:
+        return {"status": "review", "message": "No encontro campo de nombre", "retry": True}
+
+    full_name = generate_register_name(chosen_gender)
+    set_prog(f"C{clone}: Nombre: {full_name}...", 97)
+    # Limpiar el nombre pre-llenado por Spotify y escribir el nuestro
+    agent_set_text_index(ga(), 0, full_name)
+    time.sleep(0.8)
+
+    # --- BOTON CREATE ACCOUNT ---
+    set_prog(f"C{clone}: Buscando boton Create account...", 98)
+
+    def find_create_account_button():
+        try:
+            nodes = agent_dump(ga(), max_nodes=300, timeout=10)
+            candidates = []
+            for node in nodes:
+                label = agent_node_label(node).strip()
+                if not re.search(r"^(Create account|Crear cuenta|Crear una cuenta)$", label, re.I):
+                    continue
+                cls = str(node.get("className", "") or "")
+                clickable = bool(node.get("clickable"))
+                bounds = agent_bounds(node)
+                if not bounds:
+                    continue
+                # Preferir Button sobre TextView
+                score = 2 if "Button" in cls else (1 if clickable else 0)
+                candidates.append((score, node, bounds))
+            if candidates:
+                candidates.sort(key=lambda x: -x[0])
+                return candidates[0][1], candidates[0][2]
+        except Exception:
+            pass
+        return None, None
+
+    # Scroll suave hacia abajo para que el boton quede visible
+    width, height = agent_screen_size_from_dump(ga())
+    agent_swipe(ga(), width // 2, int(height * 0.7), width // 2, int(height * 0.4), duration=350)
+    time.sleep(0.8)
+
+    btn_node, btn_bounds = find_create_account_button()
+    if not btn_node:
+        return {"status": "review", "message": "No encontro boton Create account", "retry": True}
+
+    set_prog(f"C{clone}: Tocando Create account...", 98)
+    agent_tap(ga(), btn_bounds["centerX"], btn_bounds["centerY"])
+    time.sleep(2.5)
+
+    btn_still, _ = find_create_account_button()
+    if btn_still is not None:
+        agent_tap(ga(), btn_bounds["centerX"], btn_bounds["centerY"])
+        time.sleep(2.0)
+
+    set_prog(f"C{clone}: Cuenta enviada, verificando...", 99)
+    time.sleep(3.0)
+
+    # Verificar si aparecio pantalla de captcha (paquete sbrowser/chrome)
+    current_pkg = agent_current_package(ga())
+    if "sbrowser" in current_pkg or "chrome" in current_pkg.lower():
+        set_prog(f"C{clone}: Captcha detectado, resolviendo...", 99)
+        SPOTIFY_RECAPTCHA_SITEKEY = "6LeO36obAAAAALSBZrY6RYM1hcAY7RLvpDDcJLy3"
+        SPOTIFY_REGISTER_URL = "https://challenge.spotify.com"
+        token = solve_recaptcha_capsolver(SPOTIFY_REGISTER_URL, SPOTIFY_RECAPTCHA_SITEKEY, max_wait=120)
+        if token:
+            # La inyeccion JS directa no es posible en Custom Tab sin debugging.
+            # Usamos tap por coordenadas calibradas para el checkbox y Continue.
+            # Coordenadas confirmadas en dispositivo 1080x1794:
+            #   checkbox "I'm not a robot": x=200, y=690
+            #   boton Continue: x=515, y=1005
+            set_prog(f"C{clone}: Token obtenido, tapeando captcha...", 99)
+            adb_shell(serial, "input tap 200 690", timeout=10)
+            time.sleep(2.5)
+            # Verificar si aparecio el challenge de imagenes
+            nodes_after = []
+            try:
+                nodes_after = agent_dump(ga(), max_nodes=100, timeout=5)
+            except Exception:
+                pass
+            if not nodes_after:
+                # Sigue en WebView — tocar Continue
+                adb_shell(serial, "input tap 515 1005", timeout=10)
+                time.sleep(3.0)
+            # Si aparecio challenge de imagenes, no podemos resolverlo — marcar review
+            current_pkg2 = agent_current_package(ga())
+            if "sbrowser" in current_pkg2 or "chrome" in current_pkg2.lower():
+                return {"status": "review", "message": "Captcha con imagenes requerido — completar manualmente", "retry": False}
+        else:
+            # Sin token de CapSolver — intentar tap directo como fallback
+            set_prog(f"C{clone}: Tapeando captcha (fallback)...", 99)
+            adb_shell(serial, "input tap 200 690", timeout=10)
+            time.sleep(2.5)
+            adb_shell(serial, "input tap 515 1005", timeout=10)
+            time.sleep(3.0)
+            current_pkg2 = agent_current_package(ga())
+            if "sbrowser" in current_pkg2 or "chrome" in current_pkg2.lower():
+                return {"status": "review", "message": "Captcha requerido — completar manualmente", "retry": False}
+        time.sleep(2.0)
+
+    # Verificar que no haya error visible (captcha, cuenta ya existente, etc.)
+    error = agent_error_marker(ga(), timeout=4)
+    if error:
+        return {"status": "error", "message": f"Error al crear cuenta: {error[:80]}", "retry": False}
+
+    set_prog(f"C{clone}: Cuenta creada", 100)
+    return {"status": "success", "message": f"Cuenta creada: {full_name} ({chosen_gender})", "retry": False}
+
+
 def perform_flowlogin_agent(serial, item, account):
     agent = agent_for_serial(serial)
     if not agent:
@@ -3504,15 +4135,16 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/autojs/run":
                 clone = body.get("clone", None)
                 clones = body.get("clones", None)
+                register_lines = body.get("registerLines", None)
                 try:
                     clone = int(clone) if clone not in (None, "") else None
                 except Exception:
                     clone = None
-                self._json({"result": execute_autojs(body.get("filePath", ""), body.get("deviceIds", "all"), clone=clone, clones=clones, delimiter=body.get("delimiter", ":")), "devices": list_devices()})
+                self._json({"result": execute_autojs(body.get("filePath", ""), body.get("deviceIds", "all"), clone=clone, clones=clones, delimiter=body.get("delimiter", ":"), register_lines=register_lines), "devices": list_devices()})
             elif path == "/autojs/stop":
                 self._json({"result": stop_autojs(body.get("deviceIds", "all")), "devices": list_devices()})
             elif path == "/login-status":
-                self._json({"result": refresh_login_statuses(body.get("deviceIds", "all")), "devices": list_devices()})
+                self._json({"result": refresh_login_statuses(body.get("deviceIds", "all")), "devices": list_devices(), "progress": dict(FLOWREGISTER_PROGRESS), "registerResults": dict(FLOWREGISTER_RESULTS), "runningJobs": list(FLOWLOGIN_JOBS)})
             elif path == "/flowagent/setup":
                 self._json({
                     "result": setup_flow_agent(
@@ -3544,6 +4176,38 @@ class Handler(BaseHTTPRequestHandler):
                     body.get("command", {}),
                     timeout=body.get("timeout", 12),
                 )})
+            elif path == "/debug/dump":
+                # Endpoint de diagnostico: dump de nodos por serial para inspeccionar
+                # pantallas aunque FLAG_SECURE este activo (usa FlowAgent por socket).
+                serial = str(body.get("serial", "") or "").strip()
+                if not serial:
+                    self._json({"error": "Falta serial."}, 400)
+                    return
+                agent = agent_for_serial(serial)
+                if not agent:
+                    self._json({"error": f"FlowAgent no conectado para {serial}."}, 404)
+                    return
+                try:
+                    nodes = agent_dump(agent, max_nodes=600, timeout=15)
+                    simplified = []
+                    for n in nodes:
+                        label = agent_node_label(n).strip()
+                        bounds = agent_bounds(n)
+                        entry = {
+                            "text": label,
+                            "class": str(n.get("className", "") or ""),
+                            "resourceId": str(n.get("resourceId", "") or ""),
+                            "clickable": bool(n.get("clickable")),
+                            "editable": bool(n.get("editable") or n.get("className", "").endswith("EditText")),
+                            "focused": bool(n.get("focused")),
+                        }
+                        if bounds:
+                            entry["bounds"] = f"[{bounds['left']},{bounds['top']}][{bounds['right']},{bounds['bottom']}]"
+                            entry["center"] = f"{bounds['centerX']},{bounds['centerY']}"
+                        simplified.append(entry)
+                    self._json({"serial": serial, "nodeCount": len(simplified), "nodes": simplified})
+                except Exception as exc:
+                    self._json({"error": str(exc)}, 500)
             elif path == "/validate-license":
                 result = validate_device_license(
                     body.get("device_email", ""),
