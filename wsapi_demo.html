@@ -6,9 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FlowLogin</title>
   <script src="./wsapi.js"></script>
-  <!-- SortableJS para drag & drop multi-dispositivo con auto-scroll -->
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/plugins/MultiDrag/MultiDrag.js"></script>
+  <!-- Shopify Draggable - drag robusto entre contenedores -->
+  <script src="https://cdn.jsdelivr.net/npm/@shopify/draggable@1.0.0-beta.13/lib/draggable.bundle.legacy.js"></script>
   <style>
     :root {
       color-scheme: dark;
@@ -1725,6 +1724,27 @@
     .device-list.is-reorder-mode .device-card.sortable-chosen {
       box-shadow: 0 8px 28px rgba(79, 141, 255, 0.35);
       border-color: rgba(79, 141, 255, 0.8);
+    }
+
+    /* Mirror de Shopify Draggable */
+    .draggable-mirror {
+      opacity: 0.85 !important;
+      box-shadow: 0 14px 40px rgba(79, 141, 255, 0.45) !important;
+      border-color: rgba(79, 141, 255, 0.85) !important;
+      transform: scale(1.04) !important;
+      z-index: 9999 !important;
+      pointer-events: none !important;
+    }
+
+    /* Placeholder de Shopify Draggable */
+    .draggable--original {
+      opacity: 0 !important;
+    }
+
+    .draggable-source--is-dragging {
+      opacity: 0.25;
+      border: 2px dashed rgba(79, 141, 255, 0.5) !important;
+      background: rgba(79, 141, 255, 0.06) !important;
     }
 
     /* Indicadores de zona de drop entre tarjetas */
@@ -5504,193 +5524,72 @@
       return { wrapper, dropzone };
     }
 
-    // ===== DRAG CON MOUSE EVENTS (sin librerías externas) =====
-    // Estado del drag activo
-    const _drag = {
-      active: false,
-      card: null,          // tarjeta que se está arrastrando
-      ghost: null,         // clon visual que sigue al cursor
-      placeholder: null,   // espacio reservado en el DOM
-      startX: 0,
-      startY: 0,
-      offsetX: 0,          // offset del cursor dentro de la tarjeta
-      offsetY: 0,
-      scrollTimer: null,
-    };
+    // ===== DRAG CON SHOPIFY DRAGGABLE =====
+    let _draggableInstance = null;
 
-    function _dragGetScrollContainer() {
-      // El contenedor scrollable es el panel de dispositivos
-      return els.deviceList.closest('.panel-body') || els.deviceList.parentElement;
-    }
-
-    function _dragAutoScroll(clientY) {
-      const container = _dragGetScrollContainer();
-      if (!container) return;
-      const rect = container.getBoundingClientRect();
-      const zone = 60; // px desde el borde donde empieza el scroll
-      const speed = 12;
-      if (clientY < rect.top + zone) {
-        container.scrollTop -= speed;
-      } else if (clientY > rect.bottom - zone) {
-        container.scrollTop += speed;
+    function initDraggable() {
+      if (_draggableInstance) {
+        _draggableInstance.destroy();
+        _draggableInstance = null;
       }
-    }
-
-    function _dragFindInsertTarget(clientX, clientY) {
-      // Encuentra la tarjeta más cercana al cursor para insertar antes/después
-      const cards = [...els.deviceList.querySelectorAll('.device-card:not(.drag-ghost)')];
-      let best = null;
-      let bestDist = Infinity;
-      let bestBefore = true;
-      for (const card of cards) {
-        if (card === _drag.card || card === _drag.placeholder) continue;
-        const rect = card.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        const dist = Math.hypot(clientX - cx, clientY - cy);
-        if (dist < bestDist) {
-          bestDist = dist;
-          best = card;
-          // En modo lista: antes/después por Y; en grilla: por X
-          if (state.deviceViewMode === 'list') {
-            bestBefore = clientY < cy;
-          } else {
-            bestBefore = clientX < cx;
-          }
-        }
-      }
-      return { card: best, before: bestBefore };
-    }
-
-    function _dragMovePlaceholder(clientX, clientY) {
-      const { card, before } = _dragFindInsertTarget(clientX, clientY);
-      if (!card) return;
-      const parent = card.parentElement;
-      if (!parent) return;
-      if (before) {
-        parent.insertBefore(_drag.placeholder, card);
-      } else {
-        parent.insertBefore(_drag.placeholder, card.nextSibling);
-      }
-      // Actualiza categoria si el placeholder cambió de zona
-      const zone = _drag.placeholder.closest('.device-category-dropzone');
-      const catId = zone ? (zone.dataset.categoryId || '') : '';
-      _drag.placeholder.dataset.targetCat = catId;
-    }
-
-    function _dragOnMouseMove(e) {
-      if (!_drag.active) return;
-      const x = e.clientX;
-      const y = e.clientY;
-      // Mueve el ghost
-      _drag.ghost.style.left = `${x - _drag.offsetX}px`;
-      _drag.ghost.style.top  = `${y - _drag.offsetY}px`;
-      // Auto-scroll
-      clearTimeout(_drag.scrollTimer);
-      _drag.scrollTimer = setTimeout(() => _dragAutoScroll(y), 10);
-      _dragAutoScroll(y);
-      // Mueve el placeholder
-      _dragMovePlaceholder(x, y);
-    }
-
-    function _dragOnMouseUp() {
-      if (!_drag.active) return;
-      _drag.active = false;
-      clearTimeout(_drag.scrollTimer);
-      document.removeEventListener('mousemove', _dragOnMouseMove);
-      document.removeEventListener('mouseup', _dragOnMouseUp);
-
-      // Aplica el nuevo orden desde el DOM
-      const targetCat = _drag.placeholder.dataset.targetCat || '';
-      const did = _drag.card.dataset.deviceId;
-
-      // Inserta la tarjeta real donde está el placeholder
-      _drag.placeholder.parentElement.insertBefore(_drag.card, _drag.placeholder);
-      _drag.placeholder.remove();
-      _drag.ghost.remove();
-
-      // Actualiza categoría si cambió
-      if (targetCat) state.deviceGroups.assignments[did] = targetCat;
-      else delete state.deviceGroups.assignments[did];
-
-      // Reconstruye el orden desde el DOM
-      const newOrder = [];
-      [...els.deviceList.querySelectorAll('.device-card')].forEach((c, i) => {
-        const id = c.dataset.deviceId;
-        if (!id) return;
-        newOrder.push(id);
-        // Actualiza numerito en tiempo real
-        const numEl = c.querySelector('.device-order-number');
-        if (numEl) numEl.textContent = String(i + 1);
-      });
-      state.deviceGroups.order = newOrder;
-
-      // Restaura estilos de la tarjeta
-      _drag.card.style.opacity = '';
-      _drag.card.style.visibility = '';
-      _drag.card = null;
-      _drag.ghost = null;
-      _drag.placeholder = null;
-    }
-
-    function _dragStart(e, card) {
       if (!state.reorderMode) return;
-      e.preventDefault();
-      const rect = card.getBoundingClientRect();
-      _drag.active = true;
-      _drag.card = card;
-      _drag.offsetX = e.clientX - rect.left;
-      _drag.offsetY = e.clientY - rect.top;
+      if (typeof Draggable === 'undefined' && typeof window.Draggable === 'undefined') return;
 
-      // Crea el ghost (clon visual que sigue al cursor)
-      const ghost = card.cloneNode(true);
-      ghost.className = card.className + ' drag-ghost';
-      ghost.style.cssText = `
-        position: fixed;
-        z-index: 9999;
-        width: ${rect.width}px;
-        height: ${rect.height}px;
-        left: ${e.clientX - _drag.offsetX}px;
-        top: ${e.clientY - _drag.offsetY}px;
-        opacity: 0.82;
-        pointer-events: none;
-        box-shadow: 0 12px 36px rgba(79,141,255,0.45);
-        border-color: rgba(79,141,255,0.8);
-        transform: scale(1.03);
-        transition: none;
-      `;
-      document.body.appendChild(ghost);
-      _drag.ghost = ghost;
+      const DraggableLib = (typeof Draggable !== 'undefined' && Draggable.Sortable)
+        ? Draggable
+        : window.Draggable;
+      if (!DraggableLib || !DraggableLib.Sortable) return;
 
-      // Crea el placeholder (espacio reservado)
-      const ph = document.createElement('div');
-      ph.className = 'device-card drag-placeholder';
-      ph.style.cssText = `
-        width: ${rect.width}px;
-        height: ${rect.height}px;
-        opacity: 0.28;
-        border: 2px dashed rgba(79,141,255,0.55);
-        background: rgba(79,141,255,0.07);
-        border-radius: inherit;
-        pointer-events: none;
-        flex-shrink: 0;
-      `;
-      ph.dataset.targetCat = card.closest('.device-category-dropzone')?.dataset.categoryId || '';
-      card.parentElement.insertBefore(ph, card);
-      _drag.placeholder = ph;
+      // Todos los contenedores donde pueden vivir tarjetas
+      const dropzones = [...els.deviceList.querySelectorAll('.device-category-dropzone')];
+      const containers = dropzones.length ? dropzones : [els.deviceList];
 
-      // Oculta la tarjeta original
-      card.style.opacity = '0';
-      card.style.visibility = 'hidden';
+      _draggableInstance = new DraggableLib.Sortable(containers, {
+        draggable: '.device-card',
+        handle: '.device-reorder-handle',
+        mirror: {
+          constrainDimensions: true,
+          appendTo: document.body,
+        },
+        scrollable: {
+          speed: 16,
+          sensitivity: 60,
+        },
+        plugins: [DraggableLib.Plugins.ResizeMirror],
+      });
 
-      document.addEventListener('mousemove', _dragOnMouseMove);
-      document.addEventListener('mouseup', _dragOnMouseUp);
+      _draggableInstance.on('sortable:stop', () => {
+        // Pequeño delay para que el DOM quede estable
+        requestAnimationFrame(() => {
+          const newOrder = [];
+          const allZones = [...els.deviceList.querySelectorAll('.device-category-dropzone')];
+          const zonesArr = allZones.length ? allZones : [els.deviceList];
+          zonesArr.forEach(z => {
+            const zCatId = z.dataset.categoryId || '';
+            [...z.querySelectorAll('.device-card:not(.draggable-mirror):not(.draggable--original)')].forEach(c => {
+              const did = c.dataset.deviceId;
+              if (!did) return;
+              newOrder.push(did);
+              if (zCatId) state.deviceGroups.assignments[did] = zCatId;
+              else delete state.deviceGroups.assignments[did];
+            });
+          });
+          if (newOrder.length) {
+            state.deviceGroups.order = newOrder;
+            // Actualiza numeritos en tiempo real
+            [...els.deviceList.querySelectorAll('.device-card:not(.draggable-mirror)')].forEach((c, i) => {
+              const numEl = c.querySelector('.device-order-number');
+              if (numEl) numEl.textContent = String(i + 1);
+            });
+          }
+        });
+      });
     }
 
-    const _sortableInstances = []; // mantenido por compatibilidad, no se usa
+    const _sortableInstances = []; // compatibilidad
 
     function initSortableDropzones() {
-      // No-op: el drag se maneja con mouse events en el handle
+      // No-op: manejado por initDraggable
     }
 
     function toggleReorderMode() {
@@ -5703,8 +5602,13 @@
         els.deviceReorderBtn.setAttribute('aria-label', state.reorderMode ? 'Guardar orden' : 'Reordenar dispositivos');
       }
 
-      if (!state.reorderMode) {
-        // Guarda el orden al desactivar
+      if (state.reorderMode) {
+        initDraggable();
+      } else {
+        if (_draggableInstance) {
+          _draggableInstance.destroy();
+          _draggableInstance = null;
+        }
         saveDeviceGroups().then(() => {
           renderDevices();
           appendOutput('Orden guardado', `${state.deviceGroups.order.length} dispositivo${state.deviceGroups.order.length === 1 ? '' : 's'} reordenados.`);
@@ -5794,12 +5698,6 @@
         reorderHandle.setAttribute('title', 'Arrastrar para reordenar');
         reorderHandle.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h2"/><path d="M9 12h2"/><path d="M9 19h2"/><path d="M13 5h2"/><path d="M13 12h2"/><path d="M13 19h2"/></svg>';
         reorderHandle.addEventListener('pointerdown', e => e.stopPropagation());
-        reorderHandle.addEventListener('mousedown', e => {
-          if (!state.reorderMode) return;
-          e.preventDefault();
-          e.stopPropagation();
-          _dragStart(e, card);
-        });
         card.appendChild(reorderHandle);
         stopBtn.type = 'button';
         stopBtn.className = 'device-action-btn device-stop-btn';
@@ -6064,9 +5962,9 @@
 
       updateTargetLabel();
       updateFlowAgentControls();
-      // Aplica clase de modo reordenamiento y activa SortableJS si corresponde
+      // Aplica clase de modo reordenamiento y activa Draggable si corresponde
       els.deviceList.classList.toggle('is-reorder-mode', state.reorderMode);
-      if (state.reorderMode) initSortableDropzones();
+      if (state.reorderMode) initDraggable();
     }
 
     function stopLoginStatusPolling() {
