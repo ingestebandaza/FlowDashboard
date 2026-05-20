@@ -6,8 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FlowLogin</title>
   <script src="./wsapi.js"></script>
-  <!-- Shopify Draggable - drag robusto entre contenedores -->
-  <script src="https://cdn.jsdelivr.net/npm/@shopify/draggable@1.0.0-beta.13/lib/draggable.bundle.legacy.js"></script>
+  <!-- Dragula - drag entre contenedores, simple y robusto -->
+  <script src="https://cdn.jsdelivr.net/npm/dragula@3.7.3/dist/dragula.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dragula@3.7.3/dist/dragula.min.css" />
   <style>
     :root {
       color-scheme: dark;
@@ -1646,39 +1647,33 @@
       color: #f0f6ff;
     }
 
-    /* ===== MODO REORDENAMIENTO ===== */
-    .device-list.is-reorder-mode .device-card {
-      cursor: default;
-      border-color: rgba(79, 141, 255, 0.28);
-    }
-
-    .device-list.is-reorder-mode .device-card:hover {
-      border-color: rgba(79, 141, 255, 0.55);
-      background: linear-gradient(145deg, rgba(28, 44, 78, 0.98), rgba(14, 24, 46, 0.98));
-    }
-
-    /* Handle de arrastre — oculto por defecto, visible en modo reordenamiento */
+    /* ===== HANDLE DE REORDENAMIENTO (siempre visible) ===== */
     .device-reorder-handle {
-      display: none;
+      display: inline-grid;
       position: absolute;
-      top: 6px;
-      left: 6px;
+      top: 5px;
+      left: 5px;
       z-index: 4;
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       place-items: center;
-      border-radius: 6px;
-      background: rgba(79, 141, 255, 0.18);
-      border: 1px solid rgba(79, 141, 255, 0.3);
-      color: #7aa8ff;
+      border-radius: 5px;
+      background: rgba(79, 141, 255, 0.12);
+      border: 1px solid rgba(79, 141, 255, 0.22);
+      color: rgba(79, 141, 255, 0.5);
       cursor: grab;
       pointer-events: all;
-      transition: background 0.14s, color 0.14s;
+      transition: background 0.14s, color 0.14s, border-color 0.14s;
+      opacity: 0;
+    }
+
+    .device-card:hover .device-reorder-handle {
+      opacity: 1;
     }
 
     .device-reorder-handle svg {
-      width: 13px;
-      height: 13px;
+      width: 12px;
+      height: 12px;
       stroke: currentColor;
       fill: none;
       stroke-width: 2.2;
@@ -1686,65 +1681,40 @@
     }
 
     .device-reorder-handle:hover {
-      background: rgba(79, 141, 255, 0.34);
-      color: #c0d8ff;
+      background: rgba(79, 141, 255, 0.28);
+      border-color: rgba(79, 141, 255, 0.5);
+      color: #7aa8ff;
+      opacity: 1;
     }
 
     .device-reorder-handle:active {
       cursor: grabbing;
     }
 
-    .device-list.is-reorder-mode .device-reorder-handle {
-      display: inline-grid;
-    }
-
-    /* En modo reordenamiento, bloquea clicks en el resto de la tarjeta */
-    .device-list.is-reorder-mode .device-card > *:not(.device-reorder-handle) {
-      pointer-events: none;
-    }
-
-    /* Boton reordenar activo */
-    .device-select-btn.is-reorder-active {
-      background: rgba(34, 184, 111, 0.22);
-      border-color: rgba(34, 184, 111, 0.55);
-      color: #9ef0c1;
-    }
-
-    .device-select-btn.is-reorder-active:hover {
-      background: rgba(34, 184, 111, 0.34);
-    }
-
-    /* Ghost de SortableJS en modo reordenamiento */
-    .device-list.is-reorder-mode .device-card.sortable-ghost {
-      opacity: 0.35;
-      border-color: rgba(79, 141, 255, 0.6);
-      background: rgba(79, 141, 255, 0.1);
-    }
-
-    .device-list.is-reorder-mode .device-card.sortable-chosen {
-      box-shadow: 0 8px 28px rgba(79, 141, 255, 0.35);
-      border-color: rgba(79, 141, 255, 0.8);
-    }
-
-    /* Mirror de Shopify Draggable */
-    .draggable-mirror {
-      opacity: 0.85 !important;
-      box-shadow: 0 14px 40px rgba(79, 141, 255, 0.45) !important;
-      border-color: rgba(79, 141, 255, 0.85) !important;
-      transform: scale(1.04) !important;
+    /* Dragula: elemento siendo arrastrado */
+    .gu-mirror {
+      position: fixed !important;
       z-index: 9999 !important;
-      pointer-events: none !important;
+      opacity: 0.88;
+      box-shadow: 0 14px 40px rgba(79, 141, 255, 0.45) !important;
+      border: 1px solid rgba(79, 141, 255, 0.8) !important;
+      transform: scale(1.03);
+      pointer-events: none;
+      background: linear-gradient(145deg, rgba(28, 44, 78, 0.99), rgba(14, 24, 46, 0.99)) !important;
     }
 
-    /* Placeholder de Shopify Draggable */
-    .draggable--original {
-      opacity: 0 !important;
-    }
-
-    .draggable-source--is-dragging {
-      opacity: 0.25;
+    /* Dragula: placeholder donde se soltará */
+    .gu-transit {
+      opacity: 0.25 !important;
       border: 2px dashed rgba(79, 141, 255, 0.5) !important;
       background: rgba(79, 141, 255, 0.06) !important;
+    }
+
+    /* Dragula: zona de drop activa */
+    .device-category-dropzone.gu-over,
+    .device-list.gu-over {
+      background: rgba(79, 141, 255, 0.06);
+      border-radius: 12px;
     }
 
     /* Indicadores de zona de drop entre tarjetas */
@@ -3492,7 +3462,6 @@
       deviceViewMode: localStorage.getItem('flowdashboard.deviceViewMode') || 'grid',
       deviceGroups: { groups: [], assignments: {}, order: [] },
       draggingDeviceIds: [],
-      reorderMode: false,
       deviceActionIds: new Set(),
       activeAccountTab: 'total',
       accountTraceFilter: 'all',
@@ -5524,96 +5493,69 @@
       return { wrapper, dropzone };
     }
 
-    // ===== DRAG CON SHOPIFY DRAGGABLE =====
-    let _draggableInstance = null;
+    // ===== DRAG CON DRAGULA =====
+    let _drakeInstance = null;
 
-    function initDraggable() {
-      if (_draggableInstance) {
-        _draggableInstance.destroy();
-        _draggableInstance = null;
+    function initDragula() {
+      // Destruye instancia anterior si existe
+      if (_drakeInstance) {
+        _drakeInstance.destroy();
+        _drakeInstance = null;
       }
-      if (!state.reorderMode) return;
-      if (typeof Draggable === 'undefined' && typeof window.Draggable === 'undefined') return;
+      if (typeof dragula === 'undefined') return;
 
-      const DraggableLib = (typeof Draggable !== 'undefined' && Draggable.Sortable)
-        ? Draggable
-        : window.Draggable;
-      if (!DraggableLib || !DraggableLib.Sortable) return;
-
-      // Todos los contenedores donde pueden vivir tarjetas
+      // Recoge todos los contenedores actuales del DOM
       const dropzones = [...els.deviceList.querySelectorAll('.device-category-dropzone')];
       const containers = dropzones.length ? dropzones : [els.deviceList];
 
-      _draggableInstance = new DraggableLib.Sortable(containers, {
-        draggable: '.device-card',
-        handle: '.device-reorder-handle',
-        mirror: {
-          constrainDimensions: true,
-          appendTo: document.body,
+      _drakeInstance = dragula(containers, {
+        // Solo el handle activa el drag
+        moves: (el, source, handle) => {
+          return handle.classList.contains('device-reorder-handle') ||
+                 !!handle.closest('.device-reorder-handle');
         },
-        scrollable: {
-          speed: 16,
-          sensitivity: 60,
-        },
-        plugins: [DraggableLib.Plugins.ResizeMirror],
+        // Cualquier contenedor puede recibir drops
+        accepts: () => true,
+        // Anima el reordenamiento
+        revertOnSpill: false,
+        removeOnSpill: false,
       });
 
-      _draggableInstance.on('sortable:stop', () => {
-        // Pequeño delay para que el DOM quede estable
-        requestAnimationFrame(() => {
-          const newOrder = [];
-          const allZones = [...els.deviceList.querySelectorAll('.device-category-dropzone')];
-          const zonesArr = allZones.length ? allZones : [els.deviceList];
-          zonesArr.forEach(z => {
-            const zCatId = z.dataset.categoryId || '';
-            [...z.querySelectorAll('.device-card:not(.draggable-mirror):not(.draggable--original)')].forEach(c => {
-              const did = c.dataset.deviceId;
-              if (!did) return;
-              newOrder.push(did);
-              if (zCatId) state.deviceGroups.assignments[did] = zCatId;
-              else delete state.deviceGroups.assignments[did];
-            });
+      _drakeInstance.on('drop', (el, target, source) => {
+        if (!target) return;
+        // Actualiza categoria del elemento movido
+        const did = el.dataset.deviceId;
+        if (!did) return;
+        const targetCatId = target.dataset.categoryId || '';
+        if (targetCatId) state.deviceGroups.assignments[did] = targetCatId;
+        else delete state.deviceGroups.assignments[did];
+
+        // Reconstruye el orden desde el DOM (sin re-renderizar)
+        const newOrder = [];
+        const allZones = [...els.deviceList.querySelectorAll('.device-category-dropzone')];
+        const zonesArr = allZones.length ? allZones : [els.deviceList];
+        zonesArr.forEach(z => {
+          [...z.querySelectorAll('.device-card')].forEach(c => {
+            const id = c.dataset.deviceId;
+            if (id) newOrder.push(id);
           });
-          if (newOrder.length) {
-            state.deviceGroups.order = newOrder;
-            // Actualiza numeritos en tiempo real
-            [...els.deviceList.querySelectorAll('.device-card:not(.draggable-mirror)')].forEach((c, i) => {
-              const numEl = c.querySelector('.device-order-number');
-              if (numEl) numEl.textContent = String(i + 1);
-            });
-          }
         });
+        state.deviceGroups.order = newOrder;
+
+        // Guarda sin re-renderizar (el DOM ya está correcto gracias a Dragula)
+        saveDeviceGroups();
       });
     }
 
     const _sortableInstances = []; // compatibilidad
 
     function initSortableDropzones() {
-      // No-op: manejado por initDraggable
+      // No-op: manejado por initDragula
     }
 
     function toggleReorderMode() {
-      state.reorderMode = !state.reorderMode;
-      els.deviceList.classList.toggle('is-reorder-mode', state.reorderMode);
-
-      if (els.deviceReorderBtn) {
-        els.deviceReorderBtn.classList.toggle('is-reorder-active', state.reorderMode);
-        els.deviceReorderBtn.title = state.reorderMode ? 'Listo — guardar orden' : 'Reordenar dispositivos';
-        els.deviceReorderBtn.setAttribute('aria-label', state.reorderMode ? 'Guardar orden' : 'Reordenar dispositivos');
-      }
-
-      if (state.reorderMode) {
-        initDraggable();
-      } else {
-        if (_draggableInstance) {
-          _draggableInstance.destroy();
-          _draggableInstance = null;
-        }
-        saveDeviceGroups().then(() => {
-          renderDevices();
-          appendOutput('Orden guardado', `${state.deviceGroups.order.length} dispositivo${state.deviceGroups.order.length === 1 ? '' : 's'} reordenados.`);
-        });
-      }
+      // Mantenido por compatibilidad con el botón del toolbar
+      // pero el drag funciona siempre via handle
     }
 
     function renderDevices() {
@@ -5962,9 +5904,8 @@
 
       updateTargetLabel();
       updateFlowAgentControls();
-      // Aplica clase de modo reordenamiento y activa Draggable si corresponde
-      els.deviceList.classList.toggle('is-reorder-mode', state.reorderMode);
-      if (state.reorderMode) initDraggable();
+      // Reinicializa Dragula con los contenedores actuales del DOM
+      initDragula();
     }
 
     function stopLoginStatusPolling() {
