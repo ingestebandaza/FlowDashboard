@@ -4947,12 +4947,10 @@
       return [...orderedKnown, ...unknown];
     }
 
-    // Reordena state.deviceGroups.order moviendo `movingIds` justo antes de `targetId`.
-    // Si targetId es null/'', los mueve al final del bloque que comparten categoria.
+    // Reordena state.deviceGroups.order moviendo `movingIds` justo antes/despues de `targetId`.
     function reorderDevices(movingIds, targetId, position) {
       const movingSet = new Set(movingIds);
-      // Construye orden actual completo: primero el order guardado, luego los faltantes
-      // en el orden actual del DOM (state.devices).
+      // Construye orden actual completo: primero el order guardado, luego los faltantes.
       const allIds = [];
       const seen = new Set();
       (state.deviceGroups.order || []).forEach(id => {
@@ -4962,7 +4960,7 @@
         const id = getDeviceId(device);
         if (id && !seen.has(id)) { seen.add(id); allIds.push(id); }
       });
-      // Quita los que se estan moviendo
+      // Quita los que se estan moviendo del orden actual
       const remaining = allIds.filter(id => !movingSet.has(id));
       // Inserta los movidos antes/despues del target
       let insertIdx = remaining.length;
@@ -4970,7 +4968,8 @@
         const idx = remaining.indexOf(targetId);
         if (idx >= 0) insertIdx = position === 'after' ? idx + 1 : idx;
       }
-      remaining.splice(insertIdx, 0, ...movingIds.filter(id => !movingSet.has(id) || true));
+      // Inserta solo los IDs que realmente se estan moviendo (sin duplicados)
+      remaining.splice(insertIdx, 0, ...movingIds);
       state.deviceGroups.order = remaining;
     }
 
@@ -5085,28 +5084,29 @@
       dropzone.addEventListener('drop', event => {
         event.preventDefault();
         dropzone.classList.remove('is-drag-over');
-        const raw = event.dataTransfer.getData('application/json') || event.dataTransfer.getData('text/plain');
-        let deviceIds = [];
-        try {
-          deviceIds = JSON.parse(raw);
-        } catch (_) {
-          deviceIds = raw ? [raw] : [];
-        }
-        deviceIds = Array.isArray(deviceIds) ? deviceIds.filter(Boolean) : [];
-        if (!deviceIds.length) return;
+        // Usar state.draggingDeviceIds para tener todos los seleccionados.
+        const movingIds = state.draggingDeviceIds.length
+          ? [...state.draggingDeviceIds]
+          : (() => {
+              const raw = event.dataTransfer.getData('application/json') || event.dataTransfer.getData('text/plain');
+              let ids = [];
+              try { ids = JSON.parse(raw); } catch (_) { ids = raw ? [raw] : []; }
+              return Array.isArray(ids) ? ids.filter(Boolean) : [];
+            })();
+        if (!movingIds.length) return;
         // Cambia categoria y manda los movidos al final del orden
-        deviceIds.forEach(deviceId => {
+        movingIds.forEach(deviceId => {
           if (section.id) state.deviceGroups.assignments[deviceId] = section.id;
           else delete state.deviceGroups.assignments[deviceId];
         });
         // Reordena: pone los movidos al final de la lista
-        const remaining = (state.deviceGroups.order || []).filter(o => !deviceIds.includes(o));
-        state.deviceGroups.order = [...remaining, ...deviceIds];
+        const remaining = (state.deviceGroups.order || []).filter(o => !movingIds.includes(o));
+        state.deviceGroups.order = [...remaining, ...movingIds];
         saveDeviceGroups().then(() => renderDevices());
         const categoryName = section.id
           ? state.deviceGroups.groups.find(g => g.id === section.id)?.name || 'categoria'
           : 'Sin categoria';
-        appendOutput('Dispositivos organizados', `${deviceIds.length} movido${deviceIds.length === 1 ? '' : 's'} a ${categoryName}.`);
+        appendOutput('Dispositivos organizados', `${movingIds.length} movido${movingIds.length === 1 ? '' : 's'} a ${categoryName}.`);
       });
       header.append(title, actions);
       wrapper.append(header, dropzone);
@@ -5429,17 +5429,14 @@
           event.stopPropagation();
           const before = card.classList.contains('is-drop-before');
           card.classList.remove('is-drop-before', 'is-drop-after');
-          const raw = event.dataTransfer.getData('application/json') || event.dataTransfer.getData('text/plain');
-          let movingIds = [];
-          try { movingIds = JSON.parse(raw); } catch (_) { movingIds = raw ? [raw] : []; }
-          movingIds = Array.isArray(movingIds) ? movingIds.filter(Boolean) : [];
+          // Usar state.draggingDeviceIds directamente — contiene TODOS los seleccionados,
+          // no solo el que inicio el drag (que es lo que dataTransfer tiene).
+          const movingIds = [...state.draggingDeviceIds];
           if (!movingIds.length || movingIds.includes(id)) return;
-          // Si el target esta en una categoria distinta, mover los IDs a esa categoria primero.
+          // Si el target esta en una categoria distinta, mover los IDs a esa categoria.
           const targetCat = getDeviceCategoryId(id);
           const movingFromOther = movingIds.some(m => getDeviceCategoryId(m) !== targetCat);
-          // Reordena en el state
           reorderDevices(movingIds, id, before ? 'before' : 'after');
-          // Aplica cambio de categoria si toca y guarda
           if (movingFromOther) {
             movingIds.forEach(m => {
               if (targetCat) state.deviceGroups.assignments[m] = targetCat;

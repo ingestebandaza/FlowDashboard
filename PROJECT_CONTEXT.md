@@ -1,10 +1,10 @@
 # FlowDashboard Project Context
 
-Ultima actualizacion: 2026-05-20 (1.0.46 - Drag & drop entre dispositivos, numero visual, boton reordenar)
+Ultima actualizacion: 2026-05-20 (1.0.47 - Drag & drop multi-dispositivo corregido)
 
 Este archivo es la memoria viva del proyecto. Cualquier persona o IA que vaya a modificar esta carpeta debe leer primero `AGENTS.md` y despues este archivo.
 
-Estado actual documentado: version `1.0.46` con flujo FlowRegister completo + drag & drop manual entre dispositivos con orden persistente y numerito visual.
+Estado actual documentado: version `1.0.47` con flujo FlowRegister completo + drag & drop multi-dispositivo con orden persistente y numerito visual.
 
 ## Resumen Ejecutivo
 
@@ -22,21 +22,21 @@ Arquitectura actual: `socket-first hybrid`.
 Version actual del proyecto:
 
 ```text
-APP_VERSION = 1.0.46
+APP_VERSION = 1.0.47
 ```
 
 Archivos relacionados:
 
 - `app_meta.py`: define `APP_NAME` y `APP_VERSION`.
 - `update.json`: manifest publico que el updater consulta.
-- `release_packages/FlowDashboard-1.0.46.zip`: paquete de actualizacion mas reciente (generado por `CrearActualizacion.bat`).
-- `dist/FlowDashboard.exe`: EXE compilado de la version `1.0.46`.
+- `release_packages/FlowDashboard-1.0.47.zip`: paquete de actualizacion mas reciente.
+- `dist/FlowDashboard.exe`: EXE compilado de la version `1.0.47`.
 
 `update.json` actual debe apuntar a:
 
 ```text
-version: 1.0.46
-package_url: https://github.com/ingestebandaza/FlowDashboard/releases/download/v1.0.46/FlowDashboard-1.0.46.zip
+version: 1.0.47
+package_url: https://github.com/ingestebandaza/FlowDashboard/releases/download/v1.0.47/FlowDashboard-1.0.47.zip
 sha256: <calculado por CrearActualizacion.bat al empaquetar>
 ```
 
@@ -537,6 +537,12 @@ Invoke-RestMethod -Uri http://127.0.0.1:8765/health -TimeoutSec 5 | ConvertTo-Js
 
 ## Changelog reciente
 
+### 1.0.47 (2026-05-20)
+
+- **Drag & drop multi-dispositivo**: selecciona 2+ dispositivos y arrastralos juntos. Todos se mueven a la vez al soltar sobre otra tarjeta o dropzone de categoria.
+- **Fix splice bug**: `reorderDevices` insertaba IDs duplicados. Corregido para insertar solo los IDs que se mueven.
+- **Drop usa `state.draggingDeviceIds`**: en vez de leer del `dataTransfer` (que solo tiene el ID del que inicio el drag), ahora usa el array completo de seleccionados.
+
 ### 1.0.46 (2026-05-20)
 
 - **Drag & drop entre dispositivos**: arrastrar tarjetas para reordenar dentro de la misma categoria o entre categorias. Indicador visual (linea azul-verde) muestra si el drop sera antes o despues del target.
@@ -567,7 +573,7 @@ Invoke-RestMethod -Uri http://127.0.0.1:8765/health -TimeoutSec 5 | ConvertTo-Js
 
 ## Estado Actual
 
-Version activa: `1.0.46`. El flujo completo de FlowRegister esta operativo y probado en Samsung SM-G955U con Spotify. La unica parte que requiere intervencion humana es el challenge de imagenes de reCAPTCHA cuando aparece (raro segun la sesion); en esos casos la cuenta queda en `review` para completarla manualmente.
+Version activa: `1.0.47`. El flujo completo de FlowRegister esta operativo y probado en Samsung SM-G955U con Spotify. La unica parte que requiere intervencion humana es el challenge de imagenes de reCAPTCHA cuando aparece (raro segun la sesion); en esos casos la cuenta queda en `review` para completarla manualmente.
 
 Para publicar una nueva version, ejecutar `CrearActualizacion.bat` que:
 1. Compila `launcher.py` con PyInstaller.
