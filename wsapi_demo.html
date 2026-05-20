@@ -1623,6 +1623,72 @@
       max-width: 100%;
     }
 
+    .device-order-number {
+      flex: 0 0 auto;
+      display: inline-grid;
+      place-items: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 5px;
+      background: rgba(79, 141, 255, 0.18);
+      color: #cfe1ff;
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      border: 1px solid rgba(79, 141, 255, 0.32);
+    }
+
+    .device-card.is-selected .device-order-number {
+      background: rgba(79, 141, 255, 0.32);
+      color: #f0f6ff;
+    }
+
+    /* Indicadores de zona de drop entre tarjetas */
+    .device-card.is-drop-before,
+    .device-card.is-drop-after {
+      position: relative;
+    }
+
+    .device-card.is-drop-before::before,
+    .device-card.is-drop-after::after {
+      content: '';
+      position: absolute;
+      background: linear-gradient(90deg, #4f8dff, #22b86f);
+      border-radius: 4px;
+      box-shadow: 0 0 12px rgba(79, 141, 255, 0.65);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .device-list:not(.is-list) .device-card.is-drop-before::before {
+      left: -4px;
+      top: 6%;
+      width: 3px;
+      height: 88%;
+    }
+
+    .device-list:not(.is-list) .device-card.is-drop-after::after {
+      right: -4px;
+      top: 6%;
+      width: 3px;
+      height: 88%;
+    }
+
+    .device-list.is-list .device-card.is-drop-before::before {
+      left: 6%;
+      top: -3px;
+      width: 88%;
+      height: 3px;
+    }
+
+    .device-list.is-list .device-card.is-drop-after::after {
+      left: 6%;
+      bottom: -3px;
+      width: 88%;
+      height: 3px;
+    }
+
     .device-country-flag {
       width: 18px;
       height: 13px;
@@ -2873,6 +2939,15 @@
                         <path d="M4 6h5l2 2h9v10a2 2 0 0 1-2 2H4Z" />
                       </svg>
                     </button>
+                    <button class="device-select-btn js-device-reorder-btn" type="button" title="Reordenar numeros segun orden actual" aria-label="Reordenar numeros de dispositivos">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 6h13" />
+                        <path d="M3 12h9" />
+                        <path d="M3 18h6" />
+                        <path d="m17 9 3 3-3 3" />
+                        <path d="M14 12h6" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -3092,7 +3167,7 @@
       flowMenuDeviceId: '',
       flowMenuDeviceIds: [],
       deviceViewMode: localStorage.getItem('flowdashboard.deviceViewMode') || 'grid',
-      deviceGroups: { groups: [], assignments: {} },
+      deviceGroups: { groups: [], assignments: {}, order: [] },
       draggingDeviceIds: [],
       deviceActionIds: new Set(),
       activeAccountTab: 'total',
@@ -3140,6 +3215,7 @@
       refreshCountryBtn: document.querySelector('.js-refresh-country-btn'),
       deviceViewToggleBtn: document.querySelector('.js-device-view-toggle-btn'),
       deviceCategoryAddBtn: document.querySelector('.js-device-category-add-btn'),
+      deviceReorderBtn: document.querySelector('.js-device-reorder-btn'),
       deviceCategoryPopover: document.querySelector('.js-device-category-popover'),
       deviceCategoryInput: document.querySelector('.js-device-category-input'),
       deviceCategoryCancel: document.querySelector('.js-device-category-cancel'),
@@ -4826,11 +4902,22 @@
     function normalizeDeviceGroups(groupsData) {
       const groups = Array.isArray(groupsData?.groups) ? groupsData.groups : [];
       const assignments = groupsData?.assignments && typeof groupsData.assignments === 'object' ? groupsData.assignments : {};
+      const orderRaw = Array.isArray(groupsData?.order) ? groupsData.order : [];
+      const order = [];
+      const seen = new Set();
+      orderRaw.forEach(entry => {
+        const id = String(entry || '').trim();
+        if (id && !seen.has(id)) {
+          seen.add(id);
+          order.push(id);
+        }
+      });
       return {
         groups: groups
           .map(group => ({ id: String(group.id || '').trim(), name: String(group.name || '').trim() }))
           .filter(group => group.id && group.name),
-        assignments: { ...assignments }
+        assignments: { ...assignments },
+        order
       };
     }
 
@@ -4842,15 +4929,78 @@
       return state.deviceGroups.assignments[deviceId] || '';
     }
 
+    // Ordena un array de dispositivos segun state.deviceGroups.order.
+    // Los que no aparezcan en order van al final, en el orden original.
+    function applyManualOrder(devices) {
+      const order = state.deviceGroups.order || [];
+      if (!order.length) return devices;
+      const indexById = new Map();
+      order.forEach((id, i) => indexById.set(id, i));
+      const orderedKnown = [];
+      const unknown = [];
+      devices.forEach(device => {
+        const id = getDeviceId(device);
+        if (indexById.has(id)) orderedKnown.push(device);
+        else unknown.push(device);
+      });
+      orderedKnown.sort((a, b) => indexById.get(getDeviceId(a)) - indexById.get(getDeviceId(b)));
+      return [...orderedKnown, ...unknown];
+    }
+
+    // Reordena state.deviceGroups.order moviendo `movingIds` justo antes de `targetId`.
+    // Si targetId es null/'', los mueve al final del bloque que comparten categoria.
+    function reorderDevices(movingIds, targetId, position) {
+      const movingSet = new Set(movingIds);
+      // Construye orden actual completo: primero el order guardado, luego los faltantes
+      // en el orden actual del DOM (state.devices).
+      const allIds = [];
+      const seen = new Set();
+      (state.deviceGroups.order || []).forEach(id => {
+        if (id && !seen.has(id)) { seen.add(id); allIds.push(id); }
+      });
+      state.devices.forEach(device => {
+        const id = getDeviceId(device);
+        if (id && !seen.has(id)) { seen.add(id); allIds.push(id); }
+      });
+      // Quita los que se estan moviendo
+      const remaining = allIds.filter(id => !movingSet.has(id));
+      // Inserta los movidos antes/despues del target
+      let insertIdx = remaining.length;
+      if (targetId) {
+        const idx = remaining.indexOf(targetId);
+        if (idx >= 0) insertIdx = position === 'after' ? idx + 1 : idx;
+      }
+      remaining.splice(insertIdx, 0, ...movingIds.filter(id => !movingSet.has(id) || true));
+      state.deviceGroups.order = remaining;
+    }
+
+    // Renumera el orden manual usando el orden actual de state.devices,
+    // respetando primero las categorias y luego dentro de cada una el orden actual.
+    async function resetDeviceOrder() {
+      const sections = state.deviceGroups.groups.length > 0
+        ? buildDeviceCategorySections()
+        : [{ devices: state.devices }];
+      const fresh = [];
+      sections.forEach(section => {
+        section.devices.forEach(device => fresh.push(getDeviceId(device)));
+      });
+      state.deviceGroups.order = fresh;
+      await saveDeviceGroups();
+      renderDevices();
+      appendOutput('Orden reiniciado', `Se reordenaron ${fresh.length} dispositivo${fresh.length === 1 ? '' : 's'} segun categoria y orden actual.`);
+    }
+
     function buildDeviceCategorySections() {
       const sections = [];
       const groupedIds = new Set();
+      // Aplica el orden manual antes de filtrar por categoria
+      const orderedDevices = applyManualOrder(state.devices);
       state.deviceGroups.groups.forEach((group, index) => {
-        const devices = state.devices.filter(device => getDeviceCategoryId(getDeviceId(device)) === group.id);
+        const devices = orderedDevices.filter(device => getDeviceCategoryId(getDeviceId(device)) === group.id);
         devices.forEach(device => groupedIds.add(getDeviceId(device)));
         sections.push({ id: group.id, name: group.name, color: categoryColor(index), devices });
       });
-      const ungrouped = state.devices.filter(device => !groupedIds.has(getDeviceId(device)));
+      const ungrouped = orderedDevices.filter(device => !groupedIds.has(getDeviceId(device)));
       sections.push({ id: '', name: 'Sin categoria', color: '#607086', devices: ungrouped });
       return sections;
     }
@@ -4943,7 +5093,20 @@
           deviceIds = raw ? [raw] : [];
         }
         deviceIds = Array.isArray(deviceIds) ? deviceIds.filter(Boolean) : [];
-        if (deviceIds.length) assignDevicesToCategory(deviceIds, section.id);
+        if (!deviceIds.length) return;
+        // Cambia categoria y manda los movidos al final del orden
+        deviceIds.forEach(deviceId => {
+          if (section.id) state.deviceGroups.assignments[deviceId] = section.id;
+          else delete state.deviceGroups.assignments[deviceId];
+        });
+        // Reordena: pone los movidos al final de la lista
+        const remaining = (state.deviceGroups.order || []).filter(o => !deviceIds.includes(o));
+        state.deviceGroups.order = [...remaining, ...deviceIds];
+        saveDeviceGroups().then(() => renderDevices());
+        const categoryName = section.id
+          ? state.deviceGroups.groups.find(g => g.id === section.id)?.name || 'categoria'
+          : 'Sin categoria';
+        appendOutput('Dispositivos organizados', `${deviceIds.length} movido${deviceIds.length === 1 ? '' : 's'} a ${categoryName}.`);
       });
       header.append(title, actions);
       wrapper.append(header, dropzone);
@@ -4986,7 +5149,17 @@
         }
       });
 
-      state.devices.forEach((device, index) => {
+      // Construye la lista global ordenada (todas las secciones concatenadas en orden visual)
+      // para asignar el numero correlativo y para iterar respetando el orden.
+      const orderedDevicesList = hasCategories
+        ? sections.flatMap(section => section.devices)
+        : applyManualOrder(state.devices);
+      const visualNumberById = new Map();
+      orderedDevicesList.forEach((device, i) => {
+        visualNumberById.set(getDeviceId(device), i + 1);
+      });
+
+      orderedDevicesList.forEach((device, index) => {
         const id = getDeviceId(device);
         const targetDropzone = dropzones.get(getDeviceCategoryId(id)) || dropzones.get('');
         const card = document.createElement('div');
@@ -5005,7 +5178,7 @@
         const agent = getAgentForDevice(device);
         const agentReady = isFlowAgentReady(agent);
         const isLoginRunning = isDeviceLoginRunning(id);
-        
+
         const isCreating = state.creatingDevices.has(id);
 
         card.tabIndex = 0;
@@ -5098,6 +5271,12 @@
         });
         nameRow.className = 'device-name';
         nameLine.className = 'device-name-line';
+        // Numerito visual del orden global (1, 2, 3, ...)
+        const orderNum = document.createElement('span');
+        orderNum.className = 'device-order-number';
+        orderNum.textContent = String(visualNumberById.get(id) || (index + 1));
+        orderNum.setAttribute('aria-label', `Posicion ${visualNumberById.get(id) || (index + 1)}`);
+        nameLine.append(orderNum);
         const flagUrl = countryFlagUrl(device.countryCode);
         if (flagUrl) {
           const flag = document.createElement('img');
@@ -5223,7 +5402,51 @@
         card.addEventListener('dragend', () => {
           state.draggingDeviceIds = [];
           card.classList.remove('is-dragging');
-          els.deviceList.querySelectorAll('.is-drag-over').forEach(item => item.classList.remove('is-drag-over'));
+          els.deviceList.querySelectorAll('.is-drag-over, .is-drop-before, .is-drop-after').forEach(item => {
+            item.classList.remove('is-drag-over', 'is-drop-before', 'is-drop-after');
+          });
+        });
+        // Drop entre tarjetas: reordena dentro o entre categorias.
+        card.addEventListener('dragover', event => {
+          if (!state.draggingDeviceIds.length) return;
+          if (state.draggingDeviceIds.includes(id)) return;
+          event.preventDefault();
+          event.stopPropagation();
+          const rect = card.getBoundingClientRect();
+          const isList = state.deviceViewMode === 'list';
+          const before = isList
+            ? (event.clientY - rect.top) < rect.height / 2
+            : (event.clientX - rect.left) < rect.width / 2;
+          card.classList.toggle('is-drop-before', before);
+          card.classList.toggle('is-drop-after', !before);
+        });
+        card.addEventListener('dragleave', () => {
+          card.classList.remove('is-drop-before', 'is-drop-after');
+        });
+        card.addEventListener('drop', event => {
+          if (!state.draggingDeviceIds.length) return;
+          event.preventDefault();
+          event.stopPropagation();
+          const before = card.classList.contains('is-drop-before');
+          card.classList.remove('is-drop-before', 'is-drop-after');
+          const raw = event.dataTransfer.getData('application/json') || event.dataTransfer.getData('text/plain');
+          let movingIds = [];
+          try { movingIds = JSON.parse(raw); } catch (_) { movingIds = raw ? [raw] : []; }
+          movingIds = Array.isArray(movingIds) ? movingIds.filter(Boolean) : [];
+          if (!movingIds.length || movingIds.includes(id)) return;
+          // Si el target esta en una categoria distinta, mover los IDs a esa categoria primero.
+          const targetCat = getDeviceCategoryId(id);
+          const movingFromOther = movingIds.some(m => getDeviceCategoryId(m) !== targetCat);
+          // Reordena en el state
+          reorderDevices(movingIds, id, before ? 'before' : 'after');
+          // Aplica cambio de categoria si toca y guarda
+          if (movingFromOther) {
+            movingIds.forEach(m => {
+              if (targetCat) state.deviceGroups.assignments[m] = targetCat;
+              else delete state.deviceGroups.assignments[m];
+            });
+          }
+          saveDeviceGroups().then(() => renderDevices());
         });
         (targetDropzone || els.deviceList).appendChild(card);
       });
@@ -6613,6 +6836,9 @@
     els.refreshCountryBtn.addEventListener('click', () => refreshDeviceCountries(true, false));
     els.deviceViewToggleBtn.addEventListener('click', toggleDeviceViewMode);
     els.deviceCategoryAddBtn.addEventListener('click', openDeviceCategoryPopover);
+    if (els.deviceReorderBtn) {
+      els.deviceReorderBtn.addEventListener('click', resetDeviceOrder);
+    }
     els.deviceCategoryCancel.addEventListener('click', closeDeviceCategoryPopover);
     els.deviceCategorySave.addEventListener('click', saveNewDeviceCategory);
     els.deviceCategoryInput.addEventListener('keydown', event => {

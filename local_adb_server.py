@@ -700,7 +700,7 @@ def save_device_names(names):
 
 def normalize_device_groups(data):
     if not isinstance(data, dict):
-        return {"groups": [], "assignments": {}}
+        return {"groups": [], "assignments": {}, "order": []}
     groups = []
     seen = set()
     for item in data.get("groups", []):
@@ -721,12 +721,24 @@ def normalize_device_groups(data):
             group_id = str(group_id or "").strip()
             if serial and group_id in valid_ids:
                 assignments[serial] = group_id
-    return {"groups": groups, "assignments": assignments}
+    # Orden manual: lista de deviceIds en el orden que el usuario eligio.
+    # No filtramos por dispositivos conectados, asi mantenemos el orden cuando
+    # un dispositivo se desconecta y reconecta.
+    order = []
+    seen_order = set()
+    raw_order = data.get("order", [])
+    if isinstance(raw_order, list):
+        for entry in raw_order:
+            entry = str(entry or "").strip()
+            if entry and entry not in seen_order:
+                seen_order.add(entry)
+                order.append(entry)
+    return {"groups": groups, "assignments": assignments, "order": order}
 
 
 def load_device_groups():
     if not DEVICE_GROUPS_FILE.exists():
-        return {"groups": [], "assignments": {}}
+        return {"groups": [], "assignments": {}, "order": []}
     try:
         with DEVICE_GROUPS_FILE.open("r", encoding="utf-8") as fh:
             return normalize_device_groups(json.load(fh))

@@ -1,10 +1,10 @@
 # FlowDashboard Project Context
 
-Ultima actualizacion: 2026-05-19 (1.0.45 - FlowRegister completo: limpieza visual, picker DOB, genero, nombre, captcha CapSolver)
+Ultima actualizacion: 2026-05-20 (1.0.46 - Drag & drop entre dispositivos, numero visual, boton reordenar)
 
 Este archivo es la memoria viva del proyecto. Cualquier persona o IA que vaya a modificar esta carpeta debe leer primero `AGENTS.md` y despues este archivo.
 
-Estado actual documentado: version `1.0.45` con flujo FlowRegister completo (limpieza visual del clon, picker de fecha, genero/nombre random, integracion CapSolver para captcha).
+Estado actual documentado: version `1.0.46` con flujo FlowRegister completo + drag & drop manual entre dispositivos con orden persistente y numerito visual.
 
 ## Resumen Ejecutivo
 
@@ -22,21 +22,21 @@ Arquitectura actual: `socket-first hybrid`.
 Version actual del proyecto:
 
 ```text
-APP_VERSION = 1.0.45
+APP_VERSION = 1.0.46
 ```
 
 Archivos relacionados:
 
 - `app_meta.py`: define `APP_NAME` y `APP_VERSION`.
 - `update.json`: manifest publico que el updater consulta.
-- `release_packages/FlowDashboard-1.0.45.zip`: paquete de actualizacion mas reciente (generado por `CrearActualizacion.bat`).
-- `dist/FlowDashboard.exe`: EXE compilado de la version `1.0.45`.
+- `release_packages/FlowDashboard-1.0.46.zip`: paquete de actualizacion mas reciente (generado por `CrearActualizacion.bat`).
+- `dist/FlowDashboard.exe`: EXE compilado de la version `1.0.46`.
 
 `update.json` actual debe apuntar a:
 
 ```text
-version: 1.0.45
-package_url: https://github.com/ingestebandaza/FlowDashboard/releases/download/v1.0.45/FlowDashboard-1.0.45.zip
+version: 1.0.46
+package_url: https://github.com/ingestebandaza/FlowDashboard/releases/download/v1.0.46/FlowDashboard-1.0.46.zip
 sha256: <calculado por CrearActualizacion.bat al empaquetar>
 ```
 
@@ -537,6 +537,15 @@ Invoke-RestMethod -Uri http://127.0.0.1:8765/health -TimeoutSec 5 | ConvertTo-Js
 
 ## Changelog reciente
 
+### 1.0.46 (2026-05-20)
+
+- **Drag & drop entre dispositivos**: arrastrar tarjetas para reordenar dentro de la misma categoria o entre categorias. Indicador visual (linea azul-verde) muestra si el drop sera antes o despues del target.
+- **Orden persistente**: nuevo campo `order` en `device_groups.json`, lista de deviceIds en orden manual. Persiste al desconectar/reconectar.
+- **Numerito visual**: cada tarjeta muestra su posicion global (1, 2, 3, ...) arriba a la izquierda, calculada desde el orden actual de las secciones.
+- **Boton Reordenar** (`js-device-reorder-btn`) en el toolbar `Vista`: renumera respetando primero categorias y luego el orden actual de cada seccion. Util cuando los numeros quedan dispersos entre categorias.
+- Backend: `normalize_device_groups` y `load_device_groups` ahora incluyen `order: []`.
+- Frontend: `applyManualOrder`, `reorderDevices`, `resetDeviceOrder` en `wsapi_demo.html`. `buildDeviceCategorySections` aplica el orden manual antes de filtrar por categoria.
+
 ### 1.0.45 (2026-05-19)
 
 - **FlowRegister flujo completo de Spotify**: limpieza visual del clon (cache + datos + permiso Storage), apertura, Sign up, email, password, fecha de nacimiento aleatoria mayor de edad, genero (Female/Male), nombre real random segun genero, Create account.
@@ -558,7 +567,7 @@ Invoke-RestMethod -Uri http://127.0.0.1:8765/health -TimeoutSec 5 | ConvertTo-Js
 
 ## Estado Actual
 
-Version activa: `1.0.45`. El flujo completo de FlowRegister esta operativo y probado en Samsung SM-G955U con Spotify. La unica parte que requiere intervencion humana es el challenge de imagenes de reCAPTCHA cuando aparece (raro segun la sesion); en esos casos la cuenta queda en `review` para completarla manualmente.
+Version activa: `1.0.46`. El flujo completo de FlowRegister esta operativo y probado en Samsung SM-G955U con Spotify. La unica parte que requiere intervencion humana es el challenge de imagenes de reCAPTCHA cuando aparece (raro segun la sesion); en esos casos la cuenta queda en `review` para completarla manualmente.
 
 Para publicar una nueva version, ejecutar `CrearActualizacion.bat` que:
 1. Compila `launcher.py` con PyInstaller.
