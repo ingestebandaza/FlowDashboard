@@ -1647,6 +1647,85 @@
       color: #f0f6ff;
     }
 
+    /* ===== MODO REORDENAMIENTO ===== */
+    .device-list.is-reorder-mode .device-card {
+      cursor: default;
+      border-color: rgba(79, 141, 255, 0.28);
+    }
+
+    .device-list.is-reorder-mode .device-card:hover {
+      border-color: rgba(79, 141, 255, 0.55);
+      background: linear-gradient(145deg, rgba(28, 44, 78, 0.98), rgba(14, 24, 46, 0.98));
+    }
+
+    /* Handle de arrastre — oculto por defecto, visible en modo reordenamiento */
+    .device-reorder-handle {
+      display: none;
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      z-index: 4;
+      width: 22px;
+      height: 22px;
+      place-items: center;
+      border-radius: 6px;
+      background: rgba(79, 141, 255, 0.18);
+      border: 1px solid rgba(79, 141, 255, 0.3);
+      color: #7aa8ff;
+      cursor: grab;
+      transition: background 0.14s, color 0.14s;
+    }
+
+    .device-reorder-handle svg {
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+    }
+
+    .device-reorder-handle:hover {
+      background: rgba(79, 141, 255, 0.34);
+      color: #c0d8ff;
+    }
+
+    .device-reorder-handle:active {
+      cursor: grabbing;
+    }
+
+    .device-list.is-reorder-mode .device-reorder-handle {
+      display: inline-grid;
+    }
+
+    /* En modo reordenamiento, bloquea clicks en el resto de la tarjeta */
+    .device-list.is-reorder-mode .device-card > *:not(.device-reorder-handle) {
+      pointer-events: none;
+    }
+
+    /* Boton reordenar activo */
+    .device-select-btn.is-reorder-active {
+      background: rgba(34, 184, 111, 0.22);
+      border-color: rgba(34, 184, 111, 0.55);
+      color: #9ef0c1;
+    }
+
+    .device-select-btn.is-reorder-active:hover {
+      background: rgba(34, 184, 111, 0.34);
+    }
+
+    /* Ghost de SortableJS en modo reordenamiento */
+    .device-list.is-reorder-mode .device-card.sortable-ghost {
+      opacity: 0.35;
+      border-color: rgba(79, 141, 255, 0.6);
+      background: rgba(79, 141, 255, 0.1);
+    }
+
+    .device-list.is-reorder-mode .device-card.sortable-chosen {
+      box-shadow: 0 8px 28px rgba(79, 141, 255, 0.35);
+      border-color: rgba(79, 141, 255, 0.8);
+    }
+
     /* Indicadores de zona de drop entre tarjetas */
     .device-card.is-drop-before,
     .device-card.is-drop-after {
@@ -3392,6 +3471,7 @@
       deviceViewMode: localStorage.getItem('flowdashboard.deviceViewMode') || 'grid',
       deviceGroups: { groups: [], assignments: {}, order: [] },
       draggingDeviceIds: [],
+      reorderMode: false,
       deviceActionIds: new Set(),
       activeAccountTab: 'total',
       accountTraceFilter: 'all',
@@ -5423,8 +5503,7 @@
       return { wrapper, dropzone };
     }
 
-    // ===== SORTABLEJS EN DROPZONES =====
-    // Instancias activas de Sortable para las dropzones de categorias.
+    // ===== SORTABLEJS EN MODO REORDENAMIENTO =====
     const _sortableInstances = [];
 
     function initSortableDropzones() {
@@ -5433,56 +5512,72 @@
       _sortableInstances.length = 0;
 
       if (typeof Sortable === 'undefined') return;
+      if (!state.reorderMode) return; // Solo activo en modo reordenamiento
 
-      // Crea una instancia Sortable por cada dropzone (incluida la de "Sin categoria")
       const dropzones = els.deviceList.querySelectorAll('.device-category-dropzone');
-      const allDropzones = dropzones.length
-        ? [...dropzones]
-        : [els.deviceList]; // sin categorias: toda la lista es la zona
+      const allDropzones = dropzones.length ? [...dropzones] : [els.deviceList];
 
       allDropzones.forEach(zone => {
-        const catId = zone.dataset.categoryId ?? '';
         const sortable = Sortable.create(zone, {
-          group: 'devices',           // mismo grupo = se puede mover entre zonas
-          handle: '.device-card',     // toda la tarjeta es el handle
+          group: 'devices',
+          handle: '.device-reorder-handle',  // solo el handle activa el drag
           draggable: '.device-card',
-          animation: 120,
-          ghostClass: 'is-dragging',
-          chosenClass: 'is-selected-drag',
+          animation: 130,
+          ghostClass: 'sortable-ghost',
+          chosenClass: 'sortable-chosen',
           scroll: true,
           scrollSensitivity: 80,
-          scrollSpeed: 16,
-          multiDrag: true,            // requiere plugin MultiDrag
-          selectedClass: 'is-selected',
-          onStart: evt => {
-            // Sincroniza draggingDeviceIds con los seleccionados de Sortable
-            const selected = [...zone.querySelectorAll('.device-card.is-selected')]
-              .map(c => c.dataset.deviceId).filter(Boolean);
-            state.draggingDeviceIds = selected.length ? selected : [evt.item.dataset.deviceId];
-          },
-          onEnd: evt => {
-            state.draggingDeviceIds = [];
-            // Reconstruye el orden desde el DOM actual de todas las dropzones
+          scrollSpeed: 18,
+          onEnd: () => {
+            // Reconstruye el orden desde el DOM
             const newOrder = [];
             const allZones = els.deviceList.querySelectorAll('.device-category-dropzone');
             const zonesArr = allZones.length ? [...allZones] : [els.deviceList];
             zonesArr.forEach(z => {
               const zCatId = z.dataset.categoryId ?? '';
-              [...z.querySelectorAll('.device-card')].forEach(card => {
-                const did = card.dataset.deviceId;
+              [...z.querySelectorAll('.device-card')].forEach(c => {
+                const did = c.dataset.deviceId;
                 if (!did) return;
                 newOrder.push(did);
-                // Actualiza asignacion de categoria si cambio de zona
                 if (zCatId) state.deviceGroups.assignments[did] = zCatId;
                 else delete state.deviceGroups.assignments[did];
               });
             });
             state.deviceGroups.order = newOrder;
-            saveDeviceGroups().then(() => renderDevices());
+            // Actualiza numeritos en tiempo real sin re-renderizar todo
+            [...els.deviceList.querySelectorAll('.device-card')].forEach((c, i) => {
+              const numEl = c.querySelector('.device-order-number');
+              if (numEl) numEl.textContent = String(i + 1);
+            });
           }
         });
         _sortableInstances.push(sortable);
       });
+    }
+
+    function toggleReorderMode() {
+      state.reorderMode = !state.reorderMode;
+      els.deviceList.classList.toggle('is-reorder-mode', state.reorderMode);
+
+      // Actualiza el boton
+      if (els.deviceReorderBtn) {
+        els.deviceReorderBtn.classList.toggle('is-reorder-active', state.reorderMode);
+        els.deviceReorderBtn.title = state.reorderMode ? 'Listo — guardar orden' : 'Reordenar dispositivos';
+        els.deviceReorderBtn.setAttribute('aria-label', state.reorderMode ? 'Guardar orden' : 'Reordenar dispositivos');
+      }
+
+      if (state.reorderMode) {
+        // Activa SortableJS con handles
+        initSortableDropzones();
+      } else {
+        // Desactiva SortableJS y guarda el orden
+        _sortableInstances.forEach(s => s.destroy());
+        _sortableInstances.length = 0;
+        saveDeviceGroups().then(() => {
+          renderDevices();
+          appendOutput('Orden guardado', `${state.deviceGroups.order.length} dispositivo${state.deviceGroups.order.length === 1 ? '' : 's'} reordenados.`);
+        });
+      }
     }
 
     function renderDevices() {
@@ -5557,8 +5652,17 @@
         card.setAttribute('role', 'button');
         card.setAttribute('aria-label', `Seleccionar ${getDeviceName(device, index)}`);
         card.dataset.deviceId = id;
-        card.draggable = true;
+        card.draggable = !state.reorderMode; // solo draggable nativo cuando NO es modo reordenamiento
         card.className = `device-card${isMultiSelected ? ' is-selected' : ''}${isLoginRunning ? ' is-login-running' : ''}${isCreating ? ' is-creating' : ''}`;
+
+        // Handle de reordenamiento (visible solo en modo reordenamiento)
+        const reorderHandle = document.createElement('span');
+        reorderHandle.className = 'device-reorder-handle';
+        reorderHandle.setAttribute('aria-label', 'Arrastrar para reordenar');
+        reorderHandle.setAttribute('title', 'Arrastrar para reordenar');
+        reorderHandle.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h2"/><path d="M9 12h2"/><path d="M9 19h2"/><path d="M13 5h2"/><path d="M13 12h2"/><path d="M13 19h2"/></svg>';
+        reorderHandle.addEventListener('pointerdown', e => e.stopPropagation());
+        card.appendChild(reorderHandle);
         stopBtn.type = 'button';
         stopBtn.className = 'device-action-btn device-stop-btn';
         stopBtn.setAttribute('aria-label', `Detener FlowLogin de ${getDeviceName(device, index)}`);
@@ -5822,7 +5926,9 @@
 
       updateTargetLabel();
       updateFlowAgentControls();
-      initSortableDropzones();
+      // Aplica clase de modo reordenamiento y activa SortableJS si corresponde
+      els.deviceList.classList.toggle('is-reorder-mode', state.reorderMode);
+      if (state.reorderMode) initSortableDropzones();
     }
 
     function stopLoginStatusPolling() {
@@ -7130,6 +7236,13 @@
 
     function handleConnectSuccess(deviceList) {
       state.devices = deviceList;
+      // Desactiva modo reordenamiento al reconectar
+      if (state.reorderMode) {
+        state.reorderMode = false;
+        _sortableInstances.forEach(s => s.destroy());
+        _sortableInstances.length = 0;
+        if (els.deviceReorderBtn) els.deviceReorderBtn.classList.remove('is-reorder-active');
+      }
       setStatus(true, `Conectado a ${wsapi.CONNECT_IP}`);
       els.connectBtn.setAttribute('aria-label', 'Reconectar');
       els.connectBtn.setAttribute('title', 'Reconectar');
@@ -7207,7 +7320,7 @@
     els.deviceViewToggleBtn.addEventListener('click', toggleDeviceViewMode);
     els.deviceCategoryAddBtn.addEventListener('click', openDeviceCategoryPopover);
     if (els.deviceReorderBtn) {
-      els.deviceReorderBtn.addEventListener('click', openReorderModal);
+      els.deviceReorderBtn.addEventListener('click', toggleReorderMode);
     }
     if (els.reorderModalClose)  els.reorderModalClose.addEventListener('click', () => closeReorderModal(true));
     if (els.reorderModalCancel) els.reorderModalCancel.addEventListener('click', () => closeReorderModal(true));
