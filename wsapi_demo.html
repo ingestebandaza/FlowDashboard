@@ -337,6 +337,206 @@
       height: 24px;
     }
 
+    /* ===== PANELES DE MENU IZQUIERDO ESTILO CATEGORY-BTN ===== */
+    /* Cada panel del menu izquierdo tiene el mismo look que las category-btn */
+    .left-menu-panel {
+      --menu-color: #4f8dff;
+      position: relative;
+      border: 1px solid var(--menu-color);
+      border-radius: 18px;
+      background:
+        linear-gradient(145deg, rgba(16, 21, 31, 0.97), rgba(10, 15, 24, 0.98)),
+        radial-gradient(circle at top left, color-mix(in srgb, var(--menu-color) 16%, transparent), transparent 68%);
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--menu-color) 18%, transparent),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      overflow: hidden;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    /* Punto luminoso arriba derecha */
+    .left-menu-panel::after {
+      content: '';
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--menu-color);
+      opacity: 0.55;
+      box-shadow: 0 0 10px var(--menu-color);
+      pointer-events: none;
+      z-index: 2;
+      transition: opacity 0.16s, transform 0.16s, box-shadow 0.16s;
+    }
+
+    .left-menu-panel.is-selected::after,
+    .left-menu-panel:hover::after {
+      opacity: 1;
+      transform: scale(1.35);
+      box-shadow: 0 0 16px var(--menu-color);
+    }
+
+    .left-menu-panel.is-selected {
+      border-color: var(--menu-color);
+      background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--menu-color) 30%, transparent), transparent 72%),
+        linear-gradient(145deg, rgba(20, 31, 50, 0.98), rgba(12, 18, 29, 0.98));
+      box-shadow:
+        0 16px 28px rgba(0, 0, 0, 0.28),
+        0 0 24px color-mix(in srgb, var(--menu-color) 28%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--menu-color) 34%, transparent);
+    }
+
+    .left-menu-panel.is-running {
+      animation: flowCardRunning 1.8s ease-in-out infinite;
+    }
+
+    /* Header del panel menu izquierdo */
+    .left-menu-panel .panel-header {
+      background: transparent;
+      border-bottom-color: color-mix(in srgb, var(--menu-color) 22%, transparent);
+      padding: 11px 14px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .left-menu-panel .panel-header:hover {
+      background: color-mix(in srgb, var(--menu-color) 8%, transparent);
+    }
+
+    /* Icono del panel menu izquierdo */
+    .left-menu-panel .menu-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--menu-color) 22%, transparent);
+      border: 1px solid color-mix(in srgb, var(--menu-color) 38%, transparent);
+      color: var(--menu-color);
+      flex-shrink: 0;
+    }
+
+    .left-menu-panel .menu-icon svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.1;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Titulo del panel menu izquierdo */
+    .left-menu-panel .menu-title {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--menu-color);
+      letter-spacing: -0.01em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Boton Play integrado en el header */
+    .left-menu-panel .menu-play-btn {
+      display: inline-grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--menu-color) 45%, transparent);
+      background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--menu-color) 28%, transparent), transparent 68%),
+        rgba(11, 17, 28, 0.96);
+      color: #fff;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+
+    .left-menu-panel .menu-play-btn svg {
+      width: 11px;
+      height: 11px;
+      fill: currentColor;
+      stroke: none;
+    }
+
+    .left-menu-panel .menu-play-btn:hover:not(:disabled) {
+      transform: scale(1.1);
+      border-color: var(--menu-color);
+      box-shadow: 0 0 14px color-mix(in srgb, var(--menu-color) 35%, transparent);
+    }
+
+    .left-menu-panel .menu-play-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .left-menu-panel .menu-play-btn.is-running {
+      animation: flowPlayRunning 1.15s ease-in-out infinite;
+      border-color: rgba(244, 63, 94, 0.82);
+      background:
+        radial-gradient(circle at top left, rgba(244, 63, 94, 0.45), transparent 68%),
+        rgba(34, 12, 24, 0.96);
+      box-shadow: 0 0 20px rgba(244, 63, 94, 0.34);
+    }
+
+    .left-menu-panel .menu-play-btn.is-running svg {
+      animation: flowPlayIcon 0.9s ease-in-out infinite;
+    }
+
+    /* Contador en el header del panel menu */
+    .left-menu-panel .menu-counter {
+      min-width: 22px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--menu-color) 28%, transparent);
+      color: var(--menu-color);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    /* Paneles de flujos pendientes (sin contenido) — solo header */
+    .left-menu-panel.is-pending .panel-header {
+      opacity: 0.62;
+    }
+
+    /* Colapso de paneles menu izquierdo */
+    .left-menu-panel.is-collapsed .panel-body {
+      display: none;
+    }
+
+    .left-menu-panel .panel-header::before {
+      content: '';
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='%234f8dff' stroke-width='2.2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      transition: transform 0.22s ease;
+      order: 99;
+      margin-left: 2px;
+    }
+
+    .left-menu-panel.is-collapsed .panel-header::before {
+      transform: rotate(-90deg);
+    }
+
+    /* Paneles sin contenido no muestran el chevron */
+    .left-menu-panel.no-body .panel-header::before {
+      display: none;
+    }
+
     .device-panel .panel-title {
       gap: 7px;
       min-width: 0;
@@ -2943,49 +3143,22 @@
 
     <section class="grid">
       <div class="left-column">
-        <aside class="panel device-panel js-device-panel">
+        <aside class="panel left-menu-panel device-panel js-device-panel no-body" style="--menu-color: #818cf8;">
           <div class="panel-header">
-            <h2 class="panel-title">
-              <span class="icon device-panel-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
-                  <rect x="2" y="3" width="20" height="14" rx="2" />
-                  <path d="M8 21h8" />
-                  <path d="M12 17v4" />
-                  <circle cx="7" cy="10" r="1" fill="currentColor" stroke="none" />
-                  <circle cx="12" cy="10" r="1" fill="currentColor" stroke="none" />
-                  <circle cx="17" cy="10" r="1" fill="currentColor" stroke="none" />
-                </svg>
-              </span>
-              <span class="device-panel-title-text">Dispositivos</span>
-            </h2>
-            <div class="panel-header-actions device-header-actions">
-              <span class="counter js-device-count">0</span>
-              <button class="btn js-connect-btn" type="button" aria-label="Conectar" title="Conectar">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" />
-                </svg>
-              </button>
-              <button class="btn secondary js-refresh-btn" type="button" aria-label="Actualizar" title="Actualizar" disabled>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M20 12a8 8 0 1 1-2.34-5.66" />
-                  <path d="M20 4v6h-6" />
-                </svg>
-              </button>
-            </div>
+            <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><circle cx="7" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="10" r="1" fill="currentColor" stroke="none"/></svg></span>
+            <span class="menu-title">Dispositivos</span>
+            <span class="menu-counter js-device-count">0</span>
+            <button class="btn js-connect-btn" type="button" aria-label="Conectar" title="Conectar" style="width:28px;min-width:28px;min-height:28px;border-radius:9px;box-shadow:none;background:linear-gradient(135deg,#28d17c,#12b8c4);"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:15px;height:15px;"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></svg></button>
+            <button class="btn secondary js-refresh-btn" type="button" aria-label="Actualizar" title="Actualizar" disabled style="width:28px;min-width:28px;min-height:28px;border-radius:9px;box-shadow:none;background:linear-gradient(135deg,#2b6df6,#18b6d7);"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:15px;height:15px;"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v6h-6"/></svg></button>
           </div>
         </aside>
 
-        <section class="panel accounts-panel">
+        <section class="panel left-menu-panel accounts-panel" style="--menu-color: #14b8a6;">
           <div class="panel-header">
-            <h2 class="panel-title">
-              <span class="icon" aria-hidden="true" style="background: linear-gradient(135deg, rgba(20,184,166,0.28), rgba(20,184,166,0.12)); border-color: rgba(20,184,166,0.4);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" style="color:#14b8a6;">
-                  <path d="M5 19V9" /><path d="M12 19V5" /><path d="M19 19v-7" /><path d="M3 19h18" />
-                </svg>
-              </span>
-              <span style="background: linear-gradient(90deg, #14b8a6, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 800; letter-spacing: -0.01em;">FlowLogin</span>
-            </h2>
-            <span class="counter js-account-count" style="background: linear-gradient(135deg, rgba(20,184,166,0.5), rgba(34,211,238,0.35));">0</span>
+            <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19V9"/><path d="M12 19V5"/><path d="M19 19v-7"/><path d="M3 19h18"/></svg></span>
+            <span class="menu-title">FlowLogin</span>
+            <span class="menu-counter js-account-count">0</span>
+            <button class="menu-play-btn js-flow-run-btn" type="button" data-flow="FlowLogin" style="--flow-color:#14b8a6;" aria-label="Ejecutar FlowLogin" title="Ejecutar FlowLogin"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg></button>
           </div>
           <div class="panel-body">
             <div class="accounts-tabs" role="tablist" aria-label="Listas de cuentas">
@@ -3060,18 +3233,13 @@
           </div>
         </section>
 
-      <section class="panel create-accounts-panel" style="margin-top: 14px;">
-        <div class="panel-header">
-          <h2 class="panel-title">
-            <span class="icon" aria-hidden="true" style="background: linear-gradient(135deg, rgba(167,139,250,0.28), rgba(236,72,153,0.12)); border-color: rgba(167,139,250,0.4);">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" style="color:#a78bfa;">
-                <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /><path d="M19 8v6" /><path d="M22 11h-6" />
-              </svg>
-            </span>
-            <span style="background: linear-gradient(90deg, #a78bfa, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 800; letter-spacing: -0.01em;">FlowSpotifyCreate</span>
-          </h2>
-          <span class="counter js-create-account-count" style="background: linear-gradient(135deg, rgba(167,139,250,0.5), rgba(236,72,153,0.35));">0</span>
-        </div>
+      <section class="panel left-menu-panel create-accounts-panel" style="--menu-color: #a78bfa;">
+          <div class="panel-header">
+            <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg></span>
+            <span class="menu-title">FlowSpotifyCreate</span>
+            <span class="menu-counter js-create-account-count">0</span>
+            <button class="menu-play-btn js-start-creation-btn" type="button" aria-label="Iniciar Creacion" title="Iniciar Creacion" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg></button>
+          </div>
         <div class="panel-body">
           <div class="accounts-tabs" role="tablist" aria-label="Listas de crear cuentas">
             <button class="account-tab js-create-account-tab is-selected" type="button" role="tab" aria-label="Total" title="Total" aria-selected="true" aria-controls="createAccountsPanelTotal" data-create-tab="total" style="--tab-color: #4f8dff;">
@@ -3118,31 +3286,63 @@
         </div>
       </section>
 
-      <!-- Categorias de flujos en el menu izquierdo -->
-      <section class="panel left-categories-panel">
-        <div class="panel-body" style="padding: 12px 10px 10px;">
-          <div class="category-grid" aria-label="Opciones" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
-            <button class="category-btn js-category-btn is-selected" type="button" aria-pressed="true" data-flow="FlowLogin" style="--action-color: #14b8a6; min-height: 72px;"><span class="category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19V9" /><path d="M12 19V5" /><path d="M19 19v-7" /><path d="M3 19h18" /></svg></span><span class="category-label">FlowLogin</span></button>
-            <button class="category-btn js-category-btn" type="button" aria-pressed="false" data-flow="FlowTrack" style="--action-color: #22b86f; min-height: 72px;"><span class="category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12 4 20" /><path d="M12 12l8-8" /><circle cx="12" cy="12" r="3" /><path d="M7 17c3 3 7 3 10 0" /></svg></span><span class="category-label">FlowTrack</span></button>
-            <button class="category-btn js-category-btn" type="button" aria-pressed="false" data-flow="FlowCache" style="--action-color: #f59e0b; min-height: 72px;"><span class="category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="5" rx="1.5" /><rect x="4" y="14" width="16" height="5" rx="1.5" /><path d="M8 10v4" /><path d="M16 10v4" /></svg></span><span class="category-label">FlowCache</span></button>
-            <button class="category-btn js-category-btn" type="button" aria-pressed="false" data-flow="FlowCast" style="--action-color: #a78bfa; min-height: 72px;"><span class="category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0" /><path d="M12 18v3" /><path d="M8 21h8" /></svg></span><span class="category-label">FlowCast</span></button>
-            <button class="category-btn js-category-btn" type="button" aria-pressed="false" data-flow="FlowApple" style="--action-color: #fa2d75; min-height: 72px;"><span class="category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="4" /><path d="M14 8v7.2a2.8 2.8 0 1 1-1.7-2.6" /><path d="M14 8h4" /></svg></span><span class="category-label">FlowApple</span></button>
-            <button class="category-btn js-category-btn" type="button" aria-pressed="false" data-flow="Flowamazon" style="--action-color: #ff9900; min-height: 72px;"><span class="category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" /><path d="M8 15c2.5 2 5.5 2 8 0" /></svg></span><span class="category-label">Flowamazon</span></button>
-            <button class="category-btn js-category-btn" type="button" aria-pressed="false" data-flow="FlowGram" style="--action-color: #ec4899; min-height: 72px;"><span class="category-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5" /><circle cx="12" cy="12" r="3.5" /><circle cx="16.8" cy="7.2" r="0.8" /></svg></span><span class="category-label">FlowGram</span></button>
-            <button class="category-btn js-category-btn" type="button" aria-pressed="false" data-flow="FlowTikTok" style="--action-color: #00f2ea; min-height: 72px;"><span class="category-icon logo-fill" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15.5 4c.35 2.5 1.8 4.1 4.5 4.4v3.2c-1.8 0-3.3-.5-4.5-1.4v5.3A5.5 5.5 0 1 1 10 10v3.3a2.2 2.2 0 1 0 2.2 2.2V4h3.3Z" /></svg></span><span class="category-label">FlowTikTok</span></button>
+      <!-- Flujos pendientes como paneles del menu izquierdo -->
+        <section class="panel left-menu-panel is-pending no-body" style="--menu-color: #22b86f;">
+          <div class="panel-header">
+            <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12 4 20"/><path d="M12 12l8-8"/><circle cx="12" cy="12" r="3"/><path d="M7 17c3 3 7 3 10 0"/></svg></span>
+            <span class="menu-title">FlowTrack</span>
+            <span class="menu-counter" style="font-size:0.62rem;opacity:0.6;">Pronto</span>
+            <button class="menu-play-btn js-flow-run-btn" type="button" data-flow="FlowTrack" style="--flow-color:#22b86f;" aria-label="FlowTrack no disponible" title="FlowTrack pronto" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg></button>
           </div>
-          <div class="flow-run-grid" aria-label="Ejecutar flujo" style="grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 6px;">
-            <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="FlowLogin" style="--flow-color: #14b8a6;" aria-label="Ejecutar FlowLogin" title="Ejecutar FlowLogin"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg></button>
-            <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="FlowTrack" style="--flow-color: #22b86f;" aria-label="FlowTrack no disponible" title="FlowTrack pronto" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg></button>
-            <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="FlowCache" style="--flow-color: #f59e0b;" aria-label="FlowCache no disponible" title="FlowCache pronto" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg></button>
-            <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="FlowCast" style="--flow-color: #a78bfa;" aria-label="FlowCast no disponible" title="FlowCast pronto" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg></button>
-            <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="FlowApple" style="--flow-color: #fa2d75;" aria-label="FlowApple no disponible" title="FlowApple pronto" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg></button>
-            <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="Flowamazon" style="--flow-color: #ff9900;" aria-label="Flowamazon no disponible" title="Flowamazon pronto" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg></button>
-            <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="FlowGram" style="--flow-color: #ec4899;" aria-label="FlowGram no disponible" title="FlowGram pronto" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg></button>
-            <button class="flow-run-btn js-flow-run-btn" type="button" data-flow="FlowTikTok" style="--flow-color: #00f2ea;" aria-label="FlowTikTok no disponible" title="FlowTikTok pronto" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg></button>
+        </section>
+        <section class="panel left-menu-panel is-pending no-body" style="--menu-color: #f59e0b;">
+          <div class="panel-header">
+            <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="5" rx="1.5"/><rect x="4" y="14" width="16" height="5" rx="1.5"/><path d="M8 10v4"/><path d="M16 10v4"/></svg></span>
+            <span class="menu-title">FlowCache</span>
+            <span class="menu-counter" style="font-size:0.62rem;opacity:0.6;">Pronto</span>
+            <button class="menu-play-btn js-flow-run-btn" type="button" data-flow="FlowCache" style="--flow-color:#f59e0b;" aria-label="FlowCache no disponible" title="FlowCache pronto" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg></button>
           </div>
-        </div>
-      </section>
+        </section>
+        <section class="panel left-menu-panel is-pending no-body" style="--menu-color: #a78bfa;">
+          <div class="panel-header">
+            <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M8 21h8"/></svg></span>
+            <span class="menu-title">FlowCast</span>
+            <span class="menu-counter" style="font-size:0.62rem;opacity:0.6;">Pronto</span>
+            <button class="menu-play-btn js-flow-run-btn" type="button" data-flow="FlowCast" style="--flow-color:#a78bfa;" aria-label="FlowCast no disponible" title="FlowCast pronto" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg></button>
+          </div>
+        </section>
+        <section class="panel left-menu-panel is-pending no-body" style="--menu-color: #fa2d75;">
+          <div class="panel-header">
+            <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="4"/><path d="M14 8v7.2a2.8 2.8 0 1 1-1.7-2.6"/><path d="M14 8h4"/></svg></span>
+            <span class="menu-title">FlowApple</span>
+            <span class="menu-counter" style="font-size:0.62rem;opacity:0.6;">Pronto</span>
+            <button class="menu-play-btn js-flow-run-btn" type="button" data-flow="FlowApple" style="--flow-color:#fa2d75;" aria-label="FlowApple no disponible" title="FlowApple pronto" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg></button>
+          </div>
+        </section>
+        <section class="panel left-menu-panel is-pending no-body" style="--menu-color: #ff9900;">
+          <div class="panel-header">
+            <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M8 15c2.5 2 5.5 2 8 0"/></svg></span>
+            <span class="menu-title">FlowAmazon</span>
+            <span class="menu-counter" style="font-size:0.62rem;opacity:0.6;">Pronto</span>
+            <button class="menu-play-btn js-flow-run-btn" type="button" data-flow="Flowamazon" style="--flow-color:#ff9900;" aria-label="FlowAmazon no disponible" title="FlowAmazon pronto" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg></button>
+          </div>
+        </section>
+        <section class="panel left-menu-panel is-pending no-body" style="--menu-color: #ec4899;">
+          <div class="panel-header">
+            <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="16.8" cy="7.2" r="0.8"/></svg></span>
+            <span class="menu-title">FlowGram</span>
+            <span class="menu-counter" style="font-size:0.62rem;opacity:0.6;">Pronto</span>
+            <button class="menu-play-btn js-flow-run-btn" type="button" data-flow="FlowGram" style="--flow-color:#ec4899;" aria-label="FlowGram no disponible" title="FlowGram pronto" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg></button>
+          </div>
+        </section>
+        <section class="panel left-menu-panel is-pending no-body" style="--menu-color: #00f2ea;">
+          <div class="panel-header">
+            <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" style="fill:currentColor;stroke:none;"><path d="M15.5 4c.35 2.5 1.8 4.1 4.5 4.4v3.2c-1.8 0-3.3-.5-4.5-1.4v5.3A5.5 5.5 0 1 1 10 10v3.3a2.2 2.2 0 1 0 2.2 2.2V4h3.3Z"/></svg></span>
+            <span class="menu-title">FlowTikTok</span>
+            <span class="menu-counter" style="font-size:0.62rem;opacity:0.6;">Pronto</span>
+            <button class="menu-play-btn js-flow-run-btn" type="button" data-flow="FlowTikTok" style="--flow-color:#00f2ea;" aria-label="FlowTikTok no disponible" title="FlowTikTok pronto" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg></button>
+          </div>
+        </section>
       </div>
 
       <div class="right-column">
