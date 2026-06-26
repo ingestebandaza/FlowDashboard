@@ -103,3 +103,9 @@ Herramientas/*.exe
 FlowDashboard.exe
 *.err
 *.out
+
+# Herramienta del agente (config local)
+.abacusai/
+
+# Repo git embebido (se conserva en disco como repo independiente, no como gitlink)
+flow_agent_monolito/
