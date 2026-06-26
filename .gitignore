@@ -109,3 +109,4 @@ FlowDashboard.exe
 
 # Repo git embebido (se conserva en disco como repo independiente, no como gitlink)
 flow_agent_monolito/
+launcher_log*.txt

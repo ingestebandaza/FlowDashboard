@@ -370,6 +370,8 @@ AGENT_CONNECTIONS_LOCK = threading.Lock()
 AGENT_RESPONSE_CACHE = {}
 AGENT_RESPONSE_CACHE_LOCK = threading.Lock()
 FLOWAGENT_AUTO_RECONNECT_ENABLED = True
+AUTO_SCAN_ON_START_ENABLED = os.getenv("FLOWDASHBOARD_DISABLE_AUTO_SCAN", "").strip().lower() not in ("1", "true", "yes")
+AUTO_SCAN_ON_START_DELAY = 3.0
 FLOWAGENT_AUTO_RECONNECT_INTERVAL = 6.0
 FLOWAGENT_AUTO_RECONNECT_INITIAL_DELAY = 8.0
 FLOWAGENT_AUTO_RECONNECT_LAUNCH_COOLDOWN = 30.0
@@ -9284,6 +9286,7 @@ def serve_forever():
     server = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"ADB dashboard local listo en http://{HOST}:{PORT}")
     print(f"ADB: {ADB or 'no encontrado'}")
+    auto_scan_on_start()
     server.serve_forever()
 
 
@@ -9371,6 +9374,30 @@ def start_network_scan(ranges, port=5555, timeout=250, concurrency=48, connect_a
     t = threading.Thread(target=scan_network_worker, args=(ips, port, timeout, concurrency, connect_adb), daemon=True)
     t.start()
     return True
+
+def auto_scan_on_start():
+    if not AUTO_SCAN_ON_START_ENABLED:
+        print("[auto-scan] Desactivado por configuracion (FLOWDASHBOARD_DISABLE_AUTO_SCAN).")
+        return
+
+    def worker():
+        try:
+            time.sleep(AUTO_SCAN_ON_START_DELAY)
+            try:
+                reconnect_known_devices()
+            except Exception as exc:
+                print(f"[auto-scan] reconnect_known_devices fallo: {exc}")
+            subnets = get_local_subnets()
+            if not subnets:
+                print("[auto-scan] No se detectaron subredes locales; se omite el escaneo automatico.")
+                return
+            print(f"[auto-scan] Escaneo automatico de arranque en subredes: {', '.join(subnets)}")
+            start_network_scan(subnets, port=5555, timeout=250, concurrency=48, connect_adb=True)
+        except Exception as exc:
+            print(f"[auto-scan] Error en escaneo automatico de arranque: {exc}")
+
+    threading.Thread(target=worker, daemon=True).start()
+
 
 def reconnect_known_devices():
     inv = load_device_inventory()
