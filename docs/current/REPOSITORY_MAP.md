@@ -1,12 +1,12 @@
 # Repository Map
 
 STATUS: CURRENT
-Last verified against code: 2026-06-24
-Last verified against runtime: 2026-06-24
+Last verified against code: 2026-06-27
+Last verified against runtime: 2026-06-27
 Canonical replacement: N/A
 Owner: FlowDashboard
 
-Date: 2026-06-24
+Date: 2026-06-27
 
 This map classifies the workspace by current role. It does not delete or move
 runtime files; legacy candidates are listed in `archive/LEGACY_INDEX.md`.
@@ -47,8 +47,8 @@ runtime files; legacy candidates are listed in `archive/LEGACY_INDEX.md`.
 | `abrir_electron.ps1` | current launcher | Actual startup logic. |
 | `version.json` | current metadata | Single source of truth for product version/name/channel. |
 | `app_meta.py` | current metadata | Synchronized to `2.0.0` by `scripts/release/sync-version.ps1`. |
-| `update.json` | legacy updater manifest | Historical Python updater manifest. Phase 9 does not mutate or use it. |
-| `h264_canary_config.json` | current config | Read by the launcher for H.264 canary/frame_meta settings. |
+| `archive/legacy-updater/update.json` | legacy updater manifest | Historical Python updater manifest, moved to archive. Phase 9 does not mutate or use it. |
+| `h264_canary_config.json` | optional local config | Read by the launcher when present for H.264 canary/frame_meta settings. Device-specific (`frameMetaSerials`), gitignored and not version-controlled; the launcher works without it. |
 
 ## Current Documentation
 
@@ -102,11 +102,11 @@ into public docs.
 
 | Path | Status | Notes |
 |---|---|---|
-| `wsapi_demo.html` | legacy dashboard | Keep for historical reference only; product is Electron. |
-| `wsapi.js` | legacy helper | Legacy dashboard helper; no new features. |
+| `archive/legacy-dashboard/wsapi_demo.html` | legacy dashboard | Moved to archive; keep for historical reference only; product is Electron. |
+| `archive/legacy-dashboard/wsapi.js` | legacy helper | Moved to archive; legacy dashboard helper; no new features. |
 | `FlowDashboard.exe` | unverified legacy package | Existing binary in root; exact runtime role not verified. |
-| `launcher.py`, `launcher.spec`, `Crearexe.bat` | legacy packaging | Old Python/PyInstaller path. |
-| `CrearActualizacion.bat`, `archive/legacy-updater/updater.py` | legacy updater | Superseded by Electron UpdateManager and GitHub Releases. |
+| `archive/legacy-launchers/launcher.py`, root `launcher.spec`, `archive/legacy-launchers/Crearexe.bat` | legacy packaging | Old Python/PyInstaller path; `launcher.py` and `Crearexe.bat` moved to archive, `launcher.spec` still at root. |
+| `archive/legacy-launchers/CrearActualizacion.bat`, `archive/legacy-updater/updater.py` | legacy updater | Moved to archive. Superseded by Electron UpdateManager and GitHub Releases. |
 | `abrir_dashboard*`, `INICIAR_FLOWDASHBOARD*` | legacy launchers | Official launcher is `abrir_electron.bat`. |
 | `PASOS_*`, `LISTO_*`, `SOLUCION_*`, `PRUEBA_*`, `RESUMEN_*`, `INSTRUCCIONES_*` | historical notes | Use only as history, not as source of truth. |
 | `hotfix*`, `spike*`, `dump*`, `window_dump*` | experiments/debug artifacts | Keep out of current architecture decisions. |

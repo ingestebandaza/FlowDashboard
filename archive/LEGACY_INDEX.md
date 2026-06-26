@@ -1,17 +1,19 @@
 # Legacy Index
 
 STATUS: CURRENT
-Last verified against code: 2026-06-24
-Last verified against runtime: 2026-06-24
+Last verified against code: 2026-06-27
+Last verified against runtime: 2026-06-27
 Canonical replacement: N/A
 Owner: FlowDashboard
 
-Date: 2026-06-24
+Date: 2026-06-27
 
 This index classifies files that should not be treated as current architecture
-unless a fresh runtime verification proves otherwise. Phase 1 marks these files
-as legacy/candidate legacy without mass-moving them, because moving runtime
-paths in a dirty workspace can break the dashboard.
+unless a fresh runtime verification proves otherwise. The original Phase 1 only
+marked candidates; a later cleanup actually moved several of them into the
+`archive/` buckets. The path column below reflects the real current location as
+re-verified on 2026-06-27 (some files now live under `archive/`, others are
+still at the repository root).
 
 Before moving any listed file:
 
@@ -38,8 +40,8 @@ Forbidden as current source:
 
 | Path | Classification | Consumers found in Phase 1 | Handling |
 |---|---|---|---|
-| `wsapi_demo.html` | legacy dashboard | no exact live text references found outside snapshots/reports | Do not add features; keep only for history/migration reference. |
-| `wsapi.js` | legacy helper | no exact live text references found outside snapshots/reports | Do not use for new Electron work. |
+| `archive/legacy-dashboard/wsapi_demo.html` | legacy dashboard | no exact live text references found outside snapshots/reports | Moved to archive on cleanup. Do not add features; keep only for history/migration reference. |
+| `archive/legacy-dashboard/wsapi.js` | legacy helper | no exact live text references found outside snapshots/reports | Moved to archive on cleanup. Do not use for new Electron work. |
 | `diagnostico_streaming.html` | diagnostic legacy | candidate diagnostic page | Keep out of product runtime. |
 | `license_admin.html` | admin/legacy-adjacent | not classified as product runtime in Phase 1 | Verify before moving; may become admin work in later phases. |
 
@@ -52,19 +54,19 @@ Forbidden as current source:
 | `abrir_dashboard_pro.bat` | legacy launcher | candidate legacy | Do not use as official launcher. |
 | `INICIAR_FLOWDASHBOARD.bat` | legacy launcher | no exact live text references found outside snapshots/reports | Do not use as official launcher. |
 | `INICIAR_FLOWDASHBOARD.ps1` | legacy launcher | no exact live text references found outside snapshots/reports | Do not use as official launcher. |
-| `launcher.py` | legacy Python launcher | no exact live text references found outside snapshots/reports | Old packaging path. |
-| `launcher.spec` | legacy PyInstaller spec | no exact live text references found outside snapshots/reports | Old packaging path. |
-| `Crearexe.bat` | legacy packager | no exact live text references found outside snapshots/reports | Old packaging path. |
+| `launcher.py` | legacy Python launcher | moved to `archive/legacy-launchers/launcher.py` | Old packaging path. |
+| `launcher.spec` | legacy PyInstaller spec | still at repository root | Old packaging path. |
+| `Crearexe.bat` | legacy packager | moved to `archive/legacy-launchers/Crearexe.bat` | Old packaging path. |
 | `FlowDashboard.exe` | unverified legacy binary | no exact live text references found outside snapshots/reports | Do not treat as current product until verified. |
 
 ## Legacy Updater
 
 | Path | Classification | Consumers found in Phase 1 | Handling |
 |---|---|---|---|
-| `CrearActualizacion.bat` | legacy updater | no exact live text references found outside snapshots/reports | Superseded by future commercial release pipeline. |
+| `archive/legacy-launchers/CrearActualizacion.bat` | legacy updater | moved to archive on cleanup | Superseded by future commercial release pipeline. |
 | `archive/legacy-updater/updater.py` | archived legacy updater | Python `/update-check` now returns `legacy_updater_disabled`; Electron uses `electron-updater`. | Historical only; do not restore as active updater. |
-| `update_config.json` | updater config | candidate local config | Do not expose secrets if any are added later. |
-| `update_config.example.json` | updater example | candidate historical example | Keep only if later updater uses it. |
+| `archive/legacy-updater/update_config.json` | updater config | moved to archive; dev data root keeps its own copy | Do not expose secrets if any are added later. |
+| `archive/legacy-updater/update_config.example.json` | updater example | moved to archive on cleanup | Keep only if later updater uses it. |
 
 ## SQL And Supabase Artifacts
 

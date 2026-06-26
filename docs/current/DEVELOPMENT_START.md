@@ -1,12 +1,12 @@
 # Development Start
 
 STATUS: CURRENT
-Last verified against code: 2026-06-24
-Last verified against runtime: 2026-06-24
+Last verified against code: 2026-06-27
+Last verified against runtime: 2026-06-27
 Canonical replacement: N/A
 Owner: FlowDashboard
 
-Date: 2026-06-24
+Date: 2026-06-27
 
 Use this checklist before modifying FlowDashboard.
 
@@ -47,6 +47,11 @@ its logs go to `scratch\flowdashboard-data-runtime\logs\runtime`.
 
 Important: the launcher intentionally restarts Python-bound ports `8765-8768`.
 Do not run it during a live device test unless that restart is acceptable.
+
+Because that restart drops Wi-Fi/TCP device connections, the Python backend
+auto-recovers them on startup: a few seconds after it is ready it reconnects the
+known inventory devices and scans the auto-detected local subnets. Set
+`FLOWDASHBOARD_DISABLE_AUTO_SCAN=1` to turn this off.
 
 ## Data Root
 

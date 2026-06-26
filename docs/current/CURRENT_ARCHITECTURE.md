@@ -1,12 +1,12 @@
 # Current Architecture
 
 STATUS: CURRENT
-Last verified against code: 2026-06-24
-Last verified against runtime: 2026-06-24
+Last verified against code: 2026-06-27
+Last verified against runtime: 2026-06-27
 Canonical replacement: N/A
 Owner: FlowDashboard
 
-Date: 2026-06-24
+Date: 2026-06-27
 
 This document summarizes the runtime architecture verified for the current
 FlowDashboard workspace. The authoritative detailed source remains
@@ -34,6 +34,13 @@ startup:
   or Electron RuntimeManager owns Python startup;
 - does not install APKs, launch FlowAgent or configure accessibility during
   normal startup.
+
+On startup the Python backend (`local_adb_server.py`) also recovers device
+connectivity automatically, because restarting the ADB server drops TCP/Wi-Fi
+connections. A few seconds after the server is ready, `auto_scan_on_start()`
+reconnects the known devices from the inventory and then scans the
+auto-detected local subnets (no hardcoded IPs, device counts or serials). This
+can be disabled with the environment variable `FLOWDASHBOARD_DISABLE_AUTO_SCAN`.
 
 ## Paths And Data Roots
 
