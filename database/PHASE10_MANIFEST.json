@@ -1,0 +1,86 @@
+{
+    "version": "1.0",
+    "phase": 10,
+    "migrations": [
+        {
+            "order": 1,
+            "file": "001_preflight_and_backup.sql",
+            "dependencies": [],
+            "expected": "Success. No rows returned"
+        },
+        {
+            "order": 2,
+            "file": "002_admin_profiles.sql",
+            "dependencies": [
+                "001_preflight_and_backup.sql"
+            ],
+            "expected": "Success. No rows returned"
+        },
+        {
+            "order": 3,
+            "file": "003_plans_and_features.sql",
+            "dependencies": [
+                "002_admin_profiles.sql"
+            ],
+            "expected": "Success. No rows returned"
+        },
+        {
+            "order": 4,
+            "file": "004_license_assignments.sql",
+            "dependencies": [
+                "003_plans_and_features.sql"
+            ],
+            "expected": "Success. No rows returned"
+        },
+        {
+            "order": 5,
+            "file": "005_installations.sql",
+            "dependencies": [
+                "004_license_assignments.sql"
+            ],
+            "expected": "Success. No rows returned"
+        },
+        {
+            "order": 6,
+            "file": "006_audit_events.sql",
+            "dependencies": [
+                "005_installations.sql"
+            ],
+            "expected": "Success. No rows returned"
+        },
+        {
+            "order": 7,
+            "file": "007_migrate_legacy.sql",
+            "dependencies": [
+                "006_audit_events.sql"
+            ],
+            "expected": "Success. No rows returned"
+        },
+        {
+            "order": 8,
+            "file": "008_validate_license_v2.sql",
+            "dependencies": [
+                "007_migrate_legacy.sql"
+            ],
+            "expected": "Success. No rows returned"
+        },
+        {
+            "order": 9,
+            "file": "009_rls_and_grants_cutover.sql",
+            "dependencies": [
+                "008_validate_license_v2.sql"
+            ],
+            "expected": "Success. No rows returned"
+        },
+        {
+            "order": 10,
+            "file": "010_legacy_access_lockdown.sql",
+            "dependencies": [
+                "009_rls_and_grants_cutover.sql"
+            ],
+            "expected": "Success. No rows returned"
+        }
+    ],
+    "risks": "Posible interrupcion si el cliente FlowDashboard viejo hace peticiones directas POST al REST despues del paso 009 (RLS cutover).",
+    "rollback": "Rollbacks individuales y reversibles provistos en la carpeta rollbacks"
+}

@@ -1,0 +1,70 @@
+================================================================================
+                    🔧 PASOS RÁPIDOS - LIMPIAR FUNCIONES
+================================================================================
+
+PROBLEMA:
+  ✗ Ves 2 funciones validate_flowdashboard_license
+  ✗ Error: function digest(text, unknown) does not exist
+
+SOLUCIÓN RÁPIDA:
+  Ejecutar supabase_license_rpc_LIMPIO.sql
+
+================================================================================
+                         PASOS (5 MINUTOS)
+================================================================================
+
+1. ABRE SUPABASE
+   https://supabase.com → Inicia sesión → Selecciona proyecto
+
+2. ABRE SQL EDITOR
+   Panel izquierdo → SQL Editor → New Query
+
+3. COPIA EL SCRIPT LIMPIO
+   Abre: supabase_license_rpc_LIMPIO.sql
+   Copia TODO el contenido
+
+4. PEGA EN SUPABASE
+   Pega en el SQL Editor
+
+5. EJECUTA
+   Haz clic en "Run" (o Ctrl+Enter)
+   Espera a que se complete
+
+6. VERIFICA
+   Panel izquierdo → Database → Functions
+   Deberías ver SOLO 1 función validate_flowdashboard_license
+
+7. RECARGA DASHBOARD
+   Recarga el navegador (F5)
+   Intenta iniciar sesión nuevamente
+
+================================================================================
+                         QUÉ HACE EL SCRIPT
+================================================================================
+
+✅ Verifica que pgcrypto está habilitada
+✅ Elimina las funciones duplicadas
+✅ Agrega columnas a las tablas
+✅ Crea la función correctamente
+✅ Configura permisos
+✅ Notifica a PostgREST
+
+================================================================================
+                         VERIFICACIÓN
+================================================================================
+
+Después de ejecutar:
+
+1. Ves SOLO 1 función validate_flowdashboard_license
+2. No hay errores en la consola
+3. pgcrypto está habilitada
+4. digest() funciona correctamente
+
+================================================================================
+                         RESULTADO
+================================================================================
+
+✅ ANTES: 2 funciones duplicadas + error digest()
+✅ DESPUÉS: 1 función correcta + validación funciona
+
+================================================================================

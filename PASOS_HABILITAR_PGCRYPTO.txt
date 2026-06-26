@@ -1,0 +1,86 @@
+================================================================================
+                    🔐 HABILITAR PGCRYPTO EN SUPABASE
+================================================================================
+
+PROBLEMA:
+  ✗ Error: function digest(text, unknown) does not exist
+  ✗ pgcrypto no está habilitada
+
+SOLUCIÓN:
+  Ejecutar 2 scripts en orden:
+  1. supabase_HABILITAR_PGCRYPTO.sql (habilita pgcrypto)
+  2. supabase_CREAR_FUNCION.sql (crea la función)
+
+================================================================================
+                         PASO 1: HABILITAR PGCRYPTO
+================================================================================
+
+ARCHIVO: supabase_HABILITAR_PGCRYPTO.sql
+
+PASOS:
+  1. Abre https://supabase.com
+  2. Selecciona tu proyecto
+  3. Panel izquierdo → SQL Editor → New Query
+  4. Copia supabase_HABILITAR_PGCRYPTO.sql
+  5. Pega en el editor
+  6. Haz clic en "Run"
+  7. Espera a que se complete
+
+VERIFICACIÓN:
+  Deberías ver 2 resultados:
+  1. Una fila con pgcrypto (extensión habilitada)
+  2. Un hash SHA256 (digest() funciona)
+
+================================================================================
+                         PASO 2: CREAR LA FUNCIÓN
+================================================================================
+
+ARCHIVO: supabase_CREAR_FUNCION.sql
+
+PASOS:
+  1. Abre https://supabase.com
+  2. Selecciona tu proyecto
+  3. Panel izquierdo → SQL Editor → New Query
+  4. Copia supabase_CREAR_FUNCION.sql
+  5. Pega en el editor
+  6. Haz clic en "Run"
+  7. Espera a que se complete
+
+VERIFICACIÓN:
+  Panel izquierdo → Database → Functions
+  Busca: validate_flowdashboard_license
+  Deberías ver: 1 función
+
+================================================================================
+                         PASO 3: RECARGA DASHBOARD
+================================================================================
+
+PASOS:
+  1. Recarga el navegador (F5)
+  2. Intenta iniciar sesión
+  3. Email: tu_email@example.com
+  4. Licencia: tu_clave_de_licencia
+  5. Haz clic en "Validar Licencia"
+
+RESULTADO ESPERADO:
+  ✅ Licencia válida
+  ✅ Dispositivo registrado
+  ✅ Acceso permitido
+
+================================================================================
+                         IMPORTANTE
+================================================================================
+
+⚠️ NO ejecutes ambos scripts al mismo tiempo
+⚠️ PRIMERO: supabase_HABILITAR_PGCRYPTO.sql
+⚠️ LUEGO: supabase_CREAR_FUNCION.sql
+⚠️ ESPERA a que cada uno se complete
+
+================================================================================
+                         RESULTADO FINAL
+================================================================================
+
+✅ ANTES: Error "function digest() does not exist"
+✅ DESPUÉS: pgcrypto habilitada + función creada + validación funciona
+
+================================================================================

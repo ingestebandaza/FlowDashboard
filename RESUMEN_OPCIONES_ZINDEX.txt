@@ -1,0 +1,203 @@
+================================================================================
+OPCIONES PARA ARREGLAR EL Z-INDEX DEL MODAL DE PERFORMANCE
+================================================================================
+
+PROBLEMA
+--------
+El modal aparece DETRÁS de los dispositivos, no encima.
+
+Estructura actual:
+  app-container
+  ├── titlebar
+  ├── main-layout
+  │   ├── sidebar
+  │   └── main-area (overflow-y: auto) ← CREA CONTEXTO DE APILAMIENTO
+  │       └── device-list (DISPOSITIVOS AQUÍ)
+  └── performance-panel-modal (z-index: 2001) ← MODAL AQUÍ
+
+El problema: main-area crea un "contexto de apilamiento" que hace que los
+dispositivos aparezcan encima del modal, sin importar el z-index.
+
+================================================================================
+OPCIONES DISPONIBLES
+================================================================================
+
+OPCIÓN 1: Aumentar z-index del main-area
+─────────────────────────────────────────
+Complejidad: ⭐ Muy Baja
+Éxito: 60%
+Cambios: 1 línea CSS
+
+.main-area {
+  z-index: 1;  /* AGREGAR ESTO */
+}
+
+✅ Muy simple
+❌ Podría afectar otros elementos
+❌ No es la solución más correcta
+
+================================================================================
+
+OPCIÓN 2: Mover Modal Fuera de app-container ⭐⭐ RECOMENDADO
+──────────────────────────────────────────────
+Complejidad: ⭐⭐ Media
+Éxito: 95%
+Cambios: Estructura HTML + JavaScript
+
+Mover el modal al nivel más alto del DOM, fuera de app-container.
+
+✅ Solución más correcta
+✅ Garantiza que esté encima
+✅ Funciona con cualquier z-index
+❌ Requiere cambiar estructura
+❌ Más código para mantener
+
+================================================================================
+
+OPCIÓN 3: Usar position: absolute en main-area
+───────────────────────────────────────────────
+Complejidad: ⭐ Baja
+Éxito: 50%
+Cambios: 2 líneas CSS
+
+.main-area {
+  position: relative;
+  z-index: auto;
+}
+
+✅ Simple
+❌ Podría afectar posicionamiento
+❌ Menos predecible
+
+================================================================================
+
+OPCIÓN 4: Mejorar Efectos Visuales del Modal
+─────────────────────────────────────────────
+Complejidad: ⭐ Baja
+Éxito: 30%
+Cambios: CSS
+
+Aumentar opacidad y blur del fondo del modal.
+
+✅ Mejora la experiencia visual
+❌ No resuelve el problema real
+❌ Solo es un parche visual
+
+================================================================================
+
+OPCIÓN 5: Usar transform para Crear Contexto
+──────────────────────────────────────────────
+Complejidad: ⭐⭐ Media
+Éxito: 40%
+Cambios: 2 líneas CSS
+
+.performance-panel-modal {
+  transform: translateZ(0);
+  will-change: z-index;
+}
+
+✅ Crea contexto de apilamiento explícito
+❌ Podría no funcionar en todos los navegadores
+❌ Más complejo
+
+================================================================================
+
+OPCIÓN 6: Ocultar Dispositivos Cuando Modal Está Abierto
+─────────────────────────────────────────────────────────
+Complejidad: ⭐⭐ Media
+Éxito: 100%
+Cambios: JavaScript
+
+Cuando el modal se abre, ocultar los dispositivos.
+
+✅ Funciona garantizado
+✅ Mejora la UX
+❌ Oculta los dispositivos (no es ideal)
+❌ Menos elegante
+
+================================================================================
+
+OPCIÓN 7: Usar pointer-events en main-area ⭐⭐ RECOMENDADO
+───────────────────────────────────────────
+Complejidad: ⭐⭐ Media
+Éxito: 100%
+Cambios: CSS + JavaScript
+
+Cuando el modal está abierto, desactivar eventos del mouse en main-area.
+
+.main-area.modal-active {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+✅ Funciona garantizado
+✅ Mejora la UX (claramente el modal está activo)
+✅ Elegante y profesional
+✅ Fácil de implementar
+
+================================================================================
+
+OPCIÓN 8: Usar CSS Grid para Reordenar
+───────────────────────────────────────
+Complejidad: ⭐⭐⭐ Alta
+Éxito: 70%
+Cambios: CSS significativo
+
+Usar CSS Grid en app-container para controlar el orden de apilamiento.
+
+✅ Solución muy limpia y moderna
+✅ No depende de z-index
+❌ Requiere cambiar estructura CSS
+❌ Más complejo
+
+================================================================================
+RECOMENDACIÓN
+================================================================================
+
+MEJOR OPCIÓN: OPCIÓN 2 + OPCIÓN 7
+
+1. Implementar OPCIÓN 2 (mover modal fuera de app-container)
+   → Resuelve el problema de raíz
+
+2. Implementar OPCIÓN 7 (pointer-events)
+   → Mejora la UX
+
+Resultado:
+✅ Modal siempre encima
+✅ Usuario ve claramente que modal está activo
+✅ No hay conflictos de z-index
+✅ Solución robusta y mantenible
+
+================================================================================
+ALTERNATIVAS RÁPIDAS
+================================================================================
+
+Si quieres una solución RÁPIDA (sin cambiar estructura):
+→ OPCIÓN 7 (pointer-events) + OPCIÓN 4 (efectos visuales)
+
+Si quieres la solución MÁS SIMPLE:
+→ OPCIÓN 1 (z-index en main-area)
+
+Si quieres la solución MÁS CORRECTA:
+→ OPCIÓN 2 (mover modal fuera)
+
+Si quieres la solución MÁS GARANTIZADA:
+→ OPCIÓN 6 (ocultar dispositivos)
+
+================================================================================
+¿CUÁL PREFIERES?
+================================================================================
+
+Dime cuál opción te gustaría que implemente:
+
+1. OPCIÓN 1 (z-index en main-area)
+2. OPCIÓN 2 (mover modal fuera) ← RECOMENDADO
+3. OPCIÓN 3 (position: absolute)
+4. OPCIÓN 4 (efectos visuales)
+5. OPCIÓN 5 (transform)
+6. OPCIÓN 6 (ocultar dispositivos)
+7. OPCIÓN 7 (pointer-events) ← RECOMENDADO
+8. OPCIÓN 8 (CSS Grid)
+9. COMBINACIÓN 2 + 7 ← MI RECOMENDACIÓN
+
+================================================================================

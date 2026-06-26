@@ -30,7 +30,10 @@ public class FlowAccessibilityService extends AccessibilityService {
     protected void onServiceConnected() {
         super.onServiceConnected();
         instance = this;
-        AgentSocketClient.get().start(this);
+        
+        DeviceIdentity.resolveAdbSerial(this, true);
+
+        AgentSocketClient.get().restart(this);
     }
 
     @Override
@@ -53,6 +56,8 @@ public class FlowAccessibilityService extends AccessibilityService {
     public void restartSocket() {
         AgentSocketClient.get().restart(this);
     }
+
+    private volatile ScreenCaptureThread captureThread;
 
     public JSONObject executeCommand(JSONObject command) {
         try {
@@ -105,6 +110,12 @@ public class FlowAccessibilityService extends AccessibilityService {
             if ("recents".equals(name)) {
                 return global(GLOBAL_ACTION_RECENTS, "recents");
             }
+            if ("capture_screen".equals(name) || "capture_screen_start".equals(name)) {
+                return startScreenCapture();
+            }
+            if ("capture_screen_stop".equals(name)) {
+                return stopScreenCapture();
+            }
             return fail("Comando no soportado: " + name);
         } catch (Exception exc) {
             try {
@@ -113,6 +124,39 @@ public class FlowAccessibilityService extends AccessibilityService {
                 return new JSONObject();
             }
         }
+    }
+
+    private JSONObject startScreenCapture() throws Exception {
+        if (captureThread != null && captureThread.isRunning()) {
+            return fail("Captura ya en progreso");
+        }
+        // Obtener MediaProjection guardado por MainActivity
+        android.media.projection.MediaProjection mp = MediaProjectionHolder.get();
+        if (mp == null) {
+            // No hay MediaProjection disponible - pedir a MainActivity que lo obtenga
+            // Lanzar MainActivity para que solicite el permiso
+            try {
+                android.content.Intent intent = new android.content.Intent(this, MainActivity.class);
+                intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.putExtra("request_capture", true);
+                startActivity(intent);
+                return fail("Solicitando permiso de captura. Acepta el dialogo en el telefono.");
+            } catch (Exception e) {
+                return fail("No hay MediaProjection disponible: " + e.getMessage());
+            }
+        }
+        captureThread = new ScreenCaptureThread(this);
+        captureThread.setMediaProjection(mp);
+        captureThread.start();
+        return ok().put("message", "Captura de pantalla iniciada");
+    }
+
+    private JSONObject stopScreenCapture() throws Exception {
+        if (captureThread == null || !captureThread.isRunning()) {
+            return fail("No hay captura en progreso");
+        }
+        captureThread.stopCapture();
+        return ok().put("message", "Captura de pantalla detenida");
     }
 
     private JSONObject status() throws Exception {

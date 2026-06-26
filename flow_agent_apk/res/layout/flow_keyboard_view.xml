@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/flow_keyboard_bg"
+    android:padding="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:id="@+id/flow_keyboard_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/flow_keyboard_name"
+            android:textColor="#E7EEFC"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/flow_keyboard_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/flow_keyboard_ready"
+            android:textColor="#36D08F"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="34dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:baselineAligned="false">
+        <Button android:id="@+id/flow_key_q" style="@style/FlowKeyboardKey" android:text="q" />
+        <Button android:id="@+id/flow_key_w" style="@style/FlowKeyboardKey" android:text="w" />
+        <Button android:id="@+id/flow_key_e" style="@style/FlowKeyboardKey" android:text="e" />
+        <Button android:id="@+id/flow_key_r" style="@style/FlowKeyboardKey" android:text="r" />
+        <Button android:id="@+id/flow_key_t" style="@style/FlowKeyboardKey" android:text="t" />
+        <Button android:id="@+id/flow_key_y" style="@style/FlowKeyboardKey" android:text="y" />
+        <Button android:id="@+id/flow_key_u" style="@style/FlowKeyboardKey" android:text="u" />
+        <Button android:id="@+id/flow_key_i" style="@style/FlowKeyboardKey" android:text="i" />
+        <Button android:id="@+id/flow_key_o" style="@style/FlowKeyboardKey" android:text="o" />
+        <Button android:id="@+id/flow_key_p" style="@style/FlowKeyboardKey" android:text="p" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="34dp"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:baselineAligned="false">
+        <Button android:id="@+id/flow_key_a" style="@style/FlowKeyboardKey" android:text="a" />
+        <Button android:id="@+id/flow_key_s" style="@style/FlowKeyboardKey" android:text="s" />
+        <Button android:id="@+id/flow_key_d" style="@style/FlowKeyboardKey" android:text="d" />
+        <Button android:id="@+id/flow_key_f" style="@style/FlowKeyboardKey" android:text="f" />
+        <Button android:id="@+id/flow_key_g" style="@style/FlowKeyboardKey" android:text="g" />
+        <Button android:id="@+id/flow_key_h" style="@style/FlowKeyboardKey" android:text="h" />
+        <Button android:id="@+id/flow_key_j" style="@style/FlowKeyboardKey" android:text="j" />
+        <Button android:id="@+id/flow_key_k" style="@style/FlowKeyboardKey" android:text="k" />
+        <Button android:id="@+id/flow_key_l" style="@style/FlowKeyboardKey" android:text="l" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="34dp"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingStart="26dp"
+        android:paddingEnd="4dp"
+        android:baselineAligned="false">
+        <Button android:id="@+id/flow_key_z" style="@style/FlowKeyboardKey" android:text="z" />
+        <Button android:id="@+id/flow_key_x" style="@style/FlowKeyboardKey" android:text="x" />
+        <Button android:id="@+id/flow_key_c" style="@style/FlowKeyboardKey" android:text="c" />
+        <Button android:id="@+id/flow_key_v" style="@style/FlowKeyboardKey" android:text="v" />
+        <Button android:id="@+id/flow_key_b" style="@style/FlowKeyboardKey" android:text="b" />
+        <Button android:id="@+id/flow_key_n" style="@style/FlowKeyboardKey" android:text="n" />
+        <Button android:id="@+id/flow_key_m" style="@style/FlowKeyboardKey" android:text="m" />
+        <Button
+            android:id="@+id/flow_key_backspace"
+            style="@style/FlowKeyboardKey"
+            android:layout_weight="1.3"
+            android:text="@string/flow_keyboard_backspace" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="38dp"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:baselineAligned="false">
+
+        <Button
+            android:id="@+id/flow_key_symbol"
+            style="@style/FlowKeyboardKey"
+            android:layout_weight="1.2"
+            android:text="#" />
+
+        <Button
+            android:id="@+id/flow_key_space"
+            style="@style/FlowKeyboardKey"
+            android:layout_weight="4"
+            android:text="@string/flow_keyboard_space" />
+
+        <Button
+            android:id="@+id/flow_key_enter"
+            style="@style/FlowKeyboardKeyPrimary"
+            android:layout_weight="1.4"
+            android:text="@string/flow_keyboard_done" />
+    </LinearLayout>
+</LinearLayout>

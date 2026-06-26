@@ -1,0 +1,99 @@
+================================================================================
+                    🔧 PASOS FINALES - SOLUCIÓN DEFINITIVA
+================================================================================
+
+ERROR ACTUAL:
+  ✗ function name "public.validate_flowdashboard_license" is not unique
+  ✗ Hay múltiples firmas (parámetros) de la función
+
+SOLUCIÓN:
+  Ejecutar 2 scripts en orden:
+  1. supabase_ELIMINAR_TODAS_FIRMAS.sql (elimina TODAS las firmas)
+  2. supabase_license_rpc_LIMPIO.sql (crea la correcta)
+
+================================================================================
+                         PASO 1: ELIMINAR TODAS LAS FIRMAS
+================================================================================
+
+ARCHIVO: supabase_ELIMINAR_TODAS_FIRMAS.sql
+
+PASOS:
+  1. Abre https://supabase.com
+  2. Selecciona tu proyecto
+  3. Panel izquierdo → SQL Editor → New Query
+  4. Copia supabase_ELIMINAR_TODAS_FIRMAS.sql
+  5. Pega en el editor
+  6. Haz clic en "Run"
+  7. Espera a que se complete
+
+VERIFICACIÓN:
+  Panel izquierdo → Database → Functions
+  Busca: validate_flowdashboard_license
+  Deberías ver: NADA (0 funciones)
+
+================================================================================
+                         PASO 2: CREAR LA FUNCIÓN CORRECTA
+================================================================================
+
+ARCHIVO: supabase_license_rpc_LIMPIO.sql
+
+PASOS:
+  1. Abre https://supabase.com
+  2. Selecciona tu proyecto
+  3. Panel izquierdo → SQL Editor → New Query
+  4. Copia supabase_license_rpc_LIMPIO.sql
+  5. Pega en el editor
+  6. Haz clic en "Run"
+  7. Espera a que se complete
+
+VERIFICACIÓN:
+  Panel izquierdo → Database → Functions
+  Busca: validate_flowdashboard_license
+  Deberías ver: 1 función (SOLO 1)
+
+================================================================================
+                         PASO 3: RECARGA DASHBOARD
+================================================================================
+
+PASOS:
+  1. Recarga el navegador (F5)
+  2. Intenta iniciar sesión
+  3. Email: tu_email@example.com
+  4. Licencia: tu_clave_de_licencia
+  5. Haz clic en "Validar Licencia"
+
+RESULTADO ESPERADO:
+  ✅ Licencia válida
+  ✅ Dispositivo registrado
+  ✅ Acceso permitido
+
+================================================================================
+                         IMPORTANTE
+================================================================================
+
+⚠️ NO ejecutes ambos scripts al mismo tiempo
+⚠️ PRIMERO: supabase_ELIMINAR_TODAS_FIRMAS.sql
+⚠️ LUEGO: supabase_license_rpc_LIMPIO.sql
+⚠️ ESPERA a que cada uno se complete
+
+================================================================================
+                         VERIFICACIÓN RÁPIDA
+================================================================================
+
+En Supabase SQL Editor, ejecuta:
+
+  SELECT proname, pronargs, proargtypes 
+  FROM pg_proc 
+  WHERE proname = 'validate_flowdashboard_license';
+
+DESPUÉS DE PASO 1: 0 filas (sin funciones)
+DESPUÉS DE PASO 2: 1 fila (SOLO 1 función)
+
+================================================================================
+                         RESULTADO FINAL
+================================================================================
+
+✅ ANTES: Múltiples firmas + error "is not unique"
+✅ DESPUÉS: 1 función correcta + validación funciona
+
+================================================================================

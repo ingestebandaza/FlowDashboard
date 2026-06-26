@@ -1,0 +1,1 @@
+Estos documentos son históricos/legacy. No usar como fuente principal de verdad. La fuente vigente es AGENTS.md + PROJECT_CONTEXT.md + TASKS_MONOLITO_PRO.md.

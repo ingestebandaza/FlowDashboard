@@ -1,0 +1,114 @@
+================================================================================
+                    ❌ ERROR DE SUPABASE - SOLUCIÓN
+================================================================================
+
+ERROR:
+  ✗ No se pudo validar con Supabase
+  ✗ HTTP Error 404: Not Found
+  ✗ function digest(text, unknown) does not exist
+
+CAUSA:
+  La función validate_flowdashboard_license() no está creada en Supabase
+
+SOLUCIÓN:
+  Ejecutar el archivo supabase_license_rpc.sql en Supabase SQL Editor
+
+================================================================================
+                         PASOS PARA RESOLVER
+================================================================================
+
+1. ACCEDER A SUPABASE
+   - Abre https://supabase.com
+   - Inicia sesión
+   - Selecciona tu proyecto
+
+2. ABRIR SQL EDITOR
+   - Panel izquierdo → SQL Editor
+   - Haz clic en "New Query"
+
+3. COPIAR EL SQL
+   - Abre: supabase_license_rpc.sql
+   - Copia TODO el contenido
+   - Pégalo en el SQL Editor
+
+4. EJECUTAR
+   - Haz clic en "Run" (o Ctrl+Enter)
+   - Espera a que se complete
+   - Deberías ver un mensaje de éxito
+
+5. VERIFICAR
+   - Panel izquierdo → Database → Functions
+   - Busca: validate_flowdashboard_license
+   - Deberías verla en la lista
+
+6. RECARGAR DASHBOARD
+   - Recarga el navegador (F5)
+   - Intenta iniciar sesión nuevamente
+   - Debería funcionar correctamente
+
+================================================================================
+                         QUÉ HACE EL SQL
+================================================================================
+
+1. Crea la extensión pgcrypto (necesaria para digest())
+2. Agrega columnas a las tablas de Supabase
+3. Crea la función validate_flowdashboard_license()
+4. Configura permisos para usuarios anónimos
+
+================================================================================
+                         VERIFICACIÓN
+================================================================================
+
+Después de ejecutar el SQL, verifica:
+
+1. La extensión pgcrypto existe
+2. La función validate_flowdashboard_license existe
+3. Las columnas se agregaron a las tablas
+4. Los permisos están configurados
+
+================================================================================
+                         PROBLEMAS COMUNES
+================================================================================
+
+PROBLEMA: "Permission denied"
+SOLUCIÓN: Usa una cuenta con permisos de propietario del proyecto
+
+PROBLEMA: "Extension pgcrypto already exists"
+SOLUCIÓN: Normal, el SQL usa "if not exists"
+
+PROBLEMA: "Function already exists"
+SOLUCIÓN: Normal, el SQL reemplaza la función antigua
+
+PROBLEMA: "Column already exists"
+SOLUCIÓN: Normal, el SQL usa "if not exists"
+
+================================================================================
+                         ARCHIVO NECESARIO
+================================================================================
+
+Archivo: supabase_license_rpc.sql
+Ubicación: c:\DASHBOARD\FlowDashboard\supabase_license_rpc.sql
+Tamaño: ~8 KB
+Contenido: SQL para crear función de validación de licencias
+
+================================================================================
+                         PRÓXIMOS PASOS
+================================================================================
+
+1. ✅ Ejecuta supabase_license_rpc.sql en Supabase
+2. ✅ Verifica que la función existe
+3. ✅ Recarga el dashboard
+4. ✅ Intenta iniciar sesión nuevamente
+5. ✅ La validación debería funcionar
+
+================================================================================
+                         ESTADO
+================================================================================
+
+❌ ANTES: Error de validación de licencias
+✅ DESPUÉS: Validación funciona correctamente
+
+Versión: 1.0.0
+Fecha: 2026-05-21
+
+================================================================================

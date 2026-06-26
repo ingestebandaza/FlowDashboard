@@ -1,5 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">FlowAgent</string>
+    <string name="app_name">FlowAgent PRO</string>
+    <string name="app_subtitle">Control remoto profesional</string>
     <string name="accessibility_description">FlowAgent permite automatizar este dispositivo desde tu dashboard local.</string>
-    <color name="icon_background">#07111F</color>
+    
+    <!-- Estados -->
+    <string name="status_connected">Conectado</string>
+    <string name="status_disconnected">Desconectado</string>
+    <string name="status_connecting">Conectando...</string>
+    
+    <!-- Botones -->
+    <string name="btn_enable_accessibility">Habilitar Accesibilidad</string>
+    <string name="btn_clear_logs">Limpiar Logs</string>
+    
+    <!-- Mensajes -->
+    <string name="msg_accessibility_enabled">✓ Accesibilidad habilitada</string>
+    <string name="msg_accessibility_disabled">✗ Accesibilidad deshabilitada</string>
+    <string name="msg_socket_connected">✓ Socket conectado</string>
+    <string name="msg_socket_disconnected">✗ Socket desconectado</string>
+    <string name="msg_capture_active">✓ Captura activa</string>
+    <string name="msg_capture_inactive">✗ Captura inactiva</string>
+    <string name="flow_keyboard_name">FlowKeyboard</string>
+    <string name="flow_keyboard_ready">Listo</string>
+    <string name="flow_keyboard_backspace">Borrar</string>
+    <string name="flow_keyboard_space">Espacio</string>
+    <string name="flow_keyboard_done">Done</string>
 </resources>

@@ -85,6 +85,10 @@ $Sources = @()
 $Sources += Get-ChildItem -Path (Join-Path $Root "src") -Recurse -Filter *.java | ForEach-Object { $_.FullName }
 $Sources += Get-ChildItem -Path $Gen -Recurse -Filter *.java | ForEach-Object { $_.FullName }
 
+# Nota: WebP compression esta disponible nativamente en Android 4.2.1+ via Bitmap.compress()
+# No se requiere dependencia externa adicional. El codigo usa Bitmap.CompressFormat.WEBP_LOSSY
+# que esta disponible en android.jar desde API 30+. Para APIs anteriores, fallback a PNG.
+
 Run-Javac $Javac (@("-encoding", "UTF-8", "-source", "11", "-target", "11", "-classpath", $LocalAndroidJar, "-d", $Classes) + $Sources)
 Run-Native $Jar @("cf", $ClassesJar, "-C", $Classes, ".")
 Run-Native $D8 @("--min-api", "26", "--classpath", $LocalAndroidJar, "--output", $Dex, $ClassesJar)

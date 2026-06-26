@@ -1,0 +1,65 @@
+FlowDashboard 2.0.0 - Third Party Notices
+STATUS: CURRENT
+Last verified against code: 2026-06-23
+
+This notice file documents third-party components intentionally staged for the
+FlowDashboard commercial package. It is an engineering inventory for release
+preparation; legal review must verify upstream license text before public
+distribution.
+
+Electron / Chromium / Node.js
+- Electron embeds Chromium and Node.js and is used as the desktop application
+  shell for FlowDashboard.
+- License family: MIT/BSD-style notices from the Electron, Chromium and Node.js
+  projects, plus transitive notices distributed with Electron.
+
+scrcpy
+- FlowDashboard distributes the Windows scrcpy 4.0 runtime from
+  scrcpy-win64-v4.0, including scrcpy.exe, scrcpy-server.jar, adb.exe and the
+  required native DLLs.
+- scrcpy is an open-source Android screen mirroring project. The packaged
+  runtime also includes Android platform-tools components, FFmpeg libraries,
+  SDL3 and libusb components.
+- Release packaging must preserve the applicable upstream license and notice
+  files for scrcpy and every native dependency shipped in the scrcpy bundle.
+
+Android Debug Bridge / Android platform-tools
+- adb.exe and AdbWinApi.dll/AdbWinUsbApi.dll are distributed as part of the
+  bundled Android platform-tools-compatible runtime used only by FlowDashboard.
+
+FFmpeg libraries
+- The scrcpy runtime includes avcodec, avformat, avutil and swresample DLLs.
+  Packaging must preserve the applicable FFmpeg license notices for the exact
+  build distributed with scrcpy.
+
+SDL3
+- The scrcpy runtime includes SDL3.dll. Packaging must preserve SDL3 license
+  notices for the exact binary distributed with scrcpy.
+
+libusb
+- The scrcpy runtime includes libusb-1.0.dll. Packaging must preserve libusb
+  license notices for the exact binary distributed with scrcpy.
+
+Python / PyInstaller
+- FlowDashboard.Backend.exe and FlowDashboard.MailHelper.exe are generated with
+  PyInstaller onedir packaging and embed the Python runtime plus Python package
+  dependencies required by the backend.
+- Release packaging must preserve Python, PyInstaller bootloader and bundled
+  Python package notices.
+
+.NET
+- FlowDashboard.Core.exe is published as a self-contained .NET runtime for
+  win-x64. Release packaging must preserve Microsoft .NET runtime notices and
+  third-party NuGet notices for libraries included in the publish output.
+
+MailKit / MimeKit
+- FlowDashboard mail validation uses MailKit and MimeKit from the C# backend.
+  Release packaging must preserve their upstream notices.
+
+Other distributed dependencies
+- Electron dependencies are declared in electron-app/package.json.
+- Python dependencies are declared in requirements.txt and the PyInstaller
+  specs under build_specs/.
+- C# dependencies are declared in FlowDashboard.Core/FlowDashboard.Core.csproj.
+- The Phase 7 RESOURCE_MANIFEST.json records the exact files, sizes and SHA-256
+  hashes staged for a candidate package.

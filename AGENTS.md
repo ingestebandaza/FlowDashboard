@@ -9,6 +9,17 @@ Estas reglas protegen el estilo visual de `wsapi_demo.html`. Cualquier cambio fu
 - Cada vez que se haga una modificacion funcional, visual o estructural, actualizar `PROJECT_CONTEXT.md` en la misma tarea.
 - Si otro agente de IA trabaja en esta carpeta, basta decirle: "lee AGENTS.md y PROJECT_CONTEXT.md antes de tocar nada".
 - No copiar cuentas, passwords ni datos sensibles completos desde `device_names.json` o `.flowlogin_payloads` dentro de la documentacion. Describir la estructura, no los secretos.
+- `DOCUMENTACION_TECNICA.md` es legacy/prohibido como fuente tecnica vigente. No leerlo, no basarse en el y no usarlo para corregir documentacion actual; solo puede mencionarse como archivo historico si aparece en inventarios.
+
+## FlowAgent Monolito (Etapa B - desde 2026-05-27)
+
+- **El FlowAgent ahora ejecuta scripts JavaScript internamente** usando el motor Rhino embebido de AutoJs6 v6.7.0. No requiere instalar AutoJs6 standalone aparte.
+- Path del fork: `flow_agent_monolito/` (clone shallow del tag v6.7.0). NO es para reemplazar a `flow_agent_apk/` directamente; convive como `flow_agent_apk` (legado 0.3.8 estable) + `flow_agent_monolito` (nuevo monolito).
+- Comandos socket nuevos del FlowAgent: `run_script`, `stop_script`, `ocr_detect`, `image_match_template`. Endpoints HTTP correspondientes en `local_adb_server.py`: `/flowagent/run-script`, `/flowagent/stop-script`, `/flowagent/ocr-detect`, `/flowagent/find-template`.
+- El monolito mantiene `applicationId=com.flowlogin.agent` y la misma firma del keystore (`flow_agent_apk/flowagent-debug.keystore`) para que `pm install -r` reemplace al 0.3.8 sin perder permisos.
+- Coexistencia con AutoJs6 standalone (Etapa A): NO. El monolito declara la misma `permission android.permission.PLUGIN`. Antes de instalar el monolito en un dispositivo que tenia AutoJs6 standalone, desinstalarlo: `adb uninstall org.autojs.autojs6`.
+- Etapa A queda como **fallback historico** para clientes con problemas de espacio (FlowAgent 0.3.8 + AutoJs6 standalone separados pesan menos que el monolito de 100MB).
+- Backup del APK 0.3.8 real: `flow_agent_apk/backup_0_3_8/flowagent-0.3.8-from-41.apk` (50KB). Para rollback inmediato si el monolito causa problemas en algun dispositivo.
 
 ## Validacion de Licencias (Importante)
 
@@ -74,9 +85,28 @@ Estas reglas protegen el estilo visual de `wsapi_demo.html`. Cualquier cambio fu
 ## Preferencias Generales
 
 - No volver a depender de Laixi. El dashboard debe usar `local_adb_server.py` + `wsapi.js` apuntando al servidor ADB local.
-- Para abrir el dashboard en Windows, usar `abrir_dashboard.bat`; este lanzador inicia `local_adb_server.py` si hace falta y abre `wsapi_demo.html`.
-- Al cargar `wsapi_demo.html`, el dashboard debe intentar conectarse automaticamente al servidor ADB local para mostrar dispositivos sin pulsar `Conectar`.
-- El dashboard debe intentar preparar FlowAgent automaticamente para dispositivos conectados por ADB que aun no esten en `Socket`, usando `install: "auto"` para abrir/reconectar sin reinstalar si el APK ya esta actualizado.
+- El producto final es el dashboard Electron. `wsapi_demo.html` queda como legado y no debe recibir funcionalidades nuevas salvo migracion o referencia puntual.
+- Para abrir el dashboard final en Windows, usar `abrir_electron.bat`; este lanzador solo inicia ADB, backend C#, servidor Python/socket y Electron.
+- Referencia tecnica vigente: `docs/master_technical_specification.md`. Si `PROJECT_CONTEXT.md` o notas antiguas contradicen ese documento, tratar la nota antigua como historica salvo nueva verificacion runtime. `DOCUMENTACION_TECNICA.md` no participa en esta jerarquia porque es legacy/prohibido.
+- Arquitectura operativa permanente:
+  - Perfil `control`:
+    - Estado actual vigente: video Grid/Focus usa scrcpy H.264 raw/frame_meta via Python WS 8768 y Electron WebCodecs/canvas.
+    - Control manual usa `scrcpy-control` como motor principal de taps, swipes, live touch y Back/Home/Recents via endpoints `/control/*`.
+    - ADB input queda como fallback seguro.
+    - FlowAgent/Accesibilidad NO es fallback automático para Control.
+    - FlowAgent queda solo para Automation, FlowLogin, scripts JS, click_text, set_text, dump inteligente, FlowKeyboard y comparación técnica.
+  - Perfil `automation`: FlowLogin, scripts JS, click por texto, set_text, dump inteligente y FlowKeyboard usan FlowAgent socket + AutoJs6 + AccessibilityServiceUsher + FlowKeyboard. Solo se prepara por accion explicita del usuario.
+  - Perfil `inspector`: Tree/Nativo/Auto debe usar primero UIAutomator por ADB y, como complemento, Accessibility/CDP si estan disponibles. OCR/Hybrid son los unicos modos que pueden solicitar captura/MediaProjection.
+  - Perfil `ocr`: OCR y OpenCV/template matching pueden llamar `capture_screen_start(streamFrames=false)` solo en ese momento y deben permitir `capture_screen_stop`.
+  - Perfil `recording`: grabacion manual usa scrcpy/H.264 guardado en PC; no arrancar automaticamente ni usar MediaProjection por defecto.
+  - Grabacion manual actual: endpoints `/recordings/start`, `/recordings/stop`, `/recordings/status` y `/recordings/active`; guardar en `recordings/` con `scrcpy.exe --record --no-window --no-playback --no-control`.
+- Todos los componentes deben usar el ADB empaquetado en `scrcpy-win64-v4.0\adb.exe`. No depender del ADB del PATH, Android Studio, SDK instalado en el PC ni `C:\adb`.
+- **Arranque / Onboarding de dispositivos nuevos**: Al iniciar el dashboard, SÍ se permite instalar automáticamente el APK monolito SOLO si el dispositivo no tiene `com.flowlogin.agent` instalado. Esto incluye configurar los `adb reverse` e intentar preparar Accesibilidad/FlowKeyboard para automatización. Sin embargo, este proceso de onboarding automático **NO debe iniciar `capture_screen_start`**, **NO debe iniciar MediaProjection**, ni encender iconos de captura.
+- **Si el APK ya existe**: NO se debe reinstalar, ni actualizar, ni desinstalar automáticamente. Solo se diagnostica su estado. Si está viejo, se marca para actualización manual.
+- **Media Projection / Icono de captura**: Es una regla dura que ni instalar APK, ni abrir FlowAgent, ni activar Accesibilidad pueden encender el icono de captura. El icono solo aparece por demanda explícita (OCR, Template Matching, etc.).
+- Abrir Focus/Grid y usar control manual normal no debe encender el icono de captura/proyeccion de Android. Control manual NO usa FlowAgent.
+- La deteccion de dispositivos debe ser real: usar `adb devices` y/o escaneo ADB WiFi desde el dashboard. No mostrar dispositivos hardcodeados como conectados.
+- Preparar, instalar o actualizar FlowAgent en dispositivos que ya lo tienen debe ser una accion explicita del usuario desde Electron.
 - FlowLogin debe tratar `Socket` como canal obligatorio: si un telefono no queda con FlowAgent listo, se omite o se avisa, no debe caer silenciosamente a ADB como motor de login.
 - La seccion `Cuentas` debe mantener pestañas visuales solo con iconos y contador para `Total`, `Validos` y `No validos`, cada una con su propio textarea.
 - En `Cuentas`, los campos `Delimitador` y `Dividir` deben permanecer lado a lado.

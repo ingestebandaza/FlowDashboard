@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colores PRO - Tema Oscuro Sobrio (Coherente con Dashboard) -->
+    
+    <!-- Fondos: Tema Oscuro Profesional -->
+    <color name="background">#0b1220</color>
+    <color name="surface">#111a2e</color>
+    <color name="surface_soft">#0f1a30</color>
+    <color name="surface_variant">#1a2847</color>
+    
+    <!-- Texto: Blanco Azulado -->
+    <color name="text_primary">#e7eefc</color>
+    <color name="text_secondary">#9fb0cc</color>
+    <color name="text_tertiary">#6b7fa8</color>
+    
+    <!-- Líneas y Divisores -->
+    <color name="divider">#23314d</color>
+    <color name="line">#23314d</color>
+    
+    <!-- Brand: Azul Profesional -->
+    <color name="primary">#4f8dff</color>
+    <color name="primary_dark">#3a73d9</color>
+    <color name="primary_light">#6ba3ff</color>
+    
+    <!-- Acentos -->
+    <color name="accent">#22b86f</color>
+    <color name="accent_light">#2dd47f</color>
+    <color name="accent_dark">#1a8a54</color>
+    
+    <!-- Estados -->
+    <color name="success">#22b86f</color>
+    <color name="warning">#f5a623</color>
+    <color name="error">#d45862</color>
+    
+    <!-- Overlay -->
+    <color name="overlay">#1A000000</color>
+    
+    <!-- Icon background para launcher -->
+    <color name="icon_background">#4f8dff</color>
+</resources>

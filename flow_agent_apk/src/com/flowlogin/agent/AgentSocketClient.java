@@ -3,7 +3,6 @@ package com.flowlogin.agent;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
-import android.provider.Settings;
 
 import org.json.JSONObject;
 
@@ -23,6 +22,7 @@ public class AgentSocketClient {
     private volatile int generation;
     private Thread thread;
     private Socket socket;
+    private volatile PrintWriter writer;
 
     public static AgentSocketClient get() {
         return INSTANCE;
@@ -63,11 +63,25 @@ public class AgentSocketClient {
         return lastMessage;
     }
 
+    public synchronized void sendFrame(JSONObject frameMessage) {
+        try {
+            if (writer == null || !connected) {
+                return;
+            }
+            writer.println(frameMessage.toString());
+            writer.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void loop(Context context, int runGeneration) {
+        sleep(2000);
         while (running && runGeneration == generation) {
             SharedPreferences prefs = context.getSharedPreferences("flow_agent", Context.MODE_PRIVATE);
-            String host = prefs.getString("host", "127.0.0.1");
+            String host = prefs.getString("host", "localhost");
             int port = prefs.getInt("port", 8766);
+
             Socket activeSocket = null;
             try {
                 lastMessage = "Conectando a " + host + ":" + port;
@@ -80,12 +94,15 @@ public class AgentSocketClient {
                 lastMessage = "Socket conectado.";
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(activeSocket.getInputStream(), StandardCharsets.UTF_8));
-                PrintWriter writer = new PrintWriter(new OutputStreamWriter(activeSocket.getOutputStream(), StandardCharsets.UTF_8), true);
+                PrintWriter localWriter = new PrintWriter(new OutputStreamWriter(activeSocket.getOutputStream(), StandardCharsets.UTF_8), true);
+                synchronized (this) {
+                    writer = localWriter;
+                }
                 writer.println(buildHello(context).toString());
 
                 String line;
                 while (running && (line = reader.readLine()) != null) {
-                    handleIncoming(line, writer);
+                    handleIncoming(line, localWriter);
                 }
                 if (running && isCurrentSocket(activeSocket) && runGeneration == generation) {
                     lastMessage = "Servidor cerro la conexion. Reintentando...";
@@ -98,6 +115,9 @@ public class AgentSocketClient {
                 if (isCurrentSocket(activeSocket) && runGeneration == generation) {
                     connected = false;
                 }
+                synchronized (this) {
+                    writer = null;
+                }
                 closeSocket(activeSocket);
             }
             sleep(2200);
@@ -105,18 +125,75 @@ public class AgentSocketClient {
     }
 
     private JSONObject buildHello(Context context) throws Exception {
-        SharedPreferences prefs = context.getSharedPreferences("flow_agent", Context.MODE_PRIVATE);
+        String androidId = DeviceIdentity.getAndroidId(context);
+
+        String adbSerial = "";
+        for (int i = 0; i < 5; i++) {
+            adbSerial = DeviceIdentity.resolveAdbSerial(context, true);
+            if (DeviceIdentity.isUsableAdbSerial(adbSerial)) {
+                break;
+            }
+            try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+        }
+
+        if (!DeviceIdentity.isUsableAdbSerial(adbSerial)) {
+            adbSerial = androidId == null || androidId.isEmpty() ? "" : "android:" + androidId;
+        }
+
+        final String finalSerial = adbSerial;
+        new Thread(() -> registerDeviceInBackend(androidId, finalSerial)).start();
+
         JSONObject hello = new JSONObject();
         hello.put("type", "hello");
-        hello.put("agentId", Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID));
-        hello.put("serial", prefs.getString("serial", ""));
+        hello.put("agentId", androidId);
+        hello.put("serial", adbSerial);
         hello.put("deviceName", Build.MANUFACTURER + " " + Build.MODEL);
         hello.put("manufacturer", Build.MANUFACTURER);
         hello.put("model", Build.MODEL);
         hello.put("androidVersion", Build.VERSION.RELEASE);
-        hello.put("agentVersion", "0.2.4");
+        hello.put("agentVersion", "0.3.8");
         hello.put("accessibility", FlowAccessibilityService.getInstance() != null);
+        hello.put("keyboardInstalled", true);
+        hello.put("keyboardActive", FlowKeyboardService.getInstance() != null);
+        hello.put("keyboardName", "FlowKeyboard");
         return hello;
+    }
+
+    private void registerDeviceInBackend(String androidId, String adbSerial) {
+        java.net.HttpURLConnection conn = null;
+        try {
+            String host = "localhost";
+            int port = 5000;
+            String url = "http://" + host + ":" + port + "/api/devices/register";
+
+            java.net.URL urlObj = new java.net.URL(url);
+            conn = (java.net.HttpURLConnection) urlObj.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+
+            JSONObject payload = new JSONObject();
+            payload.put("androidId", androidId);
+            payload.put("adbSerial", adbSerial);
+
+            conn.setDoOutput(true);
+            java.io.OutputStream os = conn.getOutputStream();
+            byte[] input = payload.toString().getBytes("utf-8");
+            os.write(input, 0, input.length);
+            os.close();
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode == 200) {
+                lastMessage = "Dispositivo registrado en backend";
+            }
+        } catch (Exception e) {
+            lastMessage = "No se pudo registrar en backend: " + e.getMessage();
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
     }
 
     private void handleIncoming(String line, PrintWriter writer) {
@@ -128,10 +205,13 @@ public class AgentSocketClient {
             String requestId = message.optString("requestId", "");
             JSONObject command = message.optJSONObject("command");
             if (command == null) command = new JSONObject();
+            String commandName = command.optString("name", "").toLowerCase(java.util.Locale.US);
 
             FlowAccessibilityService service = FlowAccessibilityService.getInstance();
             JSONObject result;
-            if (service == null) {
+            if (commandName.startsWith("keyboard_")) {
+                result = FlowKeyboardService.executeKeyboardCommand(command);
+            } else if (service == null) {
                 result = new JSONObject();
                 result.put("ok", false);
                 result.put("error", "AccessibilityService no esta activo.");

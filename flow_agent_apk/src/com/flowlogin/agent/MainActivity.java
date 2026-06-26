@@ -1,462 +1,415 @@
 package com.flowlogin.agent;
 
+import android.accessibilityservice.AccessibilityServiceInfo;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
-import android.graphics.Color;
-import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
-import android.net.Uri;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.provider.Settings;
-import android.view.Gravity;
 import android.view.View;
-import android.view.Window;
+import android.view.accessibility.AccessibilityManager;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
+/**
+ * MainActivity PRO - Interfaz profesional para FlowAgent
+ * 
+ * Características:
+ * - Diseño Material Design 3
+ * - Monitoreo en tiempo real del estado
+ * - Información del dispositivo
+ * - Logs en vivo
+ * - Controles intuitivos
+ * - Solicitud de permisos de captura de pantalla
+ */
 public class MainActivity extends Activity {
-    private static final String PREFS = "flow_agent";
 
-    private EditText hostInput;
-    private EditText portInput;
-    private TextView accessibilityChip;
-    private TextView socketChip;
-    private TextView lastMessageText;
-    private TextView configSummaryText;
-    private TextView heroStatusText;
-    private final Handler handler = new Handler(Looper.getMainLooper());
+    private static final int REQUEST_MEDIA_PROJECTION = 1001;
 
-    private final Runnable statusTick = new Runnable() {
-        @Override
-        public void run() {
-            updateStatus();
-            handler.postDelayed(this, 1000);
-        }
-    };
+    private TextView statusText;
+    private TextView connectionInfo;
+    private TextView accessibilityStatus;
+    private TextView socketStatus;
+    private TextView captureStatus;
+    private TextView deviceModel;
+    private TextView androidVersion;
+    private TextView deviceSerial;
+    private TextView logsText;
+    private View statusIndicator;
+    private Button btnEnableAccessibility;
+    private Button btnClearLogs;
+    private Button btnEnableCapture;
+
+    private AccessibilityManager accessibilityManager;
+    private MediaProjectionManager mediaProjectionManager;
+    private StringBuilder logsBuilder = new StringBuilder();
+    private String lastDisplayedSerial = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        Window window = getWindow();
-        window.setStatusBarColor(Color.rgb(7, 17, 31));
+        setContentView(R.layout.activity_main);
 
-        applyIntentConfig(getIntent());
-        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        hostInput = new EditText(this);
-        portInput = new EditText(this);
+        boolean shouldRestartSocket = persistLaunchIntent(getIntent());
 
-        setContentView(buildContent(prefs));
-        autoConnectFromIntent(getIntent());
+        initializeViews();
+        setupListeners();
+        updateDeviceInfo();
+        
+        // Iniciar o reiniciar el socket con los extras actuales del dashboard.
+        if (shouldRestartSocket) {
+            AgentSocketClient.get().restart(this);
+        } else {
+            AgentSocketClient.get().start(this);
+        }
+        addLog("🔌 Socket cliente iniciado");
+        
+        startMonitoring();
+        
+        // Solicitar permisos de captura de pantalla automáticamente
+        requestScreenCapturePermission();
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        applyIntentConfig(intent);
-        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        hostInput.setText(prefs.getString("host", "127.0.0.1"));
-        portInput.setText(String.valueOf(prefs.getInt("port", 8766)));
-        autoConnectFromIntent(intent);
-        updateStatus();
+        boolean shouldRestartSocket = persistLaunchIntent(intent);
+        updateDeviceSerial(true);
+        if (shouldRestartSocket) {
+            AgentSocketClient.get().restart(this);
+            addLog("Socket reiniciado con configuracion del dashboard");
+        }
+        if (intent != null && intent.getBooleanExtra("request_capture", false)) {
+            requestScreenCapturePermission();
+        }
+    }
+
+    private boolean persistLaunchIntent(Intent intent) {
+        // Python lanza el APK con: --es host 127.0.0.1 --es serial 192.168.1.X:5555 --ei port 8766
+        if (intent == null) return false;
+        android.content.SharedPreferences prefs = getSharedPreferences("flow_agent", Context.MODE_PRIVATE);
+        android.content.SharedPreferences.Editor editor = prefs.edit();
+        String host = intent.getStringExtra("host");
+        String serial = intent.getStringExtra("serial");
+        int port = intent.getIntExtra("port", 0);
+        boolean autoconnect = intent.getBooleanExtra("autoconnect", false);
+        boolean changed = false;
+        if (host != null && !host.isEmpty()) {
+            editor.putString("host", host);
+            changed = true;
+        }
+        if (serial != null && !serial.isEmpty()) {
+            editor.putString("serial", serial);
+            changed = true;
+        }
+        if (port > 0) {
+            editor.putInt("port", port);
+            changed = true;
+        }
+        editor.apply();
+        return changed || autoconnect;
+    }
+
+    /**
+     * Inicializa todas las vistas
+     */
+    private void initializeViews() {
+        // statusText y connectionInfo fueron removidos del nuevo layout minimalista
+        // statusText = (TextView) findViewById(R.id.status_text);
+        // connectionInfo = (TextView) findViewById(R.id.connection_info);
+        
+        accessibilityStatus = (TextView) findViewById(R.id.accessibility_status);
+        socketStatus = (TextView) findViewById(R.id.socket_status);
+        captureStatus = (TextView) findViewById(R.id.capture_status);
+        deviceModel = (TextView) findViewById(R.id.device_model);
+        androidVersion = (TextView) findViewById(R.id.android_version);
+        deviceSerial = (TextView) findViewById(R.id.device_serial);
+        logsText = (TextView) findViewById(R.id.logs_text);
+        statusIndicator = (View) findViewById(R.id.status_indicator);
+        btnEnableAccessibility = (Button) findViewById(R.id.btn_enable_accessibility);
+        btnClearLogs = (Button) findViewById(R.id.btn_clear_logs);
+
+        accessibilityManager = (AccessibilityManager) getSystemService(Context.ACCESSIBILITY_SERVICE);
+        mediaProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+    }
+
+    /**
+     * Configura los listeners de botones
+     */
+    private void setupListeners() {
+        btnEnableAccessibility.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openAccessibilitySettings();
+            }
+        });
+        
+        btnClearLogs.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearLogs();
+            }
+        });
+    }
+
+    /**
+     * Solicita permisos de captura de pantalla
+     */
+    private void requestScreenCapturePermission() {
+        if (mediaProjectionManager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Intent intent = mediaProjectionManager.createScreenCaptureIntent();
+            startActivityForResult(intent, REQUEST_MEDIA_PROJECTION);
+            addLog("📹 Solicitando permisos de captura de pantalla...");
+        }
+    }
+
+    /**
+     * Abre la configuración de accesibilidad
+     */
+    private void openAccessibilitySettings() {
+        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+        startActivity(intent);
+        addLog("📱 Abriendo configuración de accesibilidad...");
+    }
+
+    /**
+     * Limpia los logs
+     */
+    private void clearLogs() {
+        logsBuilder.setLength(0);
+        logsText.setText("Logs limpiados");
+        addLog("🗑️ Logs limpiados");
+    }
+
+    /**
+     * Actualiza la información del dispositivo
+     */
+    private void updateDeviceInfo() {
+        deviceModel.setText(Build.MODEL);
+        androidVersion.setText("Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")");
+        
+        // Mostrar serial ADB desde SharedPreferences (guardado cuando Python lanza el APK)
+        updateDeviceSerial(true);
+
+        addLog("📋 Información del dispositivo cargada");
+        addLog("   Modelo: " + Build.MODEL);
+        addLog("   Android: " + Build.VERSION.RELEASE);
+        addLog("   Serial ADB/WiFi: " + lastDisplayedSerial);
+    }
+
+    private void updateDeviceSerial(boolean forceLog) {
+        String displaySerial = DeviceIdentity.resolveDisplaySerial(this);
+        deviceSerial.setText(displaySerial);
+        if (!displaySerial.equals(lastDisplayedSerial)) {
+            lastDisplayedSerial = displaySerial;
+            if (!forceLog) {
+                addLog("   Serial ADB/WiFi actualizado: " + displaySerial);
+            }
+        }
+    }
+
+    /**
+     * Inicia el monitoreo del estado
+     */
+    private void startMonitoring() {
+        Thread monitorThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(1000); // Actualizar cada segundo
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                updateAccessibilityStatus();
+                                updateSocketStatus();
+                                updateCaptureStatus();
+                                updateDeviceSerial(false);
+                                updateConnectionInfo();
+                            }
+                        });
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        monitorThread.setDaemon(true);
+        monitorThread.start();
+
+        addLog("👀 Monitoreo iniciado");
+    }
+
+    /**
+     * Actualiza el estado de accesibilidad
+     */
+    private void updateAccessibilityStatus() {
+        boolean isEnabled = isAccessibilityServiceEnabled();
+        
+        if (isEnabled) {
+            accessibilityStatus.setText("✓ Habilitado");
+            accessibilityStatus.setTextColor(0xFF4CAF50); // Verde
+            btnEnableAccessibility.setText("Accesibilidad OK");
+            btnEnableAccessibility.setEnabled(false);
+        } else {
+            accessibilityStatus.setText("✗ Deshabilitado");
+            accessibilityStatus.setTextColor(0xFFF44336); // Rojo
+            btnEnableAccessibility.setText("Habilitar Accesibilidad");
+            btnEnableAccessibility.setEnabled(true);
+        }
+    }
+
+    /**
+     * Actualiza el estado del socket
+     */
+    private void updateSocketStatus() {
+        boolean isConnected = AgentSocketClient.get() != null && AgentSocketClient.get().isConnected();
+        
+        if (isConnected) {
+            socketStatus.setText("✓ Conectado");
+            socketStatus.setTextColor(0xFF4CAF50); // Verde
+        } else {
+            socketStatus.setText("✗ Desconectado");
+            socketStatus.setTextColor(0xFFF44336); // Rojo
+        }
+    }
+
+    /**
+     * Actualiza el estado de captura
+     */
+    private void updateCaptureStatus() {
+        boolean isCapturing = MediaProjectionHolder.get() != null;
+        
+        if (isCapturing) {
+            captureStatus.setText("✓ Activa");
+            captureStatus.setTextColor(0xFF4CAF50); // Verde
+        } else {
+            captureStatus.setText("✗ Inactiva");
+            captureStatus.setTextColor(0xFFF44336); // Rojo
+        }
+    }
+
+    /**
+     * Actualiza la información de conexión
+     */
+    private void updateConnectionInfo() {
+        boolean isAccessibilityEnabled = isAccessibilityServiceEnabled();
+        boolean isSocketConnected = AgentSocketClient.get() != null && AgentSocketClient.get().isConnected();
+
+        // Actualizar indicador de estado
+        if (isAccessibilityEnabled && isSocketConnected) {
+            statusIndicator.setBackgroundColor(0xFF22b86f); // Verde
+        } else if (isAccessibilityEnabled) {
+            statusIndicator.setBackgroundColor(0xFFFFC107); // Amarillo
+        } else {
+            statusIndicator.setBackgroundColor(0xFFd45862); // Rojo
+        }
+    }
+
+    /**
+     * Verifica si el servicio de accesibilidad está habilitado
+     */
+    private boolean isAccessibilityServiceEnabled() {
+        AccessibilityManager am = (AccessibilityManager) getSystemService(Context.ACCESSIBILITY_SERVICE);
+        if (am == null) return false;
+
+        java.util.List<AccessibilityServiceInfo> services = am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_GENERIC);
+        for (AccessibilityServiceInfo service : services) {
+            if (service.getId().contains("flowlogin")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Agrega un mensaje al log
+     */
+    private void addLog(String message) {
+        String timestamp = new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date());
+        String logEntry = "[" + timestamp + "] " + message + "\n";
+        
+        logsBuilder.append(logEntry);
+        
+        // Mantener solo los últimos 100 logs
+        String[] lines = logsBuilder.toString().split("\n");
+        if (lines.length > 100) {
+            logsBuilder.setLength(0);
+            for (int i = lines.length - 100; i < lines.length; i++) {
+                if (i >= 0) {
+                    logsBuilder.append(lines[i]).append("\n");
+                }
+            }
+        }
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                logsText.setText(logsBuilder.toString());
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        if (requestCode == REQUEST_MEDIA_PROJECTION) {
+            if (resultCode == RESULT_OK && data != null) {
+                addLog("✓ Permisos de captura de pantalla otorgados");
+                
+                // Obtener MediaProjection y pasarlo al ScreenCaptureThread
+                MediaProjectionManager mpm = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+                if (mpm != null) {
+                    try {
+                        MediaProjection mediaProjection = mpm.getMediaProjection(resultCode, data);
+                        if (mediaProjection != null) {
+                            // Guardar globalmente para que FlowAccessibilityService pueda usarlo
+                            MediaProjectionHolder.set(mediaProjection);
+                            
+                            // Crear e iniciar ScreenCaptureThread
+                            FlowAccessibilityService service = FlowAccessibilityService.getInstance();
+                            ScreenCaptureThread captureThread = new ScreenCaptureThread(service);
+                            captureThread.setMediaProjection(mediaProjection);
+                            captureThread.start();
+                            addLog("✓ Captura de pantalla iniciada");
+                        } else {
+                            addLog("✗ No se pudo obtener MediaProjection");
+                        }
+                    } catch (Exception e) {
+                        addLog("✗ Error al iniciar captura: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                } else {
+                    addLog("✗ MediaProjectionManager no disponible");
+                }
+            } else {
+                addLog("✗ Permisos de captura de pantalla denegados");
+            }
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        statusTick.run();
+        addLog("📱 App en primer plano");
+        updateAccessibilityStatus();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        handler.removeCallbacks(statusTick);
+        addLog("📱 App en segundo plano");
     }
 
-    private View buildContent(SharedPreferences prefs) {
-        ScrollView scroll = new ScrollView(this);
-        scroll.setFillViewport(true);
-        scroll.setBackground(gradient(
-            new int[] {Color.rgb(7, 17, 31), Color.rgb(12, 29, 47), Color.rgb(6, 12, 24)},
-            0
-        ));
-
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(18), dp(20), dp(18), dp(22));
-        scroll.addView(root, new ScrollView.LayoutParams(
-            ScrollView.LayoutParams.MATCH_PARENT,
-            ScrollView.LayoutParams.WRAP_CONTENT
-        ));
-
-        root.addView(buildHero());
-        root.addView(buildStatusPanel());
-        root.addView(buildConnectionPanel(prefs));
-        root.addView(buildActionPanel());
-        root.addView(buildLogPanel());
-        return scroll;
-    }
-
-    private View buildHero() {
-        LinearLayout hero = card();
-        hero.setPadding(dp(16), dp(16), dp(16), dp(16));
-        hero.setBackground(gradient(
-            new int[] {Color.rgb(16, 52, 68), Color.rgb(10, 24, 42)},
-            dp(22)
-        ));
-
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        hero.addView(row);
-
-        TextView mark = text("F", 28, true);
-        mark.setGravity(Gravity.CENTER);
-        mark.setTextColor(Color.WHITE);
-        mark.setBackground(gradient(
-            new int[] {Color.rgb(20, 184, 166), Color.rgb(34, 184, 111)},
-            dp(18)
-        ));
-        LinearLayout.LayoutParams markParams = new LinearLayout.LayoutParams(dp(58), dp(58));
-        row.addView(mark, markParams);
-
-        LinearLayout titleStack = new LinearLayout(this);
-        titleStack.setOrientation(LinearLayout.VERTICAL);
-        titleStack.setPadding(dp(14), 0, 0, 0);
-        row.addView(titleStack, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
-
-        TextView title = text("FlowAgent", 28, true);
-        TextView subtitle = text("Motor socket para FlowLogin", 13, false);
-        subtitle.setTextColor(Color.rgb(183, 203, 232));
-        heroStatusText = text("Esperando estado", 12, true);
-        heroStatusText.setTextColor(Color.rgb(186, 252, 242));
-        heroStatusText.setPadding(0, dp(6), 0, 0);
-        titleStack.addView(title);
-        titleStack.addView(subtitle);
-        titleStack.addView(heroStatusText);
-
-        TextView badge = text("0.2.4", 12, true);
-        badge.setGravity(Gravity.CENTER);
-        badge.setTextColor(Color.rgb(186, 252, 242));
-        badge.setBackground(outline(Color.rgb(18, 42, 60), Color.rgb(20, 184, 166), dp(999)));
-        row.addView(badge, new LinearLayout.LayoutParams(dp(62), dp(32)));
-        return hero;
-    }
-
-    private View buildStatusPanel() {
-        LinearLayout panel = card();
-        panel.setPadding(dp(14), dp(14), dp(14), dp(14));
-
-        TextView title = sectionTitle("Estado en vivo");
-        panel.addView(title);
-
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER);
-        row.setPadding(0, dp(10), 0, 0);
-        panel.addView(row);
-
-        accessibilityChip = statusChip("Accesibilidad");
-        socketChip = statusChip("Socket");
-        LinearLayout.LayoutParams chipParams = new LinearLayout.LayoutParams(0, dp(58), 1);
-        chipParams.rightMargin = dp(8);
-        row.addView(accessibilityChip, chipParams);
-
-        LinearLayout.LayoutParams chipParams2 = new LinearLayout.LayoutParams(0, dp(58), 1);
-        row.addView(socketChip, chipParams2);
-        return panel;
-    }
-
-    private View buildConnectionPanel(SharedPreferences prefs) {
-        LinearLayout panel = card();
-        panel.setPadding(dp(14), dp(14), dp(14), dp(14));
-        panel.addView(sectionTitle("Conexion"));
-
-        configSummaryText = text("", 12, true);
-        configSummaryText.setTextColor(Color.rgb(159, 176, 204));
-        configSummaryText.setPadding(0, dp(4), 0, dp(12));
-        panel.addView(configSummaryText);
-
-        hostInput.setSingleLine(true);
-        hostInput.setText(prefs.getString("host", "127.0.0.1"));
-        hostInput.setHint("127.0.0.1");
-        styleInput(hostInput);
-        panel.addView(label("Host"));
-        panel.addView(hostInput);
-
-        portInput.setSingleLine(true);
-        portInput.setText(String.valueOf(prefs.getInt("port", 8766)));
-        portInput.setHint("8766");
-        styleInput(portInput);
-        panel.addView(label("Puerto"));
-        panel.addView(portInput);
-        return panel;
-    }
-
-    private View buildActionPanel() {
-        LinearLayout panel = card();
-        panel.setPadding(dp(14), dp(14), dp(14), dp(14));
-        panel.addView(sectionTitle("Acciones"));
-
-        Button save = primaryButton("Guardar y conectar");
-        save.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                saveConfig();
-                FlowAccessibilityService service = FlowAccessibilityService.getInstance();
-                if (service != null) {
-                    service.restartSocket();
-                } else {
-                    openAccessibilitySettings();
-                }
-                updateStatus();
-            }
-        });
-        panel.addView(save);
-
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setPadding(0, dp(10), 0, 0);
-        panel.addView(row);
-
-        Button accessibility = secondaryButton("Accesibilidad");
-        accessibility.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                openAccessibilitySettings();
-            }
-        });
-        LinearLayout.LayoutParams left = new LinearLayout.LayoutParams(0, dp(48), 1);
-        left.rightMargin = dp(8);
-        row.addView(accessibility, left);
-
-        Button appSettings = secondaryButton("Ajustes app");
-        appSettings.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                intent.setData(Uri.parse("package:" + getPackageName()));
-                startActivity(intent);
-            }
-        });
-        row.addView(appSettings, new LinearLayout.LayoutParams(0, dp(48), 1));
-        return panel;
-    }
-
-    private View buildLogPanel() {
-        LinearLayout panel = card();
-        panel.setPadding(dp(14), dp(14), dp(14), dp(14));
-        panel.addView(sectionTitle("Ultimo mensaje"));
-        lastMessageText = text("Esperando conexion.", 13, false);
-        lastMessageText.setTextColor(Color.rgb(207, 221, 245));
-        lastMessageText.setPadding(0, dp(8), 0, 0);
-        panel.addView(lastMessageText);
-        return panel;
-    }
-
-    private void saveConfig() {
-        int port = 8766;
-        try {
-            port = Integer.parseInt(portInput.getText().toString().trim());
-        } catch (Exception ignored) {
-        }
-        getSharedPreferences(PREFS, MODE_PRIVATE)
-            .edit()
-            .putString("host", hostInput.getText().toString().trim())
-            .putInt("port", port)
-            .apply();
-    }
-
-    private void applyIntentConfig(Intent intent) {
-        if (intent == null) return;
-        boolean changed = false;
-        SharedPreferences.Editor editor = getSharedPreferences(PREFS, MODE_PRIVATE).edit();
-        if (intent.hasExtra("host")) {
-            String host = intent.getStringExtra("host");
-            if (host != null && host.trim().length() > 0) {
-                editor.putString("host", host.trim());
-                changed = true;
-            }
-        }
-        if (intent.hasExtra("port")) {
-            int port = intent.getIntExtra("port", 8766);
-            if (port > 0) {
-                editor.putInt("port", port);
-                changed = true;
-            }
-        }
-        if (intent.hasExtra("serial")) {
-            String serial = intent.getStringExtra("serial");
-            if (serial != null && serial.trim().length() > 0) {
-                editor.putString("serial", serial.trim());
-                changed = true;
-            }
-        }
-        if (changed) {
-            editor.apply();
-        }
-    }
-
-    private void autoConnectFromIntent(Intent intent) {
-        if (intent == null || !intent.getBooleanExtra("autoconnect", false)) return;
-        FlowAccessibilityService service = FlowAccessibilityService.getInstance();
-        if (service != null) {
-            service.restartSocket();
-        }
-    }
-
-    private void openAccessibilitySettings() {
-        startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
-    }
-
-    private void updateStatus() {
-        FlowAccessibilityService service = FlowAccessibilityService.getInstance();
-        boolean accessibility = service != null;
-        boolean accessibilitySettingEnabled = isAccessibilitySettingEnabled();
-        boolean socket = AgentSocketClient.get().isConnected();
-        String last = AgentSocketClient.get().getLastMessage();
-
-        updateChip(accessibilityChip, "Accesibilidad", accessibility, accessibility ? "Activo" : (accessibilitySettingEnabled ? "Sin enlazar" : "Pendiente"));
-        updateChip(socketChip, "Socket", socket, socket ? "Activo" : "Pendiente");
-        heroStatusText.setText(socket ? "Conectado al dashboard" : (accessibilitySettingEnabled && !accessibility ? "Reactiva Accesibilidad" : "Esperando dashboard"));
-        configSummaryText.setText(hostInput.getText().toString().trim() + ":" + portInput.getText().toString().trim());
-        lastMessageText.setText(last == null || last.length() == 0 ? "Sin mensajes recientes." : last);
-    }
-
-    private boolean isAccessibilitySettingEnabled() {
-        String enabled = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
-        if (enabled == null) return false;
-        String full = getPackageName() + "/" + FlowAccessibilityService.class.getName();
-        String shortName = getPackageName() + "/." + FlowAccessibilityService.class.getSimpleName();
-        String[] parts = enabled.split(":");
-        for (String part : parts) {
-            String item = part == null ? "" : part.trim();
-            if (full.equals(item) || shortName.equals(item)) return true;
-        }
-        return false;
-    }
-
-    private LinearLayout card() {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackground(outline(Color.rgb(13, 28, 47), Color.rgb(36, 68, 98), dp(22)));
-        card.setElevation(dp(8));
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        params.bottomMargin = dp(14);
-        card.setLayoutParams(params);
-        return card;
-    }
-
-    private TextView sectionTitle(String value) {
-        TextView view = text(value, 14, true);
-        view.setTextColor(Color.rgb(231, 238, 252));
-        return view;
-    }
-
-    private TextView label(String value) {
-        TextView view = text(value, 11, true);
-        view.setTextColor(Color.rgb(159, 176, 204));
-        view.setPadding(0, dp(12), 0, dp(6));
-        return view;
-    }
-
-    private TextView statusChip(String title) {
-        TextView chip = text(title + "\nPendiente", 12, true);
-        chip.setGravity(Gravity.CENTER);
-        chip.setLineSpacing(dp(2), 1.0f);
-        chip.setBackground(outline(Color.rgb(18, 32, 52), Color.rgb(65, 88, 120), dp(16)));
-        return chip;
-    }
-
-    private void updateChip(TextView chip, String title, boolean active, String stateLabel) {
-        int fill = active ? Color.rgb(12, 64, 55) : Color.rgb(35, 38, 54);
-        int stroke = active ? Color.rgb(20, 184, 166) : Color.rgb(105, 82, 98);
-        int textColor = active ? Color.rgb(186, 252, 242) : Color.rgb(255, 199, 205);
-        chip.setText(title + "\n" + stateLabel);
-        chip.setTextColor(textColor);
-        chip.setBackground(outline(fill, stroke, dp(16)));
-    }
-
-    private TextView text(String value, int sp, boolean bold) {
-        TextView view = new TextView(this);
-        view.setText(value);
-        view.setTextColor(Color.rgb(231, 238, 252));
-        view.setTextSize(sp);
-        if (bold) {
-            view.setTypeface(Typeface.DEFAULT_BOLD);
-        }
-        return view;
-    }
-
-    private void styleInput(EditText input) {
-        input.setTextColor(Color.WHITE);
-        input.setHintTextColor(Color.rgb(124, 139, 165));
-        input.setTextSize(15);
-        input.setPadding(dp(13), 0, dp(13), 0);
-        input.setMinHeight(dp(48));
-        input.setSingleLine(true);
-        input.setBackground(outline(Color.rgb(9, 20, 36), Color.rgb(42, 75, 110), dp(14)));
-    }
-
-    private Button primaryButton(String value) {
-        Button button = baseButton(value);
-        button.setBackground(gradient(
-            new int[] {Color.rgb(20, 184, 166), Color.rgb(34, 184, 111)},
-            dp(15)
-        ));
-        return button;
-    }
-
-    private Button secondaryButton(String value) {
-        Button button = baseButton(value);
-        button.setBackground(outline(Color.rgb(17, 35, 58), Color.rgb(67, 104, 148), dp(15)));
-        return button;
-    }
-
-    private Button baseButton(String value) {
-        Button button = new Button(this);
-        button.setText(value);
-        button.setTextColor(Color.WHITE);
-        button.setTextSize(13);
-        button.setTypeface(Typeface.DEFAULT_BOLD);
-        button.setGravity(Gravity.CENTER);
-        button.setAllCaps(false);
-        button.setPadding(dp(8), 0, dp(8), 0);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            dp(50)
-        );
-        params.topMargin = dp(12);
-        button.setLayoutParams(params);
-        return button;
-    }
-
-    private GradientDrawable outline(int fill, int stroke, int radius) {
-        GradientDrawable drawable = new GradientDrawable();
-        drawable.setColor(fill);
-        drawable.setCornerRadius(radius);
-        drawable.setStroke(dp(1), stroke);
-        return drawable;
-    }
-
-    private GradientDrawable gradient(int[] colors, int radius) {
-        GradientDrawable drawable = new GradientDrawable(GradientDrawable.Orientation.TL_BR, colors);
-        drawable.setCornerRadius(radius);
-        return drawable;
-    }
-
-    private int dp(int value) {
-        return Math.round(value * getResources().getDisplayMetrics().density);
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        addLog("📱 App cerrada");
     }
 }

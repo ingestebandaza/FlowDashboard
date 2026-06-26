@@ -1,0 +1,184 @@
+================================================================================
+  PRUEBA ELECTRON - SIN NECESIDAD DE PEGAR CÓDIGO
+================================================================================
+
+PROBLEMA: DevTools no permite pegar código en la consola
+
+SOLUCIÓN: Usar funciones de prueba predefinidas
+
+================================================================================
+  PASO 1: EJECUTAR ELECTRON
+================================================================================
+
+cd c:\DASHBOARD\FlowDashboard
+.\abrir_electron.bat
+
+Espera a que se abra la ventana de Electron.
+
+================================================================================
+  PASO 2: ABRIR DEVTOOLS
+================================================================================
+
+Presiona: F12
+
+Verás la consola con un mensaje:
+  "✅ Script de pruebas cargado"
+  "Escribe: testHelp() para ver funciones disponibles"
+
+================================================================================
+  PASO 3: USAR FUNCIONES DE PRUEBA
+================================================================================
+
+En la consola, escribe (sin pegar):
+
+testHelp()
+  Presiona Enter
+  Verás la lista de funciones disponibles
+
+testConnections()
+  Presiona Enter
+  Prueba todas las conexiones:
+    ✅ C# API (puerto 5000)
+    ✅ Python API (puerto 8765)
+    ✅ Dispositivos cargados
+    ✅ WebSocket conectado
+    ✅ Dispositivos suscritos
+
+testDevices()
+  Presiona Enter
+  Muestra tabla con dispositivos:
+    - Serial
+    - Nombre
+    - Modelo
+    - Estado
+    - Cantidad de cuentas
+
+testFlowLogin()
+  Presiona Enter
+  Obtiene estado de FlowLogin
+
+================================================================================
+  EJEMPLO DE USO
+================================================================================
+
+1. Abre DevTools (F12)
+2. En la consola, escribe:
+   testConnections()
+3. Presiona Enter
+4. Verás los resultados:
+
+   🧪 Iniciando pruebas de conexión...
+
+   1️⃣  Probando C# API (puerto 5000)...
+      ✅ C# API: CONECTADO
+
+   2️⃣  Probando Python API (puerto 8765)...
+      ✅ Python API: CONECTADO
+
+   3️⃣  Cargando dispositivos...
+      ✅ Dispositivos cargados: 2
+      Dispositivos:
+        1. Mi Teléfono (ABC123)
+        2. Otro Teléfono (DEF456)
+
+   4️⃣  Verificando WebSocket...
+      ✅ WebSocket: Connected
+
+   5️⃣  Dispositivos suscritos a streaming...
+      ✅ Suscritos: 2
+      Serials:
+        - ABC123
+        - DEF456
+
+   ✅ Pruebas completadas
+
+================================================================================
+  FUNCIONES DISPONIBLES
+================================================================================
+
+testHelp()
+  Muestra esta ayuda
+
+testConnections()
+  Prueba todas las conexiones
+  - C# API
+  - Python API
+  - Carga de dispositivos
+  - WebSocket
+  - Dispositivos suscritos
+
+testDevices()
+  Obtiene lista de dispositivos
+  Muestra en tabla
+
+testFlowLogin()
+  Obtiene estado de FlowLogin
+
+================================================================================
+  ALTERNATIVA: PERMITIR PEGAR
+================================================================================
+
+Si quieres pegar código en la consola:
+
+1. Abre DevTools (F12)
+2. Ve a Console
+3. Escribe: allow pasting
+4. Presiona Enter
+5. Ahora puedes pegar código
+
+Luego puedes pegar:
+  await csharpAPI.healthCheck()
+  const devices = await csharpAPI.get('/devices')
+  etc.
+
+================================================================================
+  TROUBLESHOOTING
+================================================================================
+
+❌ Error: "testConnections is not defined"
+   Solución: Espera a que cargue el script
+            Recarga la página (F5)
+            Intenta de nuevo
+
+❌ Error: "csharpAPI is not defined"
+   Solución: Espera a que cargue api-client.js
+            Recarga la página (F5)
+
+❌ Error: "Cannot read property 'connection' of undefined"
+   Solución: Espera a que cargue stream-renderer.js
+            Recarga la página (F5)
+
+================================================================================
+  PRÓXIMOS PASOS
+================================================================================
+
+1. Ejecuta testConnections()
+2. Verifica que todo está conectado
+3. Ejecuta testDevices()
+4. Verifica que los dispositivos se cargan
+5. Prueba interacción en la UI
+6. Prueba reconexión (Ctrl+C en terminal, luego reinicia)
+
+================================================================================
+  DOCUMENTACIÓN
+================================================================================
+
+Para más detalles, lee:
+
+  COMIENZA_AQUI_PRUEBA_ELECTRON.txt - Guía completa
+  INSTRUCCIONES_PROBAR_ELECTRON.md - Instrucciones detalladas
+  CHECKLIST_PRUEBA_ELECTRON.md - Checklist de validación
+
+================================================================================
+  ¡COMIENZA AHORA!
+================================================================================
+
+1. Ejecuta: .\abrir_electron.bat
+2. Presiona F12 para abrir DevTools
+3. Escribe: testConnections()
+4. Presiona Enter
+5. Verifica los resultados
+
+¡Buena suerte! 🚀
+
+================================================================================

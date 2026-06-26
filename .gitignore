@@ -23,6 +23,10 @@ dist/
 # Paquetes generados para releases
 release_packages/
 
+# Node/Tauri
+node_modules/
+src-tauri/target/
+
 # Configuracion local y secretos
 .supabase_config.json
 .env
@@ -30,6 +34,7 @@ update_config.json
 device_registrations.json
 device_groups.json
 device_names.json
+FlowDashboard.Core/mail_config.json
 .android/
 .flowlogin_payloads/
 
@@ -39,3 +44,62 @@ dump.json
 _dump_*.txt
 test_*.ps1
 _check_*.ps1
+
+# EXCLUSIONES OBLIGATORIAS COMERCIALES
+node_modules/
+dist/
+release/
+win-unpacked/
+bin/
+obj/
+.venv/
+logs/
+scratch/
+recordings/
+grabaciones/
+restore_points/
+.supabase_config.json
+*service_role*
+*token*
+*clave*
+*password*
+*.key
+*.pem
+*.pfx
+*.cert
+
+# EXCLUSIONES DE USUARIO/DATOS DESCUBIERTAS
+mail_config.json
+*.mp4
+*.mkv
+*.mov
+*.jpg
+*.jpeg
+*dump*.xml
+*.csv
+test/
+device_inventory.json
+device_mappings.json
+devices_output.json
+flowmail_*.png
+musid_*.png
+flowagent_screen_*.png
+reports/commercial_review_bundle/
+reports/manual_snapshot_*.png
+reports/*.json
+h264_canary_config.json
+key-test.json
+tap-test.json
+votos_status.json
+ps.txt
+diag_out.txt
+temp_dopost.txt
+
+# === Baseline comercial v2.0.0: binarios pesados e insumos NO versionados (se conservan en disco) ===
+AutoJs6/
+APK/
+Eliminar/
+Herramientas/*.exe
+FlowDashboard.exe
+*.err
+*.out

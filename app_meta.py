@@ -1,2 +1,2 @@
 APP_NAME = "FlowDashboard"
-APP_VERSION = "1.0.55"
+APP_VERSION = "2.0.0"

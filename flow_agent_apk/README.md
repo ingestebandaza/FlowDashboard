@@ -2,9 +2,11 @@
 
 Agente Android experimental para conectar un telefono con `local_adb_server.py` por socket TCP.
 
-Version actual: `0.2.4`.
+Version actual: `0.3.7`.
 
 La APK incluye icono propio, interfaz visual con tarjetas, chips de estado para Accesibilidad/Socket y configuracion automatica desde el dashboard.
+
+En Android 9 el serial visible de licencia/dispositivo debe ser el serial ADB WiFi (`IP:5555`) que inyecta el dashboard o que FlowAgent deriva desde la IP WiFi. No se usa `Build.SERIAL` como identidad porque puede venir vacio o `unknown` en apps normales.
 
 ## Uso
 

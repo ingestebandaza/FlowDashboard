@@ -1,0 +1,290 @@
+using Microsoft.AspNetCore.SignalR;
+using FlowDashboard.Core.Hubs;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using AdvancedSharpAdbClient;
+
+namespace FlowDashboard.Core.Services;
+
+public class CanvasStreamingService
+{
+    private readonly IHubContext<StreamingHub> _hubContext;
+    private readonly AdbService _adbService;
+    private readonly ILogger<CanvasStreamingService> _logger;
+    private readonly ConcurrentDictionary<string, StreamSession> _activeSessions = new();
+    private readonly string _scrcpyPath;
+
+    public CanvasStreamingService(
+        IHubContext<StreamingHub> hubContext,
+        AdbService adbService,
+        ILogger<CanvasStreamingService> logger)
+    {
+        _hubContext = hubContext;
+        _adbService = adbService;
+        _logger = logger;
+        _scrcpyPath = FindScrcpyPath();
+    }
+
+    private string FindScrcpyPath()
+    {
+        var candidates = new[]
+        {
+            @"C:\DASHBOARD\FlowDashboard\scrcpy-win64-v4.0\scrcpy.exe",
+            @"C:\scrcpy\scrcpy.exe",
+            "scrcpy.exe"
+        };
+
+        foreach (var path in candidates)
+        {
+            if (File.Exists(path))
+            {
+                return path;
+            }
+        }
+
+        return "scrcpy.exe";
+    }
+
+    public async Task StartStreamAsync(string serial, string quality, string connectionId)
+    {
+        // Si ya existe, detenerlo primero
+        if (_activeSessions.ContainsKey(serial))
+        {
+            await StopStreamAsync(serial);
+        }
+
+        var qualitySettings = GetQualitySettings(quality);
+        
+        // Iniciar scrcpy con output a stdout (raw video)
+        var args = $"--serial={serial} " +
+                   $"--max-size={qualitySettings.MaxSize} " +
+                   $"--max-fps={qualitySettings.MaxFps} " +
+                   $"--video-bit-rate={qualitySettings.BitRate} " +
+                   "--no-audio " +
+                   "--no-window " +
+                   "--video-codec=h264 " +
+                   "--video-encoder=OMX.google.h264.encoder";
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = _scrcpyPath,
+            Arguments = args,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            WorkingDirectory = Path.GetDirectoryName(_scrcpyPath) ?? Environment.CurrentDirectory
+        };
+
+        var process = Process.Start(startInfo);
+        if (process == null)
+        {
+            throw new Exception($"No se pudo iniciar scrcpy para {serial}");
+        }
+
+        var session = new StreamSession
+        {
+            Serial = serial,
+            ConnectionId = connectionId,
+            Process = process,
+            Quality = quality,
+            CancellationTokenSource = new CancellationTokenSource()
+        };
+
+        _activeSessions[serial] = session;
+
+        // Iniciar captura de frames en background
+        _ = Task.Run(() => CaptureFramesAsync(session), session.CancellationTokenSource.Token);
+
+        _logger.LogInformation($"✅ Stream canvas iniciado para {serial}");
+    }
+
+    public async Task StopStreamAsync(string serial)
+    {
+        if (!_activeSessions.TryRemove(serial, out var session))
+        {
+            return;
+        }
+
+        try
+        {
+            session.CancellationTokenSource.Cancel();
+            
+            if (!session.Process.HasExited)
+            {
+                session.Process.Kill();
+                await session.Process.WaitForExitAsync();
+            }
+
+            session.CancellationTokenSource.Dispose();
+            
+            _logger.LogInformation($"✅ Stream canvas detenido para {serial}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error deteniendo stream {serial}");
+        }
+    }
+
+    private async Task CaptureFramesAsync(StreamSession session)
+    {
+        try
+        {
+            var buffer = new byte[1024 * 1024]; // 1MB buffer
+            var frameCount = 0;
+            var lastFrameTime = DateTime.UtcNow;
+
+            _logger.LogInformation($"📹 Iniciando captura de frames para {session.Serial}");
+
+            // Usar screencap via ADB como alternativa más simple
+            while (!session.CancellationTokenSource.Token.IsCancellationRequested)
+            {
+                try
+                {
+                    // Capturar screenshot via ADB
+                    var screenshot = await CaptureScreenshotAsync(session.Serial);
+                    
+                    if (screenshot != null && screenshot.Length > 0)
+                    {
+                        // Enviar frame al cliente via SignalR
+                        await _hubContext.Clients.Client(session.ConnectionId)
+                            .SendAsync("ReceiveFrame", session.Serial, Convert.ToBase64String(screenshot));
+
+                        frameCount++;
+                        
+                        // Log cada 30 frames
+                        if (frameCount % 30 == 0)
+                        {
+                            var fps = 30.0 / (DateTime.UtcNow - lastFrameTime).TotalSeconds;
+                            _logger.LogDebug($"📊 {session.Serial}: {frameCount} frames, ~{fps:F1} FPS");
+                            lastFrameTime = DateTime.UtcNow;
+                        }
+                    }
+
+                    // Delay según FPS deseado (30 FPS = ~33ms)
+                    await Task.Delay(33, session.CancellationTokenSource.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning($"⚠️ Error capturando frame de {session.Serial}: {ex.Message}");
+                    await Task.Delay(100, session.CancellationTokenSource.Token);
+                }
+            }
+
+            _logger.LogInformation($"📹 Captura de frames finalizada para {session.Serial}. Total: {frameCount} frames");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error en captura de frames para {session.Serial}");
+        }
+    }
+
+    private async Task<byte[]?> CaptureScreenshotAsync(string serial)
+    {
+        try
+        {
+            var device = _adbService.GetConnectedDevices().FirstOrDefault(d => d.Serial == serial);
+            if (device == null)
+            {
+                return null;
+            }
+
+            // Ejecutar screencap via ADB
+            var receiver = new AdvancedSharpAdbClient.Receivers.ConsoleOutputReceiver();
+            var adbClient = new AdbClient();
+            var adbDevice = new DeviceData { Serial = serial };
+
+            // Capturar screenshot en formato PNG
+            await Task.Run(() =>
+            {
+                adbClient.ExecuteRemoteCommand("screencap -p", adbDevice, receiver);
+            });
+
+            var output = receiver.ToString();
+            if (string.IsNullOrEmpty(output))
+            {
+                return null;
+            }
+
+            // Convertir output a bytes (PNG)
+            return System.Text.Encoding.Latin1.GetBytes(output);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning($"Error capturando screenshot de {serial}: {ex.Message}");
+            return null;
+        }
+    }
+
+    public async Task SendTouchEventAsync(string serial, string eventType, int x, int y)
+    {
+        try
+        {
+            var device = _adbService.GetConnectedDevices().FirstOrDefault(d => d.Serial == serial);
+            if (device == null)
+            {
+                throw new Exception($"Dispositivo {serial} no encontrado");
+            }
+
+            var adbClient = new AdbClient();
+            var adbDevice = new DeviceData { Serial = serial };
+            var receiver = new AdvancedSharpAdbClient.Receivers.ConsoleOutputReceiver();
+
+            string command = eventType.ToLower() switch
+            {
+                "tap" => $"input tap {x} {y}",
+                "swipe" => $"input swipe {x} {y} {x} {y} 100",
+                _ => $"input tap {x} {y}"
+            };
+
+            await Task.Run(() =>
+            {
+                adbClient.ExecuteRemoteCommand(command, adbDevice, receiver);
+            });
+
+            _logger.LogDebug($"Touch event enviado a {serial}: {command}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error enviando touch event a {serial}");
+            throw;
+        }
+    }
+
+    public List<string> GetActiveStreams()
+    {
+        return _activeSessions.Keys.ToList();
+    }
+
+    private QualitySettings GetQualitySettings(string quality)
+    {
+        return quality?.ToLower() switch
+        {
+            "480p" => new QualitySettings { MaxSize = 480, BitRate = "2M", MaxFps = 30 },
+            "720p" => new QualitySettings { MaxSize = 720, BitRate = "4M", MaxFps = 30 },
+            "1080p" => new QualitySettings { MaxSize = 1080, BitRate = "8M", MaxFps = 30 },
+            "4k" => new QualitySettings { MaxSize = 2160, BitRate = "16M", MaxFps = 30 },
+            _ => new QualitySettings { MaxSize = 720, BitRate = "4M", MaxFps = 30 }
+        };
+    }
+}
+
+public class StreamSession
+{
+    public string Serial { get; set; } = "";
+    public string ConnectionId { get; set; } = "";
+    public Process Process { get; set; } = null!;
+    public string Quality { get; set; } = "720p";
+    public CancellationTokenSource CancellationTokenSource { get; set; } = null!;
+}
+
+public class QualitySettings
+{
+    public int MaxSize { get; set; }
+    public string BitRate { get; set; } = "4M";
+    public int MaxFps { get; set; } = 30;
+}

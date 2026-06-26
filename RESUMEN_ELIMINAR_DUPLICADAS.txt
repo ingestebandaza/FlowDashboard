@@ -1,0 +1,97 @@
+================================================================================
+                    🔧 ELIMINAR FUNCIONES DUPLICADAS
+================================================================================
+
+PROBLEMA:
+  ✗ Ves 2 funciones validate_flowdashboard_license
+  ✗ El script anterior no las eliminó
+  ✗ Las funciones tienen diferentes firmas
+
+SOLUCIÓN:
+  Ejecutar 2 scripts en orden:
+  1. supabase_ELIMINAR_TODO.sql (elimina TODAS)
+  2. supabase_license_rpc_LIMPIO.sql (crea la correcta)
+
+================================================================================
+                         PASO 1: ELIMINAR TODO
+================================================================================
+
+ARCHIVO: supabase_ELIMINAR_TODO.sql
+
+PASOS:
+  1. Abre Supabase SQL Editor
+  2. New Query
+  3. Copia supabase_ELIMINAR_TODO.sql
+  4. Pega en el editor
+  5. Haz clic en "Run"
+  6. Espera a que se complete
+
+VERIFICACIÓN:
+  Panel izquierdo → Database → Functions
+  Busca: validate_flowdashboard_license
+  Deberías ver: NADA (0 funciones)
+
+================================================================================
+                         PASO 2: CREAR CORRECTA
+================================================================================
+
+ARCHIVO: supabase_license_rpc_LIMPIO.sql
+
+PASOS:
+  1. Abre Supabase SQL Editor
+  2. New Query
+  3. Copia supabase_license_rpc_LIMPIO.sql
+  4. Pega en el editor
+  5. Haz clic en "Run"
+  6. Espera a que se complete
+
+VERIFICACIÓN:
+  Panel izquierdo → Database → Functions
+  Busca: validate_flowdashboard_license
+  Deberías ver: 1 función (SOLO 1)
+
+================================================================================
+                         VERIFICACIÓN FINAL
+================================================================================
+
+En Supabase SQL Editor, ejecuta:
+
+  SELECT * FROM pg_proc 
+  WHERE proname = 'validate_flowdashboard_license';
+
+RESULTADO ESPERADO:
+  1 fila (SOLO 1 función)
+
+Si ves 0 filas: Ejecuta supabase_license_rpc_LIMPIO.sql
+Si ves 2+ filas: Ejecuta supabase_ELIMINAR_TODO.sql nuevamente
+
+================================================================================
+                         PRÓXIMOS PASOS
+================================================================================
+
+1. ✅ Ejecuta supabase_ELIMINAR_TODO.sql
+2. ✅ Verifica que NO hay funciones
+3. ✅ Ejecuta supabase_license_rpc_LIMPIO.sql
+4. ✅ Verifica que hay SOLO 1 función
+5. ✅ Recarga el dashboard (F5)
+6. ✅ Intenta iniciar sesión
+7. ✅ La validación debería funcionar
+
+================================================================================
+                         IMPORTANTE
+================================================================================
+
+⚠️ NO ejecutes ambos scripts al mismo tiempo
+⚠️ PRIMERO: supabase_ELIMINAR_TODO.sql
+⚠️ LUEGO: supabase_license_rpc_LIMPIO.sql
+⚠️ ESPERA a que cada uno se complete
+
+================================================================================
+                         RESULTADO
+================================================================================
+
+✅ ANTES: 2 funciones duplicadas
+✅ DESPUÉS: 1 función correcta
+✅ VALIDACIÓN: Funciona correctamente
+
+================================================================================

@@ -1,0 +1,1247 @@
+﻿FlowDashboard Pro - Commercial Readiness Inventory V2
+GeneratedAt: 2026-06-23T05:26:04.1305750+02:00
+Root: C:\DASHBOARD\FlowDashboard
+Official dashboard launcher: abrir_electron.bat
+Mode: READ-ONLY (except this report file)
+
+========================================================================================
+1. VERSION CONTROL
+========================================================================================
+Git branch: main
+Git HEAD: d4ae086
+Git status:
+ M .gitignore
+ M .vscode/settings.json
+ M AGENTS.md
+ M CrearActualizacion.bat
+ M Login.js
+ M PROJECT_CONTEXT.md
+ D RELEASE_NOTES_1.0.45.md
+ D RELEASE_NOTES_1.0.46.md
+ D RELEASE_NOTES_1.0.47.md
+ M abrir_dashboard.bat
+ M app_meta.py
+ M flow_agent_apk/AndroidManifest.xml
+ M flow_agent_apk/README.md
+ M flow_agent_apk/build/flowagent-debug.apk
+ M flow_agent_apk/build_apk.ps1
+ M flow_agent_apk/res/values/strings.xml
+ M flow_agent_apk/res/values/styles.xml
+ M flow_agent_apk/src/com/flowlogin/agent/AgentSocketClient.java
+ M flow_agent_apk/src/com/flowlogin/agent/FlowAccessibilityService.java
+ M flow_agent_apk/src/com/flowlogin/agent/MainActivity.java
+ M local_adb_server.py
+ M logo.png
+ M update.json
+ M wsapi_demo.html
+?? .abacusai/
+?? .app_icon_cache/
+?? .kiro/
+?? .upload_tmp/
+?? APK/
+?? ARQUITECTURA_FASE1.txt
+?? ARQUITECTURA_VISUAL.txt
+?? AUDITORIA_COMERCIAL_SOLO_LECTURA.ps1
+?? AUDITORIA_COMERCIAL_SOLO_LECTURA_V2.ps1
+?? AutoJs6/
+?? COMANDO_PARA_KIRO.txt
+?? COMIENZA_AQUI_PRUEBA_ELECTRON.txt
+?? ESTADO_ACTUAL_EJECUCION.txt
+?? ESTRUCTURA_ARCHIVOS.txt
+?? Eliminar/
+?? Error
+?? FOCUS_FLOATING_MASTER_CONTROL_ACTION_PLAN.md
+?? FlowDashboard.Core/
+?? FlowDashboard.exe
+?? Herramientas/
+?? INICIAR_FLOWDASHBOARD.bat
+?? INICIAR_FLOWDASHBOARD.ps1
+?? INSTRUCCIONES_BOTON_VALIDAR.txt
+?? INSTRUCCIONES_RAPIDAS_MEJORAS.txt
+?? INSTRUCCIONES_REINICIAR_SERVIDOR.txt
+?? LEEME_PRIMERO.txt
+?? LISTO_PARA_PROBAR.txt
+?? LISTO_PARA_USAR.txt
+?? PASOS_FINALES.txt
+?? PASOS_HABILITAR_PGCRYPTO.txt
+?? PASOS_RAPIDOS_LIMPIAR.txt
+?? PASOS_SERVICE_ROLE_KEY.txt
+?? PLAN_ROLLOUT_CONTROL.md
+?? PRUEBA_ELECTRON_AHORA.txt
+?? PRUEBA_ELECTRON_SIN_PEGAR.txt
+?? RESUMEN_CREAR_FUNCION.txt
+?? RESUMEN_ELIMINAR_DUPLICADAS.txt
+?? RESUMEN_MEJORAS_DASHBOARD.txt
+?? RESUMEN_MIGRACION_ELECTRON_FASE1.txt
+?? RESUMEN_OPCIONES_ZINDEX.txt
+?? RESUMEN_PANEL_RENDIMIENTO.txt
+?? RESUMEN_RAPIDO.txt
+?? SOLUCION_BOTONES_STREAMING.txt
+?? SOLUCION_ERROR_SUPABASE.txt
+?? TASKS_MONOLITO_PRO.md
+?? VERIFICACION_RAPIDA.txt
+?? VERIFICAR_MEJORAS.bat
+?? abrir_dashboard.ps1
+?? abrir_dashboard_pro.bat
+?? abrir_diagnostico.bat
+?? abrir_electron.bat
+?? abrir_electron.ps1
+?? build.bat
+?? build_apk.bat
+?? canary_python.err
+?? canary_python.out
+?? check_agent_detail.ps1
+?? check_agents.ps1
+?? check_apk_logs.bat
+?? check_apk_logs2.bat
+?? check_apk_version.ps1
+?? check_ports.ps1
+?? check_ports_detailed.ps1
+?? check_processes.ps1
+?? chro_192.168.1.11.csv
+?? compilar_backend.bat
+?? cone_192.168.1.11.csv
+?? conectar_dispositivos_wifi.bat
+?? connect_missing.ps1
+?? csharp_live.err
+?? csharp_live.out
+?? csharp_start.err
+?? csharp_start.out
+?? csharp_test.err
+?? csharp_test.out
+?? debug_validar.js
+?? device_inventory.json
+?? device_mappings.json
+?? devices_output.json
+?? diag_hwnd.ps1
+?? diag_out.txt
+?? diagnose_48_control.ps1
+?? diagnose_48_part3.ps1
+?? diagnose_silent_failure.ps1
+?? diagnostico_streaming.html
+?? docs/
+?? docs_legacy/
+?? dump.xml
+?? dump2.xml
+?? electron-app/
+?? find_laixi.ps1
+?? find_python.ps1
+?? fix_all.py
+?? fix_local_adb.py
+?? fix_mappings.ps1
+?? fix_modals.py
+?? flow_agent_apk/assets/
+?? flow_agent_apk/backup_0_3_8/
+?? flow_agent_apk/build/classes.jar
+?? flow_agent_apk/build/classes/
+?? flow_agent_apk/build/compiled.zip
+?? flow_agent_apk/build/dex/
+?? flow_agent_apk/build/flowagent-aligned.apk
+?? flow_agent_apk/build/flowagent-debug.apk.idsig
+?? flow_agent_apk/build/flowagent-unsigned-dex.apk
+?? flow_agent_apk/build/flowagent-unsigned.apk
+?? flow_agent_apk/build/gen/
+?? flow_agent_apk/install_apk.ps1
+?? flow_agent_apk/res/drawable/button_primary.xml
+?? flow_agent_apk/res/drawable/button_pro_background.xml
+?? flow_agent_apk/res/drawable/button_secondary.xml
+?? flow_agent_apk/res/drawable/card_pro_background.xml
+?? flow_agent_apk/res/drawable/flow_keyboard_bg.xml
+?? flow_agent_apk/res/drawable/flow_keyboard_key.xml
+?? flow_agent_apk/res/drawable/flow_keyboard_key_primary.xml
+?? flow_agent_apk/res/drawable/status_dot.xml
+?? flow_agent_apk/res/layout/
+?? flow_agent_apk/res/values/colors.xml
+?? flow_agent_apk/res/xml/flow_keyboard_method.xml
+?? flow_agent_apk/src/com/flowlogin/agent/DeviceIdentity.java
+?? flow_agent_apk/src/com/flowlogin/agent/FlowKeyboardService.java
+?? flow_agent_apk/src/com/flowlogin/agent/MediaProjectionHolder.java
+?? flow_agent_apk/src/com/flowlogin/agent/ScreenCaptureThread.java
+?? flow_agent_monolito/
+?? flowagent_screen_192_168_1_11.png
+?? flowmail_before_password.png
+?? flowmail_chrome.png
+?? flowmail_current_fields.png
+?? flowmail_password_confirm_fixed.png
+?? flowmail_password_filled.png
+?? flowmail_password_second_filled.png
+?? flowmail_password_second_submit.png
+?? flowmail_password_submit.png
+?? flowmail_reposition.png
+?? flowmail_sbrowser.png
+?? force_restart_apk.ps1
+?? fresh_start_apk.ps1
+?? h264_canary_config.json
+?? hotfix.js
+?? hotfix.py
+?? hotfix2.py
+?? icono.png
+?? "informacion de scrcpy/"
+?? iniciar_backend.ps1
+?? iniciar_electron_prueba.ps1
+?? install_apk_all.ps1
+?? install_apk_all_devices.ps1
+?? install_batches.ps1
+?? install_only_parallel.ps1
+?? install_parallel.ps1
+?? inventory.ps1
+?? key-test.json
+?? kill_duplicate_python.ps1
+?? launch_apk_all.ps1
+?? launch_apk_with_serial.ps1
+?? license_persistence.js
+?? limpiar_cache.bat
+?? limpiar_cache.py
+?? mail_config.json
+?? main.py
+?? matar_laixi_iniciar_backend.ps1
+?? matar_puertos.ps1
+?? musid_after_clear.png
+?? musid_after_clear2.png
+?? only_reverse.ps1
+?? open_musid_url.js
+?? package.json
+?? permisos.bat
+?? permisos.ps1
+?? phase1_repro.ps1
+?? pro_panel.js
+?? ps.txt
+?? reactivate_accessibility.ps1
+?? recordings/
+?? reinstall_apk_all.bat
+?? reinstall_parallel.ps1
+?? relaunch_fresh.ps1
+?? replace_script.py
+?? reports/
+?? requirements.txt
+?? reset_adb.bat
+?? restart_apk.bat
+?? restore_points/
+?? rollout_final.ps1
+?? scratch/
+?? scrcpy-server
+?? scrcpy-server.jar
+?? scrcpy-win64-v4.0/
+?? scrcpy_control_channel.py
+?? scrcpy_manager.py
+?? scrcpy_raw_streamer.py
+?? scrcpy_raw_ws_server.py
+?? server_start.err
+?? server_start.out
+?? setup_adb_reverse.ps1
+?? setup_devices_full.ps1
+?? setup_reverse_and_launch.ps1
+?? spike_A_ACTUAL.mp4
+?? spike_B_TIME_LIMIT.mp4
+?? spike_C_SW_HIDE.mp4
+?? spike_D_VISIBLE.mp4
+?? spike_E_MKV.mkv
+?? spike_G_TASKKILL.mp4
+?? start_capture_all.ps1
+?? start_hybrid.bat
+?? start_python.ps1
+?? stop_laixi_apk.ps1
+?? streaming_ui_clean.js
+?? supabase_CREAR_FUNCION.sql
+?? supabase_CREAR_FUNCION_SIN_DIGEST.sql
+?? supabase_ELIMINAR_TODAS_FIRMAS.sql
+?? supabase_ELIMINAR_TODO.sql
+?? supabase_HABILITAR_PGCRYPTO.sql
+?? supabase_license_rpc_LIMPIO.sql
+?? sync_mappings.ps1
+?? tap-test.json
+?? temp_dopost.txt
+?? test.js
+?? test/
+?? test_backend_streaming.py
+?? test_concurrent.py
+?? test_fase1.bat
+?? test_registration.bat
+?? test_scrcpy_integration.py
+?? test_tap.py
+?? test_websocket_streaming.py
+?? tools/
+?? usb_inventory.json
+?? verificar_dashboard.bat
+?? votos.js
+?? votos_status.json
+?? watchdog_reverse.ps1
+?? websocket_server.py
+?? window_dump.xml
+?? window_dump_after_click.xml
+?? window_dump_chrome.xml
+?? window_dump_chrome2.xml
+?? window_dump_chrome_clicked.xml
+?? window_dump_chrome_scrolled.xml
+?? window_dump_loaded.xml
+?? ws_analyzer.py
+
+Potential secret/config files tracked by Git:
+None detected.
+
+========================================================================================
+2. TOOLCHAIN VERSIONS
+========================================================================================
+
+[PowerShell]
+5.1.26100.8655
+
+[Python]
+Python 3.10.11
+
+[Node]
+v24.13.0
+
+[npm]
+11.7.0
+
+[.NET]
+SDK DE .NET:
+ Version:           8.0.421
+ Commit:            f16c270f6c
+ Workload version:  8.0.400-manifests.83eddae2
+ MSBuild version:   17.11.48+02bf66295
+
+Entorno de tiempo de ejecuci├│n:
+ OS Name:     Windows
+ OS Version:  10.0.26200
+ OS Platform: Windows
+ RID:         win-x64
+ Base Path:   C:\Program Files\dotnet\sdk\8.0.421\
+
+Cargas de trabajo de .NET instaladas:
+Configurado para usar loose manifests al instalar nuevos manifiestos.
+No hay cargas de trabajo instaladas para mostrar.
+
+Host:
+  Version:      8.0.27
+  Architecture: x64
+  Commit:       a6bde67c45
+
+.NET SDKs installed:
+  8.0.421 [C:\Program Files\dotnet\sdk]
+
+
+[Java]
+openjdk version "17.0.19" 2026-04-21 LTS
+OpenJDK Runtime Environment Microsoft-13877129 (build 17.0.19+10-LTS)
+OpenJDK 64-Bit Server VM Microsoft-13877129 (build 17.0.19+10-LTS, mixed mode, sharing)
+
+[ADB]
+Android Debug Bridge version 1.0.41
+Version 37.0.0-14910828
+Installed as C:\DASHBOARD\FlowDashboard\scrcpy-win64-v4.0\adb.exe
+Running on Windows 10.0.26200
+
+[scrcpy]
+scrcpy 4.0 <https://github.com/Genymobile/scrcpy>
+
+Dependencies (compiled / linked):
+ - SDL: 3.4.8 / 3.4.8
+ - libavcodec: 62.28.101 / 62.28.101
+ - libavformat: 62.12.101 / 62.12.101
+ - libavutil: 60.26.101 / 60.26.101
+ - libusb: - / 1.0.29
+
+========================================================================================
+3. IMPORTANT PROJECT FILES
+========================================================================================
+.upload_tmp\activar_captura.ps1	3487 bytes	Modified 2026-05-28T10:13:10.9363110+02:00
+.upload_tmp\activar_captura_smart.ps1	8016 bytes	Modified 2026-05-28T22:48:38.6298228+02:00
+.upload_tmp\agent_cmd.ps1	566 bytes	Modified 2026-05-27T23:47:05.4479588+02:00
+.upload_tmp\arranca_python_test.bat	1211 bytes	Modified 2026-05-28T13:36:15.4839820+02:00
+.upload_tmp\arranque_limpio.bat	956 bytes	Modified 2026-05-28T15:08:35.4422436+02:00
+.upload_tmp\auditar.ps1	3897 bytes	Modified 2026-05-28T10:54:24.3898230+02:00
+.upload_tmp\despliegue_bloques.ps1	7547 bytes	Modified 2026-05-28T04:01:29.7896418+02:00
+.upload_tmp\despliegue_limpio.ps1	6540 bytes	Modified 2026-05-28T03:53:03.9618870+02:00
+.upload_tmp\diag.ps1	2671 bytes	Modified 2026-05-28T03:15:23.2539913+02:00
+.upload_tmp\diag_full.bat	2538 bytes	Modified 2026-05-28T13:48:09.1494699+02:00
+.upload_tmp\diag_limpio.bat	1344 bytes	Modified 2026-05-28T14:41:51.6929752+02:00
+.upload_tmp\diag_limpio2.bat	1206 bytes	Modified 2026-05-28T14:47:53.2573386+02:00
+.upload_tmp\diag_raw_server.ps1	4354 bytes	Modified 2026-05-28T12:04:07.6337924+02:00
+.upload_tmp\diag_scrcpy.ps1	667 bytes	Modified 2026-05-28T11:12:01.1029109+02:00
+.upload_tmp\dump_mp_dialog.ps1	1286 bytes	Modified 2026-05-28T22:45:58.5720927+02:00
+.upload_tmp\fix_41.ps1	1409 bytes	Modified 2026-05-28T23:29:25.4909012+02:00
+.upload_tmp\fix_accessibility_y_captura.ps1	6849 bytes	Modified 2026-05-28T22:53:08.8126692+02:00
+.upload_tmp\hacer_restore_point.ps1	1584 bytes	Modified 2026-05-28T11:27:24.9775225+02:00
+.upload_tmp\kill_all.bat	597 bytes	Modified 2026-05-28T14:36:04.1914551+02:00
+.upload_tmp\limpiar_devices_y_test.bat	1293 bytes	Modified 2026-05-28T14:03:15.6890619+02:00
+.upload_tmp\limpiar_simple_y_test.bat	919 bytes	Modified 2026-05-28T14:06:07.9828519+02:00
+.upload_tmp\probar_mkv_stdout.ps1	2925 bytes	Modified 2026-05-28T11:18:26.1092626+02:00
+.upload_tmp\probar_scrcpy_solo.ps1	2184 bytes	Modified 2026-05-28T11:09:59.6487721+02:00
+.upload_tmp\probar_serial.ps1	809 bytes	Modified 2026-05-28T11:19:02.5995077+02:00
+.upload_tmp\probar_stream_real.ps1	2714 bytes	Modified 2026-05-28T11:06:06.9091283+02:00
+.upload_tmp\rebuild_y_arrancar.ps1	1538 bytes	Modified 2026-05-28T11:09:03.5990851+02:00
+.upload_tmp\reconectar_17.bat	238 bytes	Modified 2026-05-28T15:26:43.1317456+02:00
+.upload_tmp\reconnect_all.ps1	767 bytes	Modified 2026-05-28T04:03:03.8998912+02:00
+.upload_tmp\reinstall.ps1	1656 bytes	Modified 2026-05-27T23:34:54.4916760+02:00
+.upload_tmp\reset_total.bat	913 bytes	Modified 2026-05-28T14:09:15.5425248+02:00
+.upload_tmp\reset_y_leer.bat	345 bytes	Modified 2026-05-28T15:02:57.5924584+02:00
+.upload_tmp\restart_python_test_17.bat	819 bytes	Modified 2026-05-28T13:56:04.5751077+02:00
+.upload_tmp\restart_python_test_5_ws.bat	752 bytes	Modified 2026-05-28T14:02:04.8360059+02:00
+.upload_tmp\run_diag.bat	125 bytes	Modified 2026-05-28T11:40:37.5171267+02:00
+.upload_tmp\run_test_17.bat	210 bytes	Modified 2026-05-28T13:52:23.1190833+02:00
+.upload_tmp\run_test_raw.bat	240 bytes	Modified 2026-05-28T12:09:38.9245608+02:00
+.upload_tmp\run_test_raw.ps1	369 bytes	Modified 2026-05-28T11:31:40.4356294+02:00
+.upload_tmp\scan_all.ps1	2188 bytes	Modified 2026-05-28T03:55:28.6890291+02:00
+.upload_tmp\setup_flowagent_completo.ps1	15306 bytes	Modified 2026-06-08T22:07:12.3794731+02:00
+.upload_tmp\test_kbd.ps1	1081 bytes	Modified 2026-05-27T23:24:57.4818131+02:00
+.upload_tmp\verificar_streaming.ps1	2241 bytes	Modified 2026-05-28T11:05:25.9439413+02:00
+abrir_dashboard.bat	365 bytes	Modified 2026-06-15T19:15:40.4950459+02:00
+abrir_dashboard.ps1	12689 bytes	Modified 2026-06-15T19:15:40.4940228+02:00
+abrir_dashboard_pro.bat	708 bytes	Modified 2026-05-21T20:40:56.3845562+02:00
+abrir_diagnostico.bat	149 bytes	Modified 2026-05-21T16:24:11.6677979+02:00
+abrir_electron.bat	251 bytes	Modified 2026-05-28T23:00:11.9277907+02:00
+abrir_electron.ps1	9920 bytes	Modified 2026-06-19T06:18:06.6428530+02:00
+app_meta.py	50 bytes	Modified 2026-05-21T02:26:32.0156081+02:00
+AUDITORIA_COMERCIAL_SOLO_LECTURA.ps1	7743 bytes	Modified 2026-06-23T05:14:30.1812374+02:00
+AUDITORIA_COMERCIAL_SOLO_LECTURA_V2.ps1	7930 bytes	Modified 2026-06-23T05:25:48.3541340+02:00
+build.bat	321 bytes	Modified 2026-05-23T11:01:29.2131056+02:00
+build_apk.bat	1090 bytes	Modified 2026-05-23T11:13:12.2305538+02:00
+check_agent_detail.ps1	114 bytes	Modified 2026-05-24T04:29:04.2982196+02:00
+check_agents.ps1	373 bytes	Modified 2026-05-25T06:40:44.9929393+02:00
+check_apk_logs.bat	443 bytes	Modified 2026-05-23T11:06:18.7480321+02:00
+check_apk_logs2.bat	411 bytes	Modified 2026-05-23T11:06:42.8608141+02:00
+check_apk_version.ps1	683 bytes	Modified 2026-05-23T15:13:40.7929272+02:00
+check_ports.ps1	2153 bytes	Modified 2026-05-23T11:34:07.6035084+02:00
+check_ports_detailed.ps1	2340 bytes	Modified 2026-05-23T11:35:09.6509282+02:00
+check_processes.ps1	1868 bytes	Modified 2026-05-23T12:58:45.5104155+02:00
+compilar_backend.bat	167 bytes	Modified 2026-05-23T10:57:11.3531141+02:00
+conectar_dispositivos_wifi.bat	1126 bytes	Modified 2026-05-21T23:40:06.1187602+02:00
+connect_missing.ps1	1594 bytes	Modified 2026-05-23T13:31:28.5657777+02:00
+CrearActualizacion.bat	4178 bytes	Modified 2026-05-21T02:26:52.1634998+02:00
+Crearexe.bat	1756 bytes	Modified 2026-05-15T01:40:11.1767559+02:00
+diag_hwnd.ps1	4258 bytes	Modified 2026-05-22T21:10:53.4320187+02:00
+diagnose_48_control.ps1	1293 bytes	Modified 2026-06-10T06:08:49.2201859+02:00
+diagnose_48_part3.ps1	891 bytes	Modified 2026-06-10T06:13:30.9383923+02:00
+diagnose_silent_failure.ps1	1472 bytes	Modified 2026-06-10T06:19:57.0710554+02:00
+electron-app\install-ffi.bat	152 bytes	Modified 2026-05-21T23:20:38.8131937+02:00
+electron-app\package.json	988 bytes	Modified 2026-05-23T05:56:03.0880951+02:00
+electron-app\package-lock.json	158308 bytes	Modified 2026-05-23T05:56:03.1405102+02:00
+Eliminar\.laixi_extracted\assets\modules\npm\bluebird-co\package.json	3504 bytes	Modified 1981-01-01T01:01:02.0000000+01:00
+Eliminar\.laixi_extracted\assets\modules\npm\lodash\package.json	578 bytes	Modified 1981-01-01T01:01:02.0000000+01:00
+find_laixi.ps1	3196 bytes	Modified 2026-05-23T16:11:17.8610871+02:00
+find_python.ps1	1007 bytes	Modified 2026-05-23T15:42:31.0461842+02:00
+fix_mappings.ps1	2603 bytes	Modified 2026-05-23T15:17:55.4589352+02:00
+flow_agent_apk\build_apk.ps1	4491 bytes	Modified 2026-05-23T04:12:39.3472785+02:00
+flow_agent_apk\install_apk.ps1	1062 bytes	Modified 2026-05-23T10:26:47.7964134+02:00
+flow_agent_monolito\.python\generate_markdown.bat	480 bytes	Modified 2026-05-27T06:21:05.6349386+02:00
+flow_agent_monolito\.utils\package.json	315 bytes	Modified 2026-05-27T06:21:05.6548703+02:00
+flow_agent_monolito\.utils\package-lock.json	62368 bytes	Modified 2026-05-27T06:21:05.6543604+02:00
+flow_agent_monolito\.utils\print-android-version-codes.bat	785 bytes	Modified 2026-05-27T06:21:05.6553835+02:00
+flow_agent_monolito\.utils\run-scrapers.bat	768 bytes	Modified 2026-05-27T06:21:05.6558988+02:00
+flow_agent_monolito\gradle\gradle-wrapper-switcher.bat	165 bytes	Modified 2026-05-27T06:21:07.4072994+02:00
+flow_agent_monolito\gradle\gradle-wrapper-switcher.ps1	4919 bytes	Modified 2026-05-27T06:21:07.4078106+02:00
+flow_agent_monolito\gradle\wrappers\g8\gradlew.bat	2937 bytes	Modified 2026-05-27T06:21:07.4108878+02:00
+flow_agent_monolito\gradle\wrappers\g9\gradlew.bat	2937 bytes	Modified 2026-05-27T06:21:07.4129314+02:00
+flow_agent_monolito\gradle\wrappers\gradlew8.bat	43 bytes	Modified 2026-05-27T06:21:07.4134428+02:00
+flow_agent_monolito\gradle\wrappers\gradlew9.bat	43 bytes	Modified 2026-05-27T06:21:07.4139561+02:00
+flow_agent_monolito\gradlew.bat	2937 bytes	Modified 2026-05-27T06:21:07.4144694+02:00
+FlowDashboard.Core\FlowDashboard.Core.csproj	706 bytes	Modified 2026-06-19T05:42:47.9097899+02:00
+force_restart_apk.ps1	1678 bytes	Modified 2026-05-25T06:41:26.0775969+02:00
+fresh_start_apk.ps1	2651 bytes	Modified 2026-05-25T06:41:16.8971159+02:00
+h264_canary_config.json	458 bytes	Modified 2026-06-15T20:55:11.8449927+02:00
+informacion de scrcpy\app\data\open_a_terminal_here.bat	5 bytes	Modified 2026-05-12T21:35:47.0000000+02:00
+informacion de scrcpy\gradlew.bat	3056 bytes	Modified 2026-05-12T21:35:47.0000000+02:00
+iniciar_backend.ps1	1138 bytes	Modified 2026-05-23T09:11:28.4218102+02:00
+iniciar_electron_prueba.ps1	6837 bytes	Modified 2026-05-23T07:02:02.3549366+02:00
+INICIAR_FLOWDASHBOARD.bat	104 bytes	Modified 2026-05-24T04:33:22.2139370+02:00
+INICIAR_FLOWDASHBOARD.ps1	7659 bytes	Modified 2026-05-25T06:42:04.9421620+02:00
+install_apk_all.ps1	1654 bytes	Modified 2026-05-23T11:22:16.3501255+02:00
+install_apk_all_devices.ps1	4008 bytes	Modified 2026-05-23T08:03:30.8436228+02:00
+install_batches.ps1	1423 bytes	Modified 2026-05-23T13:12:43.9412977+02:00
+install_only_parallel.ps1	990 bytes	Modified 2026-05-23T13:12:08.5785379+02:00
+install_parallel.ps1	1371 bytes	Modified 2026-05-23T12:41:19.5583469+02:00
+inventory.ps1	1112 bytes	Modified 2026-06-10T23:14:13.4428388+02:00
+kill_duplicate_python.ps1	1275 bytes	Modified 2026-05-23T16:12:26.8002165+02:00
+launch_apk_all.ps1	1538 bytes	Modified 2026-05-25T06:59:57.9439886+02:00
+launch_apk_with_serial.ps1	1518 bytes	Modified 2026-05-25T06:42:21.8142738+02:00
+launcher.spec	972 bytes	Modified 2026-05-21T14:50:00.3496644+02:00
+limpiar_cache.bat	346 bytes	Modified 2026-05-21T16:09:46.9385206+02:00
+matar_laixi_iniciar_backend.ps1	2907 bytes	Modified 2026-05-23T09:14:51.5522748+02:00
+matar_puertos.ps1	2594 bytes	Modified 2026-05-23T09:49:54.1574594+02:00
+only_reverse.ps1	1336 bytes	Modified 2026-05-25T06:40:57.6346236+02:00
+package.json	239 bytes	Modified 2026-05-21T20:39:11.8833588+02:00
+permisos.bat	258 bytes	Modified 2026-05-25T01:55:24.1004748+02:00
+permisos.ps1	4584 bytes	Modified 2026-05-25T06:24:39.6365008+02:00
+phase1_repro.ps1	1054 bytes	Modified 2026-06-10T06:48:19.5304072+02:00
+reactivate_accessibility.ps1	2493 bytes	Modified 2026-05-25T06:24:21.9875106+02:00
+reinstall_apk_all.bat	1694 bytes	Modified 2026-05-23T11:15:03.2125035+02:00
+reinstall_parallel.ps1	1618 bytes	Modified 2026-05-23T13:10:47.2734404+02:00
+relaunch_fresh.ps1	1670 bytes	Modified 2026-05-25T07:00:17.3455145+02:00
+requirements.txt	53 bytes	Modified 2026-06-15T19:59:23.3864518+02:00
+reset_adb.bat	534 bytes	Modified 2026-05-24T14:25:27.5236675+02:00
+restart_apk.bat	941 bytes	Modified 2026-05-23T11:05:50.3428470+02:00
+rollout_final.ps1	3227 bytes	Modified 2026-06-10T06:16:27.9653324+02:00
+scrcpy-win64-v4.0\open_a_terminal_here.bat	5 bytes	Modified 2026-05-12T21:24:26.0000000+02:00
+setup_adb_reverse.ps1	1394 bytes	Modified 2026-05-23T11:23:06.9132577+02:00
+setup_devices_full.ps1	5198 bytes	Modified 2026-05-25T07:00:29.6752010+02:00
+setup_reverse_and_launch.ps1	2620 bytes	Modified 2026-05-25T06:43:22.8951990+02:00
+start_capture_all.ps1	1638 bytes	Modified 2026-05-25T07:05:17.3957906+02:00
+start_hybrid.bat	1688 bytes	Modified 2026-05-21T22:23:11.7516471+02:00
+start_python.ps1	656 bytes	Modified 2026-05-23T15:41:31.5097167+02:00
+stop_laixi_apk.ps1	1121 bytes	Modified 2026-05-23T16:31:02.1603862+02:00
+supabase_CREAR_FUNCION.sql	12243 bytes	Modified 2026-05-21T18:31:08.5398333+02:00
+supabase_CREAR_FUNCION_SIN_DIGEST.sql	12289 bytes	Modified 2026-05-21T18:44:11.3290735+02:00
+supabase_ELIMINAR_TODAS_FIRMAS.sql	3177 bytes	Modified 2026-05-21T18:29:29.0420353+02:00
+supabase_ELIMINAR_TODO.sql	1595 bytes	Modified 2026-05-21T18:27:38.1017639+02:00
+supabase_HABILITAR_PGCRYPTO.sql	1467 bytes	Modified 2026-05-21T18:32:22.8210397+02:00
+supabase_license_rpc.sql	12749 bytes	Modified 2026-05-15T03:37:08.2227533+02:00
+supabase_license_rpc_LIMPIO.sql	15412 bytes	Modified 2026-05-21T18:26:10.9989490+02:00
+sync_mappings.ps1	1544 bytes	Modified 2026-05-25T06:40:48.5670037+02:00
+test_capture.ps1	1039 bytes	Modified 2026-05-23T15:28:27.4464826+02:00
+test_fase1.bat	849 bytes	Modified 2026-05-21T22:45:37.9552425+02:00
+test_registration.bat	985 bytes	Modified 2026-05-23T10:55:53.9113619+02:00
+test_registration.ps1	2351 bytes	Modified 2026-05-23T10:55:18.6338137+02:00
+tools\install_monolito_device.ps1	5357 bytes	Modified 2026-05-31T18:44:39.6585826+02:00
+update_config.example.json	104 bytes	Modified 2026-05-15T01:51:36.1682495+02:00
+update_config.json	105 bytes	Modified 2026-05-20T03:22:07.1131987+02:00
+verificar_dashboard.bat	4142 bytes	Modified 2026-05-21T18:48:22.2181494+02:00
+VERIFICAR_MEJORAS.bat	2747 bytes	Modified 2026-05-21T18:55:25.6063188+02:00
+watchdog_reverse.ps1	1590 bytes	Modified 2026-05-24T16:05:39.1959942+02:00
+
+========================================================================================
+4. TOP-LEVEL INVENTORY
+========================================================================================
+DIR 	.abacusai	
+DIR 	.agents	
+DIR 	.app_icon_cache	
+DIR 	.flowlogin_payloads	
+DIR 	.git	
+DIR 	.kiro	
+DIR 	.qodo	
+DIR 	.upload_tmp	
+DIR 	.venv	
+DIR 	.vscode	
+DIR 	__pycache__	
+DIR 	APK	
+DIR 	AutoJs6	
+DIR 	docs	
+DIR 	docs_legacy	
+DIR 	electron-app	
+DIR 	Eliminar	
+DIR 	flow_agent_apk	
+DIR 	flow_agent_monolito	
+DIR 	FlowDashboard.Core	
+DIR 	Herramientas	
+DIR 	informacion de scrcpy	
+DIR 	recordings	
+DIR 	reports	
+DIR 	restore_points	
+DIR 	scratch	
+DIR 	scrcpy-win64-v4.0	
+DIR 	test	
+DIR 	tools	
+FILE	.gitattributes	66 bytes
+FILE	.gitignore	639 bytes
+FILE	.supabase_config.json	395 bytes
+FILE	abrir_dashboard.bat	365 bytes
+FILE	abrir_dashboard.ps1	12689 bytes
+FILE	abrir_dashboard_pro.bat	708 bytes
+FILE	abrir_diagnostico.bat	149 bytes
+FILE	abrir_electron.bat	251 bytes
+FILE	abrir_electron.ps1	9920 bytes
+FILE	AGENTS.md	13082 bytes
+FILE	app_meta.py	50 bytes
+FILE	ARQUITECTURA_FASE1.txt	19948 bytes
+FILE	ARQUITECTURA_VISUAL.txt	19766 bytes
+FILE	AUDITORIA_COMERCIAL_SOLO_LECTURA.ps1	7743 bytes
+FILE	AUDITORIA_COMERCIAL_SOLO_LECTURA_V2.ps1	7930 bytes
+FILE	build.bat	321 bytes
+FILE	build.log	5652 bytes
+FILE	build_apk.bat	1090 bytes
+FILE	build_assembleDebug.log	83242 bytes
+FILE	build_phase2.log	58790 bytes
+FILE	build_phase2_v2.log	58562 bytes
+FILE	build_phase3_v1.log	124894 bytes
+FILE	build_phase3_v2.log	57524 bytes
+FILE	build_phase3_v3.log	62206 bytes
+FILE	build_phase3_v4.log	74880 bytes
+FILE	build_phase3_v5.log	58536 bytes
+FILE	build_phase4_v1.log	60384 bytes
+FILE	build_phase4_v2.log	58620 bytes
+FILE	build_phase5_v1.log	58406 bytes
+FILE	build_phase567.log	58362 bytes
+FILE	build_phase8fix.log	58588 bytes
+FILE	build_release.log	88286 bytes
+FILE	canary_python.err	428 bytes
+FILE	canary_python.out	473 bytes
+FILE	check_agent_detail.ps1	114 bytes
+FILE	check_agents.ps1	373 bytes
+FILE	check_apk_logs.bat	443 bytes
+FILE	check_apk_logs2.bat	411 bytes
+FILE	check_apk_version.ps1	683 bytes
+FILE	check_ports.ps1	2153 bytes
+FILE	check_ports_detailed.ps1	2340 bytes
+FILE	check_processes.ps1	1868 bytes
+FILE	chro_192.168.1.11.csv	18602 bytes
+FILE	clear-cache-data.js	5013 bytes
+FILE	COMANDO_PARA_KIRO.txt	722 bytes
+FILE	COMIENZA_AQUI_PRUEBA_ELECTRON.txt	6846 bytes
+FILE	compilar_backend.bat	167 bytes
+FILE	cone_192.168.1.11.csv	1633 bytes
+FILE	conectar_dispositivos_wifi.bat	1126 bytes
+FILE	connect_missing.ps1	1594 bytes
+FILE	CrearActualizacion.bat	4178 bytes
+FILE	Crearexe.bat	1756 bytes
+FILE	csharp_live.err	0 bytes
+FILE	csharp_live.out	4071 bytes
+FILE	csharp_start.err	0 bytes
+FILE	csharp_start.out	2248 bytes
+FILE	csharp_test.err	0 bytes
+FILE	csharp_test.out	5683 bytes
+FILE	debug_validar.js	5364 bytes
+FILE	device_groups.json	604 bytes
+FILE	device_inventory.json	9579 bytes
+FILE	device_mappings.json	3213 bytes
+FILE	device_names.json	1259 bytes
+FILE	devices_output.json	76208 bytes
+FILE	diag_hwnd.ps1	4258 bytes
+FILE	diag_out.txt	3014 bytes
+FILE	diagnose_48_control.ps1	1293 bytes
+FILE	diagnose_48_part3.ps1	891 bytes
+FILE	diagnose_silent_failure.ps1	1472 bytes
+FILE	diagnostico_streaming.html	8224 bytes
+FILE	dump.xml	66199 bytes
+FILE	dump2.xml	66321 bytes
+FILE	Error	1394 bytes
+FILE	ESTADO_ACTUAL_EJECUCION.txt	5513 bytes
+FILE	ESTRUCTURA_ARCHIVOS.txt	944 bytes
+FILE	find_laixi.ps1	3196 bytes
+FILE	find_python.ps1	1007 bytes
+FILE	fix_all.py	6410 bytes
+FILE	fix_local_adb.py	3491 bytes
+FILE	fix_mappings.ps1	2603 bytes
+FILE	fix_modals.py	4658 bytes
+FILE	flowagent_screen_192_168_1_11.png	174521 bytes
+FILE	FlowDashboard.exe	8864780 bytes
+FILE	flowmail_before_password.png	154330 bytes
+FILE	flowmail_chrome.png	96250 bytes
+FILE	flowmail_current_fields.png	159247 bytes
+FILE	flowmail_password_confirm_fixed.png	169819 bytes
+FILE	flowmail_password_filled.png	155341 bytes
+FILE	flowmail_password_second_filled.png	170530 bytes
+FILE	flowmail_password_second_submit.png	114586 bytes
+FILE	flowmail_password_submit.png	168291 bytes
+FILE	flowmail_reposition.png	172002 bytes
+FILE	flowmail_sbrowser.png	154485 bytes
+FILE	FOCUS_FLOATING_MASTER_CONTROL_ACTION_PLAN.md	15447 bytes
+FILE	force_restart_apk.ps1	1678 bytes
+FILE	fresh_start_apk.ps1	2651 bytes
+FILE	h264_canary_config.json	458 bytes
+FILE	hotfix.js	3795 bytes
+FILE	hotfix.py	4459 bytes
+FILE	hotfix2.py	2756 bytes
+FILE	icono.png	36472 bytes
+FILE	iniciar_backend.ps1	1138 bytes
+FILE	iniciar_electron_prueba.ps1	6837 bytes
+FILE	INICIAR_FLOWDASHBOARD.bat	104 bytes
+FILE	INICIAR_FLOWDASHBOARD.ps1	7659 bytes
+FILE	install_apk_all.ps1	1654 bytes
+FILE	install_apk_all_devices.ps1	4008 bytes
+FILE	install_batches.ps1	1423 bytes
+FILE	install_only_parallel.ps1	990 bytes
+FILE	install_parallel.ps1	1371 bytes
+FILE	INSTRUCCIONES_BOTON_VALIDAR.txt	3459 bytes
+FILE	INSTRUCCIONES_RAPIDAS_MEJORAS.txt	5089 bytes
+FILE	INSTRUCCIONES_REINICIAR_SERVIDOR.txt	2798 bytes
+FILE	inventory.ps1	1112 bytes
+FILE	key-test.json	66 bytes
+FILE	kill_duplicate_python.ps1	1275 bytes
+FILE	launch_apk_all.ps1	1538 bytes
+FILE	launch_apk_with_serial.ps1	1518 bytes
+FILE	launcher.py	3650 bytes
+FILE	launcher.spec	972 bytes
+FILE	LEEME_PRIMERO.txt	6236 bytes
+FILE	license_admin.html	32178 bytes
+FILE	license_persistence.js	6695 bytes
+FILE	limpiar_cache.bat	346 bytes
+FILE	limpiar_cache.py	3111 bytes
+FILE	LISTO_PARA_PROBAR.txt	3794 bytes
+FILE	LISTO_PARA_USAR.txt	5476 bytes
+FILE	local_adb_server.py	387971 bytes
+FILE	Login.js	41163 bytes
+FILE	logo.png	91159 bytes
+FILE	mail_config.json	507 bytes
+FILE	main.py	8546 bytes
+FILE	matar_laixi_iniciar_backend.ps1	2907 bytes
+FILE	matar_puertos.ps1	2594 bytes
+FILE	musid_after_clear.png	0 bytes
+FILE	musid_after_clear2.png	0 bytes
+FILE	only_reverse.ps1	1336 bytes
+FILE	open_musid_url.js	706 bytes
+FILE	package.json	239 bytes
+FILE	PASOS_FINALES.txt	3628 bytes
+FILE	PASOS_HABILITAR_PGCRYPTO.txt	3077 bytes
+FILE	PASOS_RAPIDOS_LIMPIAR.txt	2436 bytes
+FILE	PASOS_SERVICE_ROLE_KEY.txt	3183 bytes
+FILE	permisos.bat	258 bytes
+FILE	permisos.ps1	4584 bytes
+FILE	phase1_repro.ps1	1054 bytes
+FILE	PLAN_ROLLOUT_CONTROL.md	8275 bytes
+FILE	pro_panel.js	3270 bytes
+FILE	PROJECT_CONTEXT.md	406017 bytes
+FILE	PRUEBA_ELECTRON_AHORA.txt	4643 bytes
+FILE	PRUEBA_ELECTRON_SIN_PEGAR.txt	5491 bytes
+FILE	ps.txt	106922 bytes
+FILE	reactivate_accessibility.ps1	2493 bytes
+FILE	Register.js	313 bytes
+FILE	reinstall_apk_all.bat	1694 bytes
+FILE	reinstall_parallel.ps1	1618 bytes
+FILE	relaunch_fresh.ps1	1670 bytes
+FILE	replace_script.py	1343 bytes
+FILE	requirements.txt	53 bytes
+FILE	reset_adb.bat	534 bytes
+FILE	restart_apk.bat	941 bytes
+FILE	RESUMEN_CREAR_FUNCION.txt	1647 bytes
+FILE	RESUMEN_ELIMINAR_DUPLICADAS.txt	3457 bytes
+FILE	RESUMEN_MEJORAS_DASHBOARD.txt	6199 bytes
+FILE	RESUMEN_MIGRACION_ELECTRON_FASE1.txt	7303 bytes
+FILE	RESUMEN_OPCIONES_ZINDEX.txt	6873 bytes
+FILE	RESUMEN_PANEL_RENDIMIENTO.txt	5871 bytes
+FILE	RESUMEN_RAPIDO.txt	4055 bytes
+FILE	rollout_final.ps1	3227 bytes
+FILE	scrcpy_control_channel.py	13853 bytes
+FILE	scrcpy_manager.py	13857 bytes
+FILE	scrcpy_raw_streamer.py	47191 bytes
+FILE	scrcpy_raw_ws_server.py	6782 bytes
+FILE	scrcpy-server	732226 bytes
+FILE	scrcpy-server.jar	732226 bytes
+FILE	server_start.err	370 bytes
+FILE	server_start.out	250 bytes
+FILE	setup_adb_reverse.ps1	1394 bytes
+FILE	setup_devices_full.ps1	5198 bytes
+FILE	setup_reverse_and_launch.ps1	2620 bytes
+FILE	SOLUCION_BOTONES_STREAMING.txt	4708 bytes
+FILE	SOLUCION_ERROR_SUPABASE.txt	4106 bytes
+FILE	spike_A_ACTUAL.log	1558 bytes
+FILE	spike_A_ACTUAL.mp4	48 bytes
+FILE	spike_B_TIME_LIMIT.log	1562 bytes
+FILE	spike_B_TIME_LIMIT.mp4	48 bytes
+FILE	spike_C_SW_HIDE.log	1588 bytes
+FILE	spike_C_SW_HIDE.mp4	48 bytes
+FILE	spike_D_VISIBLE.log	1587 bytes
+FILE	spike_D_VISIBLE.mp4	48 bytes
+FILE	spike_E_MKV.log	1560 bytes
+FILE	spike_E_MKV.mkv	0 bytes
+FILE	spike_F_MKV_SCREEN_ON.log	115 bytes
+FILE	spike_G_TASKKILL.log	1677 bytes
+FILE	spike_G_TASKKILL.mp4	52854 bytes
+FILE	start_capture_all.ps1	1638 bytes
+FILE	start_hybrid.bat	1688 bytes
+FILE	start_python.ps1	656 bytes
+FILE	stop_laixi_apk.ps1	1121 bytes
+FILE	streaming_ui_clean.js	29049 bytes
+FILE	supabase_CREAR_FUNCION.sql	12243 bytes
+FILE	supabase_CREAR_FUNCION_SIN_DIGEST.sql	12289 bytes
+FILE	supabase_ELIMINAR_TODAS_FIRMAS.sql	3177 bytes
+FILE	supabase_ELIMINAR_TODO.sql	1595 bytes
+FILE	supabase_HABILITAR_PGCRYPTO.sql	1467 bytes
+FILE	supabase_license_rpc.sql	12749 bytes
+FILE	supabase_license_rpc_LIMPIO.sql	15412 bytes
+FILE	sync_mappings.ps1	1544 bytes
+FILE	tap-test.json	68 bytes
+FILE	TASKS_MONOLITO_PRO.md	7529 bytes
+FILE	temp_dopost.txt	33860 bytes
+FILE	test.js	6842 bytes
+FILE	test_backend_streaming.py	3457 bytes
+FILE	test_capture.ps1	1039 bytes
+FILE	test_concurrent.py	1939 bytes
+FILE	test_fase1.bat	849 bytes
+FILE	test_registration.bat	985 bytes
+FILE	test_registration.ps1	2351 bytes
+FILE	test_scrcpy_integration.py	7370 bytes
+FILE	test_tap.py	403 bytes
+FILE	test_websocket_streaming.py	10343 bytes
+FILE	update.json	175 bytes
+FILE	update_config.example.json	104 bytes
+FILE	update_config.json	105 bytes
+FILE	updater.py	5534 bytes
+FILE	usb_inventory.json	766 bytes
+FILE	VERIFICACION_RAPIDA.txt	2415 bytes
+FILE	verificar_dashboard.bat	4142 bytes
+FILE	VERIFICAR_MEJORAS.bat	2747 bytes
+FILE	votos.js	25117 bytes
+FILE	votos_status.json	424 bytes
+FILE	watchdog_reverse.ps1	1590 bytes
+FILE	websocket_server.py	7945 bytes
+FILE	window_dump.xml	13102 bytes
+FILE	window_dump_after_click.xml	13102 bytes
+FILE	window_dump_chrome.xml	66122 bytes
+FILE	window_dump_chrome_clicked.xml	66191 bytes
+FILE	window_dump_chrome_scrolled.xml	66148 bytes
+FILE	window_dump_chrome2.xml	66122 bytes
+FILE	window_dump_loaded.xml	13943 bytes
+FILE	ws_analyzer.py	1991 bytes
+FILE	wsapi.js	8824 bytes
+FILE	wsapi_demo.html	289811 bytes
+
+========================================================================================
+5. SOURCE FILE COUNTS (EXCLUDING GENERATED/DEPENDENCY DIRECTORIES)
+========================================================================================
+.png	1421
+.js	1338
+.java	1197
+.kt	1044
+.xml	842
+.o	452
+.h	450
+.json	323
+.md	256
+.txt	161
+.cmake	143
+.hpp	141
+.c	137
+.html	113
+(no extension)	94
+.bin	83
+.ps1	80
+.log	74
+.version	67
+.properties	58
+.so	56
+.bat	52
+.a	48
+.dll	48
+.py	43
+.binarypb	35
+.ninja	32
+.kts	30
+.mjs	29
+.cpp	26
+.cs	24
+.apk	23
+.lock	20
+.mp4	20
+.pc	20
+.sh	20
+.gitignore	19
+.jar	18
+.check_cache	16
+.ninja_deps	16
+.ninja_log	16
+.cache	13
+.aar	13
+.fb	12
+.pro	11
+.jpg	9
+.exe	8
+.aidl	7
+.css	7
+.gradle	7
+.props	7
+.kotlin_builtins	7
+.sql	7
+.woff2	6
+.nb	6
+.pb	6
+.csv	5
+.err	5
+.out	5
+.pdb	4
+.tflite	4
+.dox	4
+.yml	4
+.cjs	3
+.build	3
+.bak	3
+.dex	3
+.onnx	3
+.gif	3
+.md5	3
+.skip	3
+.gzip	3
+.ttf	2
+.SymbolProcessorProvider	2
+.in	2
+.7z	2
+.vbs	2
+.desktop	2
+.ini	2
+.mov	2
+.jpeg	2
+.Up2Date	2
+.gitattributes	2
+.keystore	2
+.editorconfig	2
+.rs	2
+.bincfg	2
+.disabled	2
+.toml	2
+.probe	2
+.ts	2
+.zip	2
+.kiro	2
+.iml	2
+.prof	1
+.xlsx	1
+.profm	1
+.pk8	1
+.pem	1
+.conv_model	1
+.lstm_model	1
+.manifest	1
+.svg	1
+.hook	1
+.spec	1
+.mkv	1
+.1	1
+.rc	1
+.targets	1
+.ico	1
+.nix	1
+.dtd	1
+.csproj	1
+.MainDispatcherFactory	1
+.gz	1
+.list	1
+.bks	1
+.arsc	1
+.name	1
+.vue	1
+.BuiltInsLoader	1
+.ExternalOverridabilityCondition	1
+.MF	1
+.IServerManager	1
+.S	1
+.CoroutineExceptionHandler	1
+.ac	1
+.dfa	1
+.am	1
+
+========================================================================================
+6. LARGE FILES OVER 10 MB (EXCLUDING DEPENDENCIES/RESTORE POINTS)
+========================================================================================
+210,13 MB	Eliminar\AutoJs6\autojs6-v6.7.0-universal-047ae62e.apk
+210,13 MB	AutoJs6\autojs6-v6.7.0-universal-047ae62e.apk
+142,11 MB	AutoJs6\autojs6-v6.7.0-x86-086c273b.apk
+142,11 MB	Eliminar\AutoJs6\autojs6-v6.7.0-x86-086c273b.apk
+137,21 MB	AutoJs6\autojs6-v6.7.0-x86_64-3d410022.apk
+137,21 MB	Eliminar\AutoJs6\autojs6-v6.7.0-x86_64-3d410022.apk
+132,75 MB	AutoJs6\autojs6-v6.7.0-arm64-v8a-62db1ff8.apk
+128,42 MB	Eliminar\AutoJs6\autojs6-v6.7.0-armeabi-v7a-df0b70ee.apk
+128,42 MB	AutoJs6\autojs6-v6.7.0-armeabi-v7a-df0b70ee.apk
+110,12 MB	AutoJs6\autojs6-v6.7.0-armeabi-67502694.apk
+110,12 MB	Eliminar\AutoJs6\autojs6-v6.7.0-armeabi-67502694.apk
+108,64 MB	electron-app\electron-console.log
+100,19 MB	APK\8-9-56-618\Spotify-8.9.56.618.apk8.apk
+100,19 MB	APK\8-9-56-618\Spotify-8.9.56.618.apk3.apk
+100,19 MB	APK\8-9-56-618\Spotify-8.9.56.618.apk6.apk
+100,19 MB	APK\8-9-56-618\Spotify-8.9.56.618.apk9.apk
+100,19 MB	APK\8-9-56-618\Spotify-8.9.56.618.apk5.apk
+100,19 MB	APK\8-9-56-618\Spotify-8.9.56.618.apk2.apk
+100,19 MB	APK\8-9-56-618\Spotify-8.9.56.618.apk7.apk
+100,19 MB	APK\8-9-56-618\Spotify-8.9.56.618.apk4.apk
+100,19 MB	APK\8-9-56-618\Spotify-8.9.56.618.apk1.apk
+100,19 MB	APK\8-9-56-618\Spotify-8.9.56.618.apk10.apk
+91,66 MB	flow_agent_monolito\.gradle\9.4.0\executionHistory\executionHistory.bin
+79,33 MB	flow_agent_monolito\libs\rapidocr\cache\project-rapidocronnx-1.2.2-[4f2mhlpeds5481q2bgvlfpfs9c].7z
+59,95 MB	Eliminar\laixi.apk
+40,31 MB	test\IMG_3454.MOV
+37,62 MB	flow_agent_monolito\libs\org-opencv-4_8_0\opencv-4.8.0.aar
+30,60 MB	Herramientas\FlowTrackName.exe
+21,85 MB	scrcpy-win64-v4.0\SDL3.dll
+17,29 MB	Eliminar\.laixi_extracted\lib\arm64-v8a\libopencv_java4.so
+16,16 MB	flow_agent_monolito\libs\rapidocr\cache\opencv-mobile-4.5.3-android-[3hnno69adbcglr9sggssms1h39].zip
+14,34 MB	flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\x86\lib\libonnxruntime.so
+14,17 MB	flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\x86_64\lib\libonnxruntime.so
+12,20 MB	flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\arm64-v8a\lib\libonnxruntime.so
+11,55 MB	flow_agent_monolito\libs\rapidocr\cache\onnxruntime-1.14.0-android-shared-[5fnvm799s7ra498962qisi32v2].7z
+10,68 MB	Eliminar\.laixi_extracted\lib\armeabi-v7a\libopencv_java4.so
+10,20 MB	flow_agent_monolito\libs\rapidocr\src\main\assets\models\ch_PP-OCRv3_rec_infer.onnx
+
+========================================================================================
+7. CONFIGURATION FILE NAMES (VALUES NOT READ)
+========================================================================================
+.abacusai\config.json
+.kiro\specs\dev-mode-inspector\.config.kiro
+.kiro\specs\etapa-c-streaming-pro\.config.kiro
+.supabase_config.json
+.upload_tmp\spotify_email_field.png
+docs_legacy\ABRIR_ELECTRON_CONFIGURADO.md
+docs_legacy\APK_CONFIGURACION_VERIFICADA_2026_05_23.md
+docs_legacy\CONFIGURACION_COMPLETADA.md
+docs_legacy\CONFIGURAR_SERVICE_ROLE_KEY.md
+docs_legacy\GUIA_VISUAL_SUPABASE.md
+docs_legacy\INSTRUCCIONES_SUPABASE_LICENSE.md
+docs_legacy\SOLUCION_FINAL_SUPABASE.md
+Eliminar\.laixi_extracted\AndroidManifest.xml
+Eliminar\.laixi_extracted\assets\modules\npm\bluebird-co\LICENSE
+Eliminar\.laixi_extracted\assets\modules\npm\lodash\_baseUpdate.js
+Eliminar\.laixi_extracted\assets\modules\npm\lodash\_updateWrapDetails.js
+Eliminar\.laixi_extracted\assets\modules\npm\lodash\fp\update.js
+Eliminar\.laixi_extracted\assets\modules\npm\lodash\fp\updateWith.js
+Eliminar\.laixi_extracted\assets\modules\npm\lodash\LICENSE
+Eliminar\.laixi_extracted\assets\modules\npm\lodash\update.js
+Eliminar\.laixi_extracted\assets\modules\npm\lodash\updateWith.js
+Eliminar\.laixi_extracted\lib\META-INF\MANIFEST.MF
+Eliminar\.laixi_extracted\org\apache\log4j\lf5\config\defaultconfig.properties
+flow_agent_apk\AndroidManifest.xml
+flow_agent_apk\res\xml\accessibility_service_config.xml
+flow_agent_monolito\.gradle\config.properties
+flow_agent_monolito\.idea\codeStyles\codeStyleConfig.xml
+flow_agent_monolito\.idea\runConfigurations.xml
+flow_agent_monolito\.utils\scrape-and-update-android-releases.mjs
+flow_agent_monolito\.utils\scrape-and-update-foojay-resolver-version.mjs
+flow_agent_monolito\.utils\scrape-and-update-readme-template-contributors-table.mjs
+flow_agent_monolito\.utils\tsconfig.json
+flow_agent_monolito\.utils\utils\update-helper.mjs
+flow_agent_monolito\app\src\main\AndroidManifest.xml
+flow_agent_monolito\app\src\main\assets\modules\dayjs\LICENSE
+flow_agent_monolito\app\src\main\assets-app\docs\noticePresetConfigurationType.html
+flow_agent_monolito\app\src\main\java\com\stardust\autojs\BuildConfig.kt
+flow_agent_monolito\app\src\main\java\com\stardust\autojs\Config.java
+flow_agent_monolito\app\src\main\java\com\stardust\autojs\execution\ExecutionConfig.kt
+flow_agent_monolito\app\src\main\java\com\stardust\autojs\project\LaunchConfig.java
+flow_agent_monolito\app\src\main\java\com\stardust\autojs\project\ProjectConfig.java
+flow_agent_monolito\app\src\main\java\com\stardust\autojs\project\ScriptConfig.kt
+flow_agent_monolito\app\src\main\java\com\stardust\autojs\rhino\TokenStream.java
+flow_agent_monolito\app\src\main\java\com\stardust\autojs\runtime\accessibility\AccessibilityConfig.java
+flow_agent_monolito\app\src\main\java\com\stardust\automator\BuildConfig.kt
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\apkbuilder\ManifestEditor.java
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\execution\ExecutionConfig.kt
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\model\editor\TokenColor.java
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\model\editor\TokenColorDeserializer.java
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\model\editor\TokenColorSettings.java
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\network\UpdateChecker.java
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\network\UpdateIgnoreStore.kt
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\project\LaunchConfig.kt
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\project\ProjectConfig.java
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\project\ScriptConfig.kt
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\rhino\TokenStream.java
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\runtime\accessibility\AccessibilityConfig.kt
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\ui\edit\keyboard\SymbolsConfigStore.kt
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\ui\edit\theme\TokenMapping.java
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\ui\main\scripts\DisplayManifestActivity.kt
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\ui\project\BuildConfigStore.java
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\ui\project\ProjectConfigActivity.kt
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\ui\settings\CheckForUpdatesPreference.kt
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\ui\settings\CheckForUpdatesWithLocalVersionIgnoredPreference.kt
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\ui\settings\ClearUpdatesCheckedStatesPreference.kt
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\ui\settings\ManageIgnoredUpdatesPreference.kt
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\ui\settings\MozillaPublicLicense20.kt
+flow_agent_monolito\app\src\main\java\org\autojs\autojs\util\UpdateUtils.kt
+flow_agent_monolito\app\src\main\java\pxb\android\arsc\Config.java
+flow_agent_monolito\app\src\main\java\zhao\arsceditor\ResDecoder\data\ResConfig.java
+flow_agent_monolito\app\src\main\java\zhao\arsceditor\ResDecoder\data\ResConfigFlags.java
+flow_agent_monolito\app\src\main\res\drawable\ic_about_license.png
+flow_agent_monolito\app\src\main\res\drawable\ic_about_update.png
+flow_agent_monolito\app\src\main\res\drawable\ic_check_for_updates.png
+flow_agent_monolito\app\src\main\res\drawable\ic_email_black_48dp.png
+flow_agent_monolito\app\src\main\res\drawable-xhdpi\ic_contact_mail_black_48dp.png
+flow_agent_monolito\app\src\main\res\drawable-xhdpi\ic_email_black_48dp.png
+flow_agent_monolito\app\src\main\res\drawable-xhdpi\ic_mail_black_48dp.png
+flow_agent_monolito\app\src\main\res\drawable-xhdpi\ic_mail_outline_black_48dp.png
+flow_agent_monolito\app\src\main\res\drawable-xhdpi\ic_markunread_mailbox_black_48dp.png
+flow_agent_monolito\app\src\main\res\drawable-xhdpi\ic_system_update_alt_black_48dp.png
+flow_agent_monolito\app\src\main\res\drawable-xhdpi\ic_system_update_black_48dp.png
+flow_agent_monolito\app\src\main\res\drawable-xhdpi\ic_update_black_48dp.png
+flow_agent_monolito\app\src\main\res\drawable-xhdpi\ic_voicemail_black_48dp.png
+flow_agent_monolito\app\src\main\res\layout\activity_project_config.xml
+flow_agent_monolito\app\src\main\res\layout\item_symbol_config.xml
+flow_agent_monolito\app\src\main\res\menu\menu_display_manifest_fab.xml
+flow_agent_monolito\app\src\main\res\menu\menu_symbols_config_settings_more.xml
+flow_agent_monolito\app\src\main\res\raw\licenses.xml
+flow_agent_monolito\app\src\main\res\xml\accessibility_service_config.xml
+flow_agent_monolito\app\src\main\res\xml\locales_config.xml
+flow_agent_monolito\app\src\main\res\xml\script_widget_config.xml
+flow_agent_monolito\app\src\main\res\xml-v30\accessibility_service_config.xml
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\arm64-v8a\configure_fingerprint.bin
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\arm64-v8a\external\libpng\libpng16-config
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\arm64-v8a\external\libpng\libpng-config
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\arm64-v8a\external\libpng\PNGConfigVersion.cmake
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\arm64-v8a\prefab_config.json
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\armeabi-v7a\configure_fingerprint.bin
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\armeabi-v7a\external\libpng\libpng16-config
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\armeabi-v7a\external\libpng\libpng-config
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\armeabi-v7a\external\libpng\PNGConfigVersion.cmake
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\armeabi-v7a\prefab_config.json
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\x86\configure_fingerprint.bin
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\x86\external\libpng\libpng16-config
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\x86\external\libpng\libpng-config
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\x86\external\libpng\PNGConfigVersion.cmake
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\x86\prefab_config.json
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\x86_64\configure_fingerprint.bin
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\x86_64\external\libpng\libpng16-config
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\x86_64\external\libpng\libpng-config
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\x86_64\external\libpng\PNGConfigVersion.cmake
+flow_agent_monolito\libs\imagequant\.cxx\Debug\3k6p133w\x86_64\prefab_config.json
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\arm64-v8a\configure_fingerprint.bin
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\arm64-v8a\external\libpng\libpng16-config
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\arm64-v8a\external\libpng\libpng-config
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\arm64-v8a\external\libpng\PNGConfigVersion.cmake
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\arm64-v8a\prefab_config.json
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\armeabi-v7a\configure_fingerprint.bin
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\armeabi-v7a\external\libpng\libpng16-config
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\armeabi-v7a\external\libpng\libpng-config
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\armeabi-v7a\external\libpng\PNGConfigVersion.cmake
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\armeabi-v7a\prefab_config.json
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\x86\configure_fingerprint.bin
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\x86\external\libpng\libpng16-config
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\x86\external\libpng\libpng-config
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\x86\external\libpng\PNGConfigVersion.cmake
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\x86\prefab_config.json
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\x86_64\configure_fingerprint.bin
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\x86_64\external\libpng\libpng16-config
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\x86_64\external\libpng\libpng-config
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\x86_64\external\libpng\PNGConfigVersion.cmake
+flow_agent_monolito\libs\imagequant\.cxx\RelWithDebInfo\1p4t6ut8\x86_64\prefab_config.json
+flow_agent_monolito\libs\imagequant\external\libpng\configure.ac
+flow_agent_monolito\libs\imagequant\external\libpng\libpng-config.in
+flow_agent_monolito\libs\imagequant\external\libpng\LICENSE
+flow_agent_monolito\libs\javamail-android\mail.jar
+flow_agent_monolito\libs\rapidocr\.cxx\Debug\5s1j5e5j\arm64-v8a\configure_fingerprint.bin
+flow_agent_monolito\libs\rapidocr\.cxx\Debug\5s1j5e5j\arm64-v8a\prefab_config.json
+flow_agent_monolito\libs\rapidocr\.cxx\Debug\5s1j5e5j\armeabi-v7a\configure_fingerprint.bin
+flow_agent_monolito\libs\rapidocr\.cxx\Debug\5s1j5e5j\armeabi-v7a\prefab_config.json
+flow_agent_monolito\libs\rapidocr\.cxx\Debug\5s1j5e5j\x86\configure_fingerprint.bin
+flow_agent_monolito\libs\rapidocr\.cxx\Debug\5s1j5e5j\x86\prefab_config.json
+flow_agent_monolito\libs\rapidocr\.cxx\Debug\5s1j5e5j\x86_64\configure_fingerprint.bin
+flow_agent_monolito\libs\rapidocr\.cxx\Debug\5s1j5e5j\x86_64\prefab_config.json
+flow_agent_monolito\libs\rapidocr\.cxx\RelWithDebInfo\2047y1a1\arm64-v8a\configure_fingerprint.bin
+flow_agent_monolito\libs\rapidocr\.cxx\RelWithDebInfo\2047y1a1\arm64-v8a\prefab_config.json
+flow_agent_monolito\libs\rapidocr\.cxx\RelWithDebInfo\2047y1a1\armeabi-v7a\configure_fingerprint.bin
+flow_agent_monolito\libs\rapidocr\.cxx\RelWithDebInfo\2047y1a1\armeabi-v7a\prefab_config.json
+flow_agent_monolito\libs\rapidocr\.cxx\RelWithDebInfo\2047y1a1\x86\configure_fingerprint.bin
+flow_agent_monolito\libs\rapidocr\.cxx\RelWithDebInfo\2047y1a1\x86\prefab_config.json
+flow_agent_monolito\libs\rapidocr\.cxx\RelWithDebInfo\2047y1a1\x86_64\configure_fingerprint.bin
+flow_agent_monolito\libs\rapidocr\.cxx\RelWithDebInfo\2047y1a1\x86_64\prefab_config.json
+flow_agent_monolito\libs\rapidocr\src\main\AndroidManifest.xml
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\arm64-v8a\include\onnxruntime\core\optimizer\graph_transformer_config.h
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\arm64-v8a\include\onnxruntime\core\session\onnxruntime_run_options_config_keys.h
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\arm64-v8a\include\onnxruntime\core\session\onnxruntime_session_options_config_keys.h
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\arm64-v8a\OnnxRuntimeConfig.cmake
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\armeabi-v7a\include\onnxruntime\core\optimizer\graph_transformer_config.h
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\armeabi-v7a\include\onnxruntime\core\session\onnxruntime_run_options_config_keys.h
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\armeabi-v7a\include\onnxruntime\core\session\onnxruntime_session_options_config_keys.h
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\armeabi-v7a\OnnxRuntimeConfig.cmake
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\x86\include\onnxruntime\core\optimizer\graph_transformer_config.h
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\x86\include\onnxruntime\core\session\onnxruntime_run_options_config_keys.h
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\x86\include\onnxruntime\core\session\onnxruntime_session_options_config_keys.h
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\x86\OnnxRuntimeConfig.cmake
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\x86_64\include\onnxruntime\core\optimizer\graph_transformer_config.h
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\x86_64\include\onnxruntime\core\session\onnxruntime_run_options_config_keys.h
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\x86_64\include\onnxruntime\core\session\onnxruntime_session_options_config_keys.h
+flow_agent_monolito\libs\rapidocr\src\main\onnxruntime-shared\x86_64\OnnxRuntimeConfig.cmake
+flow_agent_monolito\libs\rapidocr\src\sdk\native\jni\abi-arm64-v8a\OpenCVConfig.cmake
+flow_agent_monolito\libs\rapidocr\src\sdk\native\jni\abi-arm64-v8a\OpenCVConfig-version.cmake
+flow_agent_monolito\libs\rapidocr\src\sdk\native\jni\abi-armeabi-v7a\OpenCVConfig.cmake
+flow_agent_monolito\libs\rapidocr\src\sdk\native\jni\abi-armeabi-v7a\OpenCVConfig-version.cmake
+flow_agent_monolito\libs\rapidocr\src\sdk\native\jni\abi-x86\OpenCVConfig.cmake
+flow_agent_monolito\libs\rapidocr\src\sdk\native\jni\abi-x86\OpenCVConfig-version.cmake
+flow_agent_monolito\libs\rapidocr\src\sdk\native\jni\abi-x86_64\OpenCVConfig.cmake
+flow_agent_monolito\libs\rapidocr\src\sdk\native\jni\abi-x86_64\OpenCVConfig-version.cmake
+flow_agent_monolito\libs\rapidocr\src\sdk\native\jni\include\opencv2\cvconfig.h
+flow_agent_monolito\libs\rapidocr\src\sdk\native\jni\OpenCVConfig.cmake
+flow_agent_monolito\libs\rapidocr\src\sdk\native\jni\OpenCVConfig-version.cmake
+flow_agent_monolito\LICENSE
+flow_agent_monolito\modules\apk-parser\src\main\AndroidManifest.xml
+flow_agent_monolito\modules\apk-parser\src\main\java\net\dongliu\apk\parser\struct\resource\ResTableConfig.java
+flow_agent_monolito\modules\apk-signer\src\main\java\com\android\apksig\internal\jar\ManifestParser.java
+flow_agent_monolito\modules\apk-signer\src\main\java\com\android\apksig\internal\jar\ManifestWriter.java
+flow_agent_monolito\modules\apk-signer\src\main\java\com\android\apksig\KeyConfig.java
+flow_agent_monolito\modules\color-picker\src\main\AndroidManifest.xml
+flow_agent_monolito\modules\expandable-layout\src\main\AndroidManifest.xml
+flow_agent_monolito\modules\expandable-recyclerview\src\main\AndroidManifest.xml
+flow_agent_monolito\modules\jieba-analysis\LICENSE
+flow_agent_monolito\modules\jieba-analysis\src\main\java\com\huaban\analysis\jieba\SegToken.java
+flow_agent_monolito\modules\material-date-time-picker\src\main\AndroidManifest.xml
+flow_agent_monolito\modules\material-dialogs\src\main\AndroidManifest.xml
+flow_agent_monolito\modules\recyclerview-flexibledivider\src\main\AndroidManifest.xml
+FlowDashboard.Core\bin\Debug\net8.0\FlowDashboard.Core.runtimeconfig.json
+FlowDashboard.Core\bin\Debug\net8.0\MailKit.dll
+FlowDashboard.Core\bin\Release\net8.0\FlowDashboard.Core.runtimeconfig.json
+FlowDashboard.Core\bin\Release\net8.0\MailKit.dll
+FlowDashboard.Core\Controllers\MailController.cs
+FlowDashboard.Core\obj\Debug\net8.0\FlowDashboard.Core.GeneratedMSBuildEditorConfig.editorconfig
+FlowDashboard.Core\obj\Debug\net8.0\FlowDashboard.Core.genruntimeconfig.cache
+FlowDashboard.Core\obj\Release\net8.0\FlowDashboard.Core.GeneratedMSBuildEditorConfig.editorconfig
+FlowDashboard.Core\obj\Release\net8.0\FlowDashboard.Core.genruntimeconfig.cache
+FlowDashboard.Core\Services\flowmail_imap_helper.py
+FlowDashboard.Core\Services\MailService.cs
+flowmail_before_password.png
+flowmail_chrome.png
+flowmail_current_fields.png
+flowmail_password_confirm_fixed.png
+flowmail_password_filled.png
+flowmail_password_second_filled.png
+flowmail_password_second_submit.png
+flowmail_password_submit.png
+flowmail_reposition.png
+flowmail_sbrowser.png
+h264_canary_config.json
+informacion de scrcpy\app\scrcpy-windows.manifest
+informacion de scrcpy\LICENSE
+informacion de scrcpy\server\src\main\AndroidManifest.xml
+informacion de scrcpy\server\src\main\java\com\genymobile\scrcpy\audio\AudioConfig.java
+informacion de scrcpy\server\src\main\java\com\genymobile\scrcpy\model\ConfigurationException.java
+license_admin.html
+license_persistence.js
+mail_config.json
+SOLUCION_ERROR_SUPABASE.txt
+supabase_CREAR_FUNCION.sql
+supabase_CREAR_FUNCION_SIN_DIGEST.sql
+supabase_ELIMINAR_TODAS_FIRMAS.sql
+supabase_ELIMINAR_TODO.sql
+supabase_HABILITAR_PGCRYPTO.sql
+supabase_license_rpc.sql
+supabase_license_rpc_LIMPIO.sql
+tools\update_flow_touch.cjs
+update.json
+update_config.example.json
+update_config.json
+updater.py
+
+========================================================================================
+8. SECURITY-RELEVANT TEXT MATCH COUNTS (NO VALUES PRINTED)
+========================================================================================
+SUPABASE_SERVICE_ROLE_KEY	17
+SUPABASE_API_KEY	21
+CAPSOLVER_API_KEY	13
+unsafe-eval	4
+unsafe-inline	6
+Math.random	46
+ALLOW_LOCAL_LICENSE_MODE	4
+FLOWDASHBOARD_ALLOW_LOCAL_LICENSE	5
+check_app_license	2
+validate_flowdashboard_license	93
+
+========================================================================================
+9. C# PROJECT ROUTES / ENDPOINT MARKERS
+========================================================================================
+FlowDashboard.Core\Program.cs:192	app.MapGet("/api/health", () => Results.Ok(new
+FlowDashboard.Core\Controllers\DevicesController.cs:8	[Route("api/[controller]")]
+FlowDashboard.Core\Controllers\DevicesController.cs:22	[HttpGet]
+FlowDashboard.Core\Controllers\DevicesController.cs:32	[HttpPost("register")]
+FlowDashboard.Core\Controllers\DevicesController.cs:55	[HttpGet("mapping/{adbSerial}")]
+FlowDashboard.Core\Controllers\DevicesController.cs:77	[HttpGet("mappings")]
+FlowDashboard.Core\Controllers\DevicesController.cs:91	[HttpPost("execute")]
+FlowDashboard.Core\Controllers\DevicesController.cs:105	[HttpPost("install-apk")]
+FlowDashboard.Core\Controllers\DevicesController.cs:119	[HttpPost("flowlogin/start")]
+FlowDashboard.Core\Controllers\DevicesController.cs:133	[HttpGet("flowlogin/status")]
+FlowDashboard.Core\Controllers\DevicesController.cs:147	[HttpGet("{serial}/screenshot")]
+FlowDashboard.Core\Controllers\DevicesController.cs:167	[HttpPost("adb/connect")]
+FlowDashboard.Core\Controllers\MailController.cs:7	[Route("api/mail")]
+FlowDashboard.Core\Controllers\MailController.cs:17	[HttpGet("status")]
+FlowDashboard.Core\Controllers\MailController.cs:23	[HttpPost("connect")]
+FlowDashboard.Core\Controllers\MailController.cs:44	[HttpPost("search-spotify-link")]
+FlowDashboard.Core\Controllers\MailController.cs:62	[HttpPost("debug-search")]
+FlowDashboard.Core\Controllers\StreamingController.cs:8	[Route("api/streaming")]
+FlowDashboard.Core\Controllers\StreamingController.cs:25	[HttpPost("start-embedded")]
+FlowDashboard.Core\Controllers\StreamingController.cs:77	[HttpPost("stop")]
+FlowDashboard.Core\Controllers\StreamingController.cs:92	[HttpPost("reposition")]
+FlowDashboard.Core\Controllers\StreamingController.cs:113	[HttpPost("set-visibility")]
+FlowDashboard.Core\Controllers\StreamingController.cs:128	[HttpPost("stop-all")]
+FlowDashboard.Core\Controllers\StreamingController.cs:153	[HttpGet("active")]
+FlowDashboard.Core\Controllers\StreamingController.cs:168	[HttpPost("frames")]
+FlowDashboard.Core\Controllers\StreamingController.cs:204	[HttpGet("stats")]
+FlowDashboard.Core\Controllers\VideoStreamController.cs:8	[Route("api/[controller]")]
+FlowDashboard.Core\Controllers\VideoStreamController.cs:18	[HttpGet("ws/{serial}")]
+FlowDashboard.Core\Controllers\VideoStreamController.cs:74	[HttpPost("stop/{serial}")]
+FlowDashboard.Core\Controllers\VideoStreamController.cs:81	[HttpGet("active")]
+
+========================================================================================
+10. RESULT
+========================================================================================
+Inventory completed successfully.
+Report: C:\DASHBOARD\FlowDashboard\reports\commercial_readiness_inventory.txt

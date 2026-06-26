@@ -1,0 +1,94 @@
+using Microsoft.AspNetCore.SignalR;
+using FlowDashboard.Core.Services;
+using System.Collections.Concurrent;
+
+namespace FlowDashboard.Core.Hubs;
+
+public class StreamingHub : Hub
+{
+    private static readonly ConcurrentDictionary<string, string> _clientStreams = new();
+    private readonly CanvasStreamingService _streamingService;
+    private readonly ILogger<StreamingHub> _logger;
+
+    public StreamingHub(CanvasStreamingService streamingService, ILogger<StreamingHub> logger)
+    {
+        _streamingService = streamingService;
+        _logger = logger;
+    }
+
+    public override async Task OnConnectedAsync()
+    {
+        _logger.LogInformation($"Cliente conectado: {Context.ConnectionId}");
+        await base.OnConnectedAsync();
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        // Detener streams del cliente desconectado
+        var streamsToStop = _clientStreams
+            .Where(kvp => kvp.Value == Context.ConnectionId)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        foreach (var serial in streamsToStop)
+        {
+            await StopStream(serial);
+        }
+
+        _logger.LogInformation($"Cliente desconectado: {Context.ConnectionId}");
+        await base.OnDisconnectedAsync(exception);
+    }
+
+    public async Task<string> StartStream(string serial, string quality)
+    {
+        try
+        {
+            _logger.LogInformation($"Iniciando stream canvas para {serial} con calidad {quality}");
+
+            // Registrar cliente
+            _clientStreams[serial] = Context.ConnectionId;
+
+            // Iniciar captura de frames
+            await _streamingService.StartStreamAsync(serial, quality, Context.ConnectionId);
+
+            return "success";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error iniciando stream para {serial}");
+            return $"error: {ex.Message}";
+        }
+    }
+
+    public async Task<string> StopStream(string serial)
+    {
+        try
+        {
+            _logger.LogInformation($"Deteniendo stream canvas para {serial}");
+
+            await _streamingService.StopStreamAsync(serial);
+            _clientStreams.TryRemove(serial, out _);
+
+            return "success";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error deteniendo stream para {serial}");
+            return $"error: {ex.Message}";
+        }
+    }
+
+    public async Task<string> SendTouchEvent(string serial, string eventType, int x, int y)
+    {
+        try
+        {
+            await _streamingService.SendTouchEventAsync(serial, eventType, x, y);
+            return "success";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error enviando evento táctil a {serial}");
+            return $"error: {ex.Message}";
+        }
+    }
+}

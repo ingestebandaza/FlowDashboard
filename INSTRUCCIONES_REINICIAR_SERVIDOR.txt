@@ -1,0 +1,86 @@
+================================================================================
+  ✅ SOLUCIÓN - ERROR 404 EN SCRIPTS
+================================================================================
+
+PROBLEMA:
+  Los scripts no se estaban sirviendo desde el servidor
+  Errores 404 en la consola:
+  - streaming_ui_clean.js (404)
+  - license_persistence.js (404)
+
+CAUSA:
+  El servidor no tenía estos archivos en la lista de archivos estáticos
+
+SOLUCIÓN:
+  ✅ Agregados los scripts a la lista STATIC_FILES en local_adb_server.py
+
+================================================================================
+  🚀 CÓMO ARREGLARLO (2 PASOS)
+================================================================================
+
+PASO 1: Reinicia el Servidor
+  Ejecuta: abrir_dashboard.bat
+  
+  Esto:
+  - Detiene el servidor anterior
+  - Inicia el servidor con la nueva configuración
+  - Abre el dashboard en Chrome
+
+PASO 2: Recarga Forzada
+  Presiona: Ctrl + Shift + R
+  
+  Esto:
+  - Limpia el caché del navegador
+  - Recarga todos los scripts
+  - Carga los nuevos archivos desde el servidor
+
+================================================================================
+  ✅ VERIFICACIÓN
+================================================================================
+
+Abre DevTools (F12) y verifica:
+
+1. Console
+   - NO debe haber errores 404
+   - Debe haber mensajes [StreamingUI]
+
+2. Network
+   - streaming_ui_clean.js → Status 200 (OK)
+   - license_persistence.js → Status 200 (OK)
+
+3. Visualmente
+   - Botón ☰ en esquina superior izquierda
+   - Botón "Streaming" en barra de controles
+   - Menú lateral ocultable
+   - Modo streaming funcional
+
+================================================================================
+  📋 ARCHIVOS MODIFICADOS
+================================================================================
+
+local_adb_server.py
+  ✅ Agregados scripts a STATIC_FILES:
+     - /streaming_ui_clean.js
+     - /license_persistence.js
+
+================================================================================
+  🎯 PRÓXIMOS PASOS
+================================================================================
+
+1. Ejecuta: abrir_dashboard.bat
+2. Presiona: Ctrl + Shift + R
+3. Abre DevTools: F12
+4. Verifica Console: No debe haber errores 404
+5. Verifica botones: Deben aparecer
+
+Si todo funciona:
+  ✅ Scripts cargados correctamente
+  ✅ Botones visibles
+  ✅ Menú ocultable
+  ✅ Modo streaming funcional
+  ✅ ¡Listo para usar!
+
+================================================================================
+Última actualización: 2026-05-21
+Estado: ✅ SOLUCIONADO
+================================================================================

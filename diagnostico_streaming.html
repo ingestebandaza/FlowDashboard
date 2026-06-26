@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico de Streaming</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #0b1220;
+            color: #e7eefc;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #4f8dff;
+            border-bottom: 2px solid #4f8dff;
+            padding-bottom: 10px;
+        }
+        .test {
+            margin: 15px 0;
+            padding: 10px;
+            border-left: 3px solid #4f8dff;
+            background: rgba(79, 141, 255, 0.1);
+        }
+        .pass {
+            border-left-color: #22b86f;
+            background: rgba(34, 184, 111, 0.1);
+        }
+        .fail {
+            border-left-color: #d45862;
+            background: rgba(212, 88, 98, 0.1);
+        }
+        .status {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .pass .status {
+            color: #22b86f;
+        }
+        .fail .status {
+            color: #d45862;
+        }
+        .details {
+            font-size: 0.9em;
+            color: #9fb0cc;
+            margin-top: 5px;
+        }
+        button {
+            background: #4f8dff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px 10px 0;
+            font-family: monospace;
+        }
+        button:hover {
+            background: #3a73d9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnóstico de Streaming</h1>
+        
+        <div id="results"></div>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #23314d;">
+            <button onclick="location.reload()">🔄 Recargar</button>
+            <button onclick="window.location='http://127.0.0.1:8765'">📊 Ir al Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        const results = document.getElementById('results');
+
+        function addTest(name, passed, details = '') {
+            const div = document.createElement('div');
+            div.className = `test ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `
+                <div class="status">${passed ? '✅' : '❌'} ${name}</div>
+                ${details ? `<div class="details">${details}</div>` : ''}
+            `;
+            results.appendChild(div);
+        }
+
+        // Test 1: Verificar que wsapi.js está cargado
+        try {
+            if (typeof Wsapi !== 'undefined') {
+                addTest('wsapi.js cargado', true, 'Clase Wsapi disponible');
+            } else {
+                addTest('wsapi.js cargado', false, 'Clase Wsapi no encontrada');
+            }
+        } catch (e) {
+            addTest('wsapi.js cargado', false, e.message);
+        }
+
+        // Test 2: Verificar que streaming_ui_implementation.js está cargado
+        try {
+            if (typeof initStreamingUI === 'function') {
+                addTest('streaming_ui_implementation.js cargado', true, 'Función initStreamingUI disponible');
+            } else {
+                addTest('streaming_ui_implementation.js cargado', false, 'Función initStreamingUI no encontrada');
+            }
+        } catch (e) {
+            addTest('streaming_ui_implementation.js cargado', false, e.message);
+        }
+
+        // Test 3: Verificar que streaming_ui_styles.css está cargado
+        try {
+            const stylesheets = Array.from(document.styleSheets);
+            const hasStreamingCSS = stylesheets.some(sheet => 
+                sheet.href && sheet.href.includes('streaming_ui_styles.css')
+            );
+            addTest('streaming_ui_styles.css cargado', hasStreamingCSS, 
+                hasStreamingCSS ? 'CSS encontrado en styleSheets' : 'CSS no encontrado');
+        } catch (e) {
+            addTest('streaming_ui_styles.css cargado', false, e.message);
+        }
+
+        // Test 4: Verificar que el servidor HTTP está respondiendo
+        try {
+            fetch('http://127.0.0.1:8765/health')
+                .then(r => r.json())
+                .then(data => {
+                    const hasScreenStreaming = data.features && data.features.includes('screen_streaming_scrcpy');
+                    addTest('Servidor HTTP respondiendo', true, 
+                        `Versión: ${data.version}, Screen Streaming: ${hasScreenStreaming ? 'Sí' : 'No'}`);
+                })
+                .catch(e => {
+                    addTest('Servidor HTTP respondiendo', false, e.message);
+                });
+        } catch (e) {
+            addTest('Servidor HTTP respondiendo', false, e.message);
+        }
+
+        // Test 5: Verificar que WebSocket está disponible
+        try {
+            if (typeof WebSocket !== 'undefined') {
+                addTest('WebSocket disponible', true, 'API WebSocket soportada');
+            } else {
+                addTest('WebSocket disponible', false, 'API WebSocket no soportada');
+            }
+        } catch (e) {
+            addTest('WebSocket disponible', false, e.message);
+        }
+
+        // Test 6: Verificar que MediaSource está disponible
+        try {
+            if (typeof MediaSource !== 'undefined') {
+                addTest('MediaSource API disponible', true, 'API MediaSource soportada');
+            } else {
+                addTest('MediaSource API disponible', false, 'API MediaSource no soportada');
+            }
+        } catch (e) {
+            addTest('MediaSource API disponible', false, e.message);
+        }
+
+        // Test 7: Verificar funciones de streaming
+        try {
+            const functions = [
+                'connectScreenStream',
+                'disconnectScreenStream',
+                'toggleStreamingMode',
+                'toggleLeftMenu'
+            ];
+            
+            const allAvailable = functions.every(fn => typeof window[fn] === 'function');
+            const available = functions.filter(fn => typeof window[fn] === 'function').length;
+            
+            addTest('Funciones de streaming', allAvailable, 
+                `${available}/${functions.length} funciones disponibles`);
+        } catch (e) {
+            addTest('Funciones de streaming', false, e.message);
+        }
+
+        // Test 8: Verificar que wsapi está instanciado
+        try {
+            if (typeof wsapi !== 'undefined' && wsapi instanceof Wsapi) {
+                addTest('Instancia wsapi disponible', true, 'wsapi está listo');
+            } else {
+                addTest('Instancia wsapi disponible', false, 'wsapi no está instanciado');
+            }
+        } catch (e) {
+            addTest('Instancia wsapi disponible', false, e.message);
+        }
+
+        // Resumen
+        setTimeout(() => {
+            const tests = document.querySelectorAll('.test');
+            const passed = document.querySelectorAll('.test.pass').length;
+            const total = tests.length;
+            
+            const summary = document.createElement('div');
+            summary.style.marginTop = '30px';
+            summary.style.padding = '15px';
+            summary.style.background = 'rgba(79, 141, 255, 0.2)';
+            summary.style.borderRadius = '5px';
+            summary.style.textAlign = 'center';
+            summary.innerHTML = `
+                <h2 style="margin: 0 0 10px 0; color: #4f8dff;">
+                    Resumen: ${passed}/${total} pruebas pasadas
+                </h2>
+                ${passed === total ? 
+                    '<p style="color: #22b86f; margin: 0;">✅ ¡Todo está funcionando correctamente!</p>' :
+                    '<p style="color: #d45862; margin: 0;">❌ Hay problemas que necesitan ser resueltos</p>'
+                }
+            `;
+            results.appendChild(summary);
+        }, 1000);
+    </script>
+</body>
+</html>

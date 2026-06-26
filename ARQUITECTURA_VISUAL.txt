@@ -1,0 +1,235 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    FLOWDASHBOARD PRO - ARQUITECTURA HÍBRIDA                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                           CAPA 1: ELECTRON UI                                │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │  📱 Dashboard Moderno                                                  │  │
+│  │  ├─ Grid de dispositivos (selección múltiple)                         │  │
+│  │  ├─ Grid de streams (2x2, 3x3, 4x4)                                   │  │
+│  │  ├─ Gestión de cuentas (bolitas de estado)                            │  │
+│  │  ├─ Categorías (FlowLogin, FlowTrack, etc)                            │  │
+│  │  └─ Real-time updates (SignalR)                                       │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  Archivos:                                                                   │
+│  • src/main/index.js         (Proceso principal)                            │
+│  • src/renderer/index.html   (UI)                                           │
+│  • src/renderer/app.js       (Lógica)                                       │
+│  • preload/preload.js        (Bridge seguro)                                │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+                          HTTP REST + SignalR WebSocket
+                                      ↓
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                        CAPA 2: C# CORE ENGINE                                │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │  🔷 REST API (ASP.NET Core)                                           │  │
+│  │  ├─ GET  /api/devices                    (Listar dispositivos)        │  │
+│  │  ├─ POST /api/devices/execute            (Ejecutar comando ADB)       │  │
+│  │  ├─ POST /api/devices/flowlogin/start    (Iniciar FlowLogin)          │  │
+│  │  ├─ POST /api/streaming/start            (Iniciar stream)             │  │
+│  │  ├─ POST /api/streaming/stop             (Detener stream)             │  │
+│  │  └─ POST /api/streaming/layout           (Calcular layout)            │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │  🔷 SignalR Hub (Real-time)                                           │  │
+│  │  ├─ DeviceUpdated          (Dispositivo conectado/desconectado)       │  │
+│  │  ├─ AccountStatusUpdated   (Estado de cuentas cambia)                 │  │
+│  │  └─ StreamUpdated          (Stream inicia/detiene)                    │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │  🔷 Servicios                                                          │  │
+│  │  ├─ AdbService              (Gestión ADB nativa)                      │  │
+│  │  ├─ ScrcpyService           (Control de streaming)                    │  │
+│  │  └─ PythonBridgeService     (Comunicación con Python)                 │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  Archivos:                                                                   │
+│  • Program.cs                    (Entry point)                              │
+│  • Services/AdbService.cs        (ADB nativo)                               │
+│  • Services/ScrcpyService.cs     (Streaming)                                │
+│  • Services/PythonBridgeService.cs (Bridge Python)                          │
+│  • Controllers/DevicesController.cs                                         │
+│  • Controllers/StreamingController.cs                                       │
+│  • Hubs/DeviceHub.cs             (SignalR)                                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+                                 HTTP REST
+                                      ↓
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                      CAPA 3: PYTHON BACKEND (ACTUAL)                         │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │  🐍 Lógica de Negocio                                                  │  │
+│  │  ├─ FlowLogin logic          (Login.js, Register.js)                  │  │
+│  │  ├─ Account management       (Gestión de cuentas)                     │  │
+│  │  ├─ Supabase integration     (Licencias, logs)                        │  │
+│  │  └─ FlowAgent communication  (Socket Android)                         │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  Archivos (SIN CAMBIOS):                                                    │
+│  • local_adb_server.py           (Servidor HTTP)                            │
+│  • Login.js                      (Lógica de login)                          │
+│  • Register.js                   (Lógica de registro)                       │
+│  • device_names.json             (Nombres de dispositivos)                  │
+│  • .flowlogin_payloads/          (Cuentas por dispositivo)                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+                                    ADB
+                                      ↓
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                      CAPA 4: DISPOSITIVOS ANDROID                            │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │  📱 Dispositivos Físicos                                               │  │
+│  │  ├─ FlowAgent APK            (Socket server)                          │  │
+│  │  ├─ Login.js                 (Ejecuta en AutoJS)                      │  │
+│  │  ├─ Spotify clones           (Apps objetivo)                          │  │
+│  │  └─ Scrcpy streaming         (Captura de pantalla)                    │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              FLUJO DE DATOS                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+1. Usuario selecciona dispositivos en Electron UI
+   ↓
+2. Electron llama a C# API: POST /api/streaming/start
+   ↓
+3. C# ScrcpyService inicia procesos scrcpy
+   ↓
+4. Ventanas scrcpy se posicionan en grid (2x2, 3x3, etc)
+   ↓
+5. Usuario presiona "Iniciar FlowLogin"
+   ↓
+6. Electron llama a C# API: POST /api/devices/flowlogin/start
+   ↓
+7. C# PythonBridgeService llama a Python: POST /flowlogin/start
+   ↓
+8. Python ejecuta Login.js en cada dispositivo via FlowAgent
+   ↓
+9. Login.js actualiza flowlogin_status.json en Android
+   ↓
+10. Python lee status y actualiza estado
+    ↓
+11. C# recibe update de Python
+    ↓
+12. C# envía evento SignalR: AccountStatusUpdated
+    ↓
+13. Electron recibe evento y actualiza bolitas en UI
+    ↓
+14. Usuario ve bolitas cambiar de color en tiempo real:
+    • Gris    = Pendiente
+    • Azul    = Ejecutando
+    • Verde   = Success
+    • Rojo    = Error
+    • Naranja = Already logged
+    • Morado  = Review
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           TECNOLOGÍAS UTILIZADAS                             ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────┬────────────────────────────────────────────────────────┐
+│ CAPA                │ TECNOLOGÍAS                                            │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Electron UI         │ • Electron 28                                          │
+│                     │ • Node.js 18+                                          │
+│                     │ • Axios (HTTP client)                                  │
+│                     │ • @microsoft/signalr (WebSocket)                       │
+│                     │ • HTML5 + CSS3 + JavaScript                            │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ C# Core Engine      │ • .NET 8.0                                             │
+│                     │ • ASP.NET Core (REST API)                              │
+│                     │ • SignalR (Real-time)                                  │
+│                     │ • AdvancedSharpAdbClient (ADB)                         │
+│                     │ • Swagger (API docs)                                   │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Python Backend      │ • Python 3.8+                                          │
+│                     │ • Flask/HTTP Server                                    │
+│                     │ • Supabase Client                                      │
+│                     │ • subprocess (ADB)                                     │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Android             │ • ADB (Android Debug Bridge)                           │
+│                     │ • Scrcpy (Screen mirroring)                            │
+│                     │ • FlowAgent APK (Socket server)                        │
+│                     │ • AutoJS (JavaScript runtime)                          │
+└─────────────────────┴────────────────────────────────────────────────────────┘
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                            ARCHIVOS CREADOS                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+📁 FlowDashboard.Core/ (C# Engine)
+├── 📄 FlowDashboard.Core.csproj
+├── 📄 Program.cs
+├── 📁 Models/
+│   └── 📄 Device.cs
+├── 📁 Services/
+│   ├── 📄 AdbService.cs
+│   ├── 📄 ScrcpyService.cs
+│   └── 📄 PythonBridgeService.cs
+├── 📁 Controllers/
+│   ├── 📄 DevicesController.cs
+│   └── 📄 StreamingController.cs
+└── 📁 Hubs/
+    └── 📄 DeviceHub.cs
+
+📁 electron-app/ (Electron UI)
+├── 📄 package.json
+├── 📁 src/
+│   ├── 📁 main/
+│   │   └── 📄 index.js
+│   └── 📁 renderer/
+│       ├── 📄 index.html
+│       └── 📄 app.js
+└── 📁 preload/
+    └── 📄 preload.js
+
+📁 Documentación
+├── 📄 PLAN_PROYECTO_HIBRIDO.md
+├── 📄 README_PROYECTO_HIBRIDO.md
+├── 📄 RESUMEN_ESTRUCTURA_HIBRIDA.md
+├── 📄 INICIO_RAPIDO.md
+├── 📄 CHECKLIST.md
+├── 📄 COMANDO_PARA_KIRO.txt
+└── 📄 ARQUITECTURA_VISUAL.txt (este archivo)
+
+📁 Scripts
+└── 📄 start_hybrid.bat
+
+TOTAL: 21 archivos creados ✅
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              PRÓXIMOS PASOS                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+1. ⏳ Instalar .NET 8.0 SDK
+   https://dotnet.microsoft.com/download/dotnet/8.0
+
+2. ⏳ Instalar Node.js 18+
+   https://nodejs.org/
+
+3. ⏳ Reiniciar terminal
+
+4. ⏳ Ejecutar: start_hybrid.bat
+
+5. ⏳ Verificar que todo funcione
+
+6. ⏳ Migrar UI actual (bolitas, cuentas, etc)
+
+7. ⏳ Build instalador profesional
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                          ESTADO ACTUAL: 100% LISTO                           ║
+║                     ESPERANDO: Instalación de .NET SDK                       ║
+║                     ETA: 10 minutos después de instalar                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝

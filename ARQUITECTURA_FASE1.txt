@@ -1,0 +1,248 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    ARQUITECTURA FLOWDASHBOARD PRO - FASE 1                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                           ELECTRON APP (UI Layer)                             │
+│                                                                               │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Titlebar (Custom)                                                   │    │
+│  │  [FlowDashboard Pro]                              [−] [□] [×]        │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                               │
+│  ┌──────────────────────────┐  ┌──────────────────────────────────────┐    │
+│  │  Panel Izquierdo         │  │  Panel Derecho                        │    │
+│  │  📱 Dispositivos [3]     │  │  🎬 Streaming                         │    │
+│  │  ● Conectado             │  │  [▶ Iniciar Streaming]                │    │
+│  │                          │  │                                        │    │
+│  │  [🔄][✓][✗]             │  │  ┌──────────┐  ┌──────────┐          │    │
+│  │  2 seleccionados         │  │  │ Stream 1 │  │ Stream 2 │          │    │
+│  │                          │  │  │ Device A │  │ Device B │          │    │
+│  │  ┌────┐ ┌────┐ ┌────┐   │  │  │ 🟢 Activo│  │ 🟢 Activo│          │    │
+│  │  │Dev1│ │Dev2│ │Dev3│   │  │  └──────────┘  └──────────┘          │    │
+│  │  │🟢🟢│ │🔵🟡│ │⚫⚫│   │  │                                        │    │
+│  │  │🟢⚫│ │🟢⚫│ │⚫⚫│   │  │                                        │    │
+│  │  └────┘ └────┘ └────┘   │  │                                        │    │
+│  └──────────────────────────┘  └──────────────────────────────────────┘    │
+│                                                                               │
+│  app.js (500+ líneas)                                                        │
+│  - Gestión de estado (devices, selection, accounts, statuses)               │
+│  - Polling dual (devices 5s, statuses 2s)                                   │
+│  - Renderizado dinámico                                                      │
+│  - Manejo de errores y reconexión                                           │
+└───────────────────────────────┬──────────────────────────────────────────────┘
+                                │
+                ┌───────────────┴───────────────┐
+                │                               │
+                ▼                               ▼
+┌───────────────────────────┐   ┌───────────────────────────────┐
+│   C# API (Port 5000)      │   │   Python API (Port 8765)      │
+│   FlowDashboard.Core      │   │   local_adb_server.py         │
+├───────────────────────────┤   ├───────────────────────────────┤
+│                           │   │                               │
+│  Endpoints:               │   │  Endpoints:                   │
+│  • GET  /api/devices      │   │  • GET  /health               │
+│  • POST /api/streaming/   │   │  • GET  /devices              │
+│       layout              │   │  • POST /login-status         │
+│  • POST /api/streaming/   │   │  • POST /device-name          │
+│       start               │   │  • POST /device-person        │
+│  • POST /api/streaming/   │   │  • POST /autojs/run           │
+│       stop                │   │  • POST /agent/command        │
+│                           │   │                               │
+│  Servicios:               │   │  Archivos:                    │
+│  • AdbService             │   │  • device_names.json          │
+│  • StreamingService       │   │  • .flowlogin_payloads/       │
+│  • SignalR Hub            │   │  • flowlogin_status.json      │
+│                           │   │                               │
+└─────────────┬─────────────┘   └───────────────┬───────────────┘
+              │                                 │
+              │  ┌──────────────────────────────┘
+              │  │
+              ▼  ▼
+    ┌─────────────────────────┐
+    │   ADB (Android Debug    │
+    │   Bridge)               │
+    └────────────┬────────────┘
+                 │
+    ┌────────────┴────────────┐
+    │                         │
+    ▼                         ▼
+┌─────────┐  ┌─────────┐  ┌─────────┐
+│ Device1 │  │ Device2 │  │ Device3 │
+│ 📱      │  │ 📱      │  │ 📱      │
+│         │  │         │  │         │
+│ FlowAgent│ │ FlowAgent│ │ FlowAgent│
+│ APK     │  │ APK     │  │ APK     │
+└─────────┘  └─────────┘  └─────────┘
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                         FLUJO DE DATOS - FASE 1                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+1. CARGA INICIAL
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ Electron App inicia                                             │
+   │   ↓                                                             │
+   │ Verifica conexión a C# API (5000) y Python API (8765)          │
+   │   ↓                                                             │
+   │ Carga dispositivos desde C# API                                 │
+   │   ↓                                                             │
+   │ Carga nombres desde Python API (device_names.json)             │
+   │   ↓                                                             │
+   │ Carga cuentas desde Python API (person field)                  │
+   │   ↓                                                             │
+   │ Carga estados desde Python API (flowlogin_status.json)         │
+   │   ↓                                                             │
+   │ Renderiza UI con todos los datos                               │
+   └─────────────────────────────────────────────────────────────────┘
+
+2. POLLING CONTINUO
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ Cada 5 segundos:                                                │
+   │   • Actualiza lista de dispositivos desde C# API                │
+   │   • Recarga nombres y cuentas desde Python API                  │
+   │   • Re-renderiza grid de dispositivos                           │
+   │                                                                 │
+   │ Cada 2 segundos (si Python conectado):                          │
+   │   • Actualiza estados de login desde Python API                 │
+   │   • Actualiza colores de bolitas en tiempo real                 │
+   │   • NO re-renderiza todo, solo actualiza bolitas                │
+   └─────────────────────────────────────────────────────────────────┘
+
+3. INTERACCIÓN USUARIO
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ Usuario hace click en dispositivo                               │
+   │   ↓                                                             │
+   │ Toggle selección en Set (selectedDeviceIds)                     │
+   │   ↓                                                             │
+   │ Re-renderiza grid (marca/desmarca tarjeta)                      │
+   │   ↓                                                             │
+   │ Actualiza contador de seleccionados                            │
+   └─────────────────────────────────────────────────────────────────┘
+
+4. STREAMING (Preparado, no implementado en FASE 1)
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ Usuario presiona "Iniciar Streaming"                            │
+   │   ↓                                                             │
+   │ POST /api/streaming/layout con serials seleccionados           │
+   │   ↓                                                             │
+   │ C# calcula posiciones (x, y, width, height)                    │
+   │   ↓                                                             │
+   │ Para cada dispositivo:                                          │
+   │   POST /api/streaming/start con config                         │
+   │   ↓                                                             │
+   │   C# inicia scrcpy en ventana separada                         │
+   │   ↓                                                             │
+   │ Renderiza placeholders en UI (FASE 2: embeber ventanas)        │
+   └─────────────────────────────────────────────────────────────────┘
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                      ESTADOS DE BOLITAS (7 ESTADOS)                          ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌────────────┬──────────────┬─────────────────────────────────────────────────┐
+│ Estado     │ Color        │ Descripción                                     │
+├────────────┼──────────────┼─────────────────────────────────────────────────┤
+│ pending    │ ⚫ Gris      │ Cuenta asignada pero no ejecutada               │
+│ running    │ 🔵 Azul     │ Login en progreso (animación pulso)             │
+│ retrying   │ 🟡 Amarillo │ Reintentando login (animación pulso)            │
+│ success    │ 🟢 Verde    │ Login exitoso (glow verde)                      │
+│ error      │ 🔴 Rojo     │ Error en login                                  │
+│ already    │ 🟠 Naranja  │ Cuenta ya estaba logueada                       │
+│ review     │ 🟣 Morado   │ Requiere revisión manual                        │
+│ notice14   │ 🔴 Rojo     │ Aviso de 14 días (Spotify)                      │
+└────────────┴──────────────┴─────────────────────────────────────────────────┘
+
+Ejemplo de dispositivo con 4 cuentas:
+┌────────────────┐
+│ Device Name    │
+│ 192.168.1.11   │
+│ device         │  🟢 ← C1: success
+│                │  🔵 ← C2: running (animado)
+│                │  🟡 ← C3: retrying (animado)
+│                │  🔴 ← C4: error
+└────────────────┘
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                         ARCHIVOS CLAVE - FASE 1                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+electron-app/
+├── src/
+│   ├── main/
+│   │   └── index.js                    [Electron main process]
+│   │       • Crea ventana frameless
+│   │       • Maneja IPC (minimize, maximize, close)
+│   │       • NO inicia C# server (manual)
+│   │
+│   ├── renderer/
+│   │   ├── index.html                  [HTML mínimo]
+│   │   │   • CSP para localhost
+│   │   │   • Div #app para renderizado
+│   │   │
+│   │   ├── app.js                      [CORE - 500+ líneas] ⭐
+│   │   │   • FlowDashboardApp class
+│   │   │   • Conexión dual (C# + Python)
+│   │   │   • Gestión de estado
+│   │   │   • Polling inteligente
+│   │   │   • Renderizado dinámico
+│   │   │   • Bolitas de estado
+│   │   │
+│   │   └── styles.css                  [Estilos completos]
+│   │       • Variables CSS (colores, sombras)
+│   │       • Titlebar custom
+│   │       • Device cards
+│   │       • Account status dots (7 estados)
+│   │       • Animaciones
+│   │
+│   └── preload/
+│       └── preload.js                  [Context bridge]
+│           • Expone APIs de Electron
+│           • minimizeWindow()
+│           • maximizeWindow()
+│           • closeWindow()
+
+FlowDashboard.Core/                     [C# Backend]
+├── Services/
+│   ├── AdbService.cs                   [Gestión ADB]
+│   └── StreamingService.cs             [Gestión scrcpy]
+└── Program.cs                          [API REST]
+
+local_adb_server.py                     [Python Backend]
+├── /health                             [Health check]
+├── /devices                            [Lista dispositivos]
+├── /login-status                       [Estados FlowLogin]
+└── /device-name, /device-person        [Persistencia]
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                            PRÓXIMOS PASOS                                    ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+FASE 2: Categorías y Acciones
+├── Tarjetas de categorías (FlowLogin, FlowTrack, etc.)
+├── Botones Play individuales
+├── Panel de cuentas con pestañas
+├── Delimitador y Dividir
+└── Comandos ADB personalizados
+
+FASE 3: Streaming Embebido
+├── Integración scrcpy en Electron
+├── Layout automático
+├── Controles de calidad
+└── Grabación de pantalla
+
+FASE 4: Features Avanzadas
+├── Grupos de dispositivos
+├── Perfiles de configuración
+├── Logs y debugging
+└── Exportación de reportes
+
+FASE 5: Distribución
+├── Empaquetado con electron-builder
+├── Instalador NSIS
+├── Auto-actualización
+└── Licenciamiento
+
+═══════════════════════════════════════════════════════════════════════════════
+                            FASE 1 COMPLETADA ✅
+═══════════════════════════════════════════════════════════════════════════════

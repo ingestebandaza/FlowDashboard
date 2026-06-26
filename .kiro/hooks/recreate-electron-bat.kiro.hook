@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Recrear abrir_electron.bat",
+  "description": "Cada vez que se guarda abrir_electron.ps1, recrea automáticamente el abrir_electron.bat",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "abrir_electron.ps1"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "El archivo abrir_electron.ps1 fue modificado. Crea inmediatamente el archivo abrir_electron.bat en c:\\DASHBOARD\\FlowDashboard\\ con este contenido exacto usando fs_write:\n\n@echo off\nsetlocal\nset APP_DIR=%~dp0\nset APP_DIR=%APP_DIR:~0,-1%\npowershell -NoProfile -ExecutionPolicy Bypass -File \"%APP_DIR%\\abrir_electron.ps1\"\nif errorlevel 1 (\n    echo.\n    echo ERROR: Algo fallo al iniciar FlowDashboard.\n    pause\n)"
+  }
+}

@@ -1,0 +1,134 @@
+================================================================================
+  PRUEBA ELECTRON AHORA - GUÍA RÁPIDA
+================================================================================
+
+OBJETIVO: Iniciar Electron y verificar que funciona con dispositivos
+
+================================================================================
+  PASO 1: EJECUTAR (30 segundos)
+================================================================================
+
+Opción A - Doble click:
+  1. Abre el Explorador de archivos
+  2. Ve a: c:\DASHBOARD\FlowDashboard
+  3. Doble click en: abrir_electron.bat
+  4. Espera a que se abran las ventanas
+
+Opción B - Terminal:
+  cd c:\DASHBOARD\FlowDashboard
+  .\abrir_electron.bat
+
+El script inicia automáticamente:
+  ✅ Backend C# (puerto 5000)
+  ✅ Backend Python (puerto 8765)
+  ✅ Electron App
+
+================================================================================
+  PASO 2: VERIFICAR CONEXIONES (1 minuto)
+================================================================================
+
+Una vez que Electron está abierto:
+
+1. Presiona F12 para abrir DevTools
+2. Ve a la pestaña "Console"
+3. Ejecuta:
+
+   await csharpAPI.healthCheck()
+   // Debe retornar: true
+
+   await pythonAPI.healthCheck()
+   // Debe retornar: true
+
+   const devices = await csharpAPI.get('/devices');
+   console.log(devices);
+   // Debe mostrar lista de dispositivos
+
+================================================================================
+  PASO 3: VERIFICAR UI (1 minuto)
+================================================================================
+
+En la ventana de Electron, verifica:
+
+✅ Dispositivos aparecen en la grilla
+✅ Cada dispositivo muestra: nombre, serial, estado
+✅ Categorías aparecen en el sidebar
+✅ Botones de control están visibles
+
+================================================================================
+  PASO 4: PROBAR INTERACCIÓN (2 minutos)
+================================================================================
+
+1. Click en un dispositivo
+   ✅ Debe cambiar de color/estilo
+
+2. Click en otro dispositivo
+   ✅ Ambos deben estar seleccionados
+
+3. Click en "Deseleccionar todo"
+   ✅ Todos deben deseleccionarse
+
+================================================================================
+  PASO 5: PROBAR RECONEXIÓN (3 minutos)
+================================================================================
+
+1. En la terminal de C#, presiona Ctrl+C
+   ✅ En Electron console, ver: "⚠️ Reintentando C# API"
+
+2. Reinicia C# en la terminal
+   dotnet run
+   ✅ En Electron console, ver: "✅ Conectado al servidor C# (ADB)"
+
+3. Repite lo mismo con Python backend
+
+================================================================================
+  CHECKLIST DE ÉXITO
+================================================================================
+
+✅ Electron inicia sin errores
+✅ Conexiones a backends funcionan
+✅ Dispositivos se cargan correctamente
+✅ UI es responsiva
+✅ Interacción funciona
+✅ Reconexión funciona
+
+Si todo está ✅, ¡ÉXITO! Electron está listo.
+
+================================================================================
+  TROUBLESHOOTING
+================================================================================
+
+❌ Error: "Port 5000 already in use"
+   Solución: netstat -ano | findstr :5000
+            taskkill /PID <PID> /F
+
+❌ Error: "Dispositivos no se cargan"
+   Solución: Verificar que adb devices muestra dispositivos
+            Verificar que C# backend está corriendo
+
+❌ Error: "WebSocket connection failed"
+   Solución: Verificar que C# backend está corriendo
+            Verificar puerto 5000
+
+================================================================================
+  DOCUMENTACIÓN
+================================================================================
+
+Para más detalles, lee:
+
+  INSTRUCCIONES_PROBAR_ELECTRON.md - Instrucciones detalladas
+  CHECKLIST_PRUEBA_ELECTRON.md - Checklist completo
+  COMIENZA_AQUI_PRUEBA_ELECTRON.txt - Guía completa
+
+================================================================================
+  ¡COMIENZA AHORA!
+================================================================================
+
+1. Ejecuta: .\abrir_electron.bat
+2. Espera a que se abran las ventanas
+3. Presiona F12 en Electron
+4. Ejecuta los comandos de verificación
+5. Prueba interacción
+
+¡Buena suerte! 🚀
+
+================================================================================

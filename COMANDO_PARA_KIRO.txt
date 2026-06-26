@@ -1,0 +1,26 @@
+========================================
+COMANDO PARA COPIAR Y PEGAR EN KIRO
+========================================
+
+Cuando reinicies la terminal con .NET instalado, copia y pega esto:
+
+---
+
+He instalado .NET 8.0 SDK y Node.js.
+
+Lee el archivo PLAN_PROYECTO_HIBRIDO.md y ejecuta ETAPA 1.
+
+Pasos:
+1. Verifica que dotnet funcione: dotnet --version
+2. Compila el proyecto C#: cd FlowDashboard.Core && dotnet restore && dotnet build
+3. Ejecuta el servidor C#: dotnet run
+4. Verifica que la API responda en http://localhost:5000/api/devices
+
+Si todo funciona, continúa con ETAPA 2 (Electron).
+
+---
+
+ALTERNATIVA RÁPIDA:
+Ejecuta el script: start_hybrid.bat
+
+========================================

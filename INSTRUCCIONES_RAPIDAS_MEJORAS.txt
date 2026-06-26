@@ -1,0 +1,159 @@
+================================================================================
+  🚀 INSTRUCCIONES RÁPIDAS - MEJORAS IMPLEMENTADAS
+================================================================================
+
+¿QUÉ CAMBIÓ?
+
+1. Chrome NO se cierra
+   - Antes: Se cerraba completamente
+   - Ahora: Permanece abierto
+   - Beneficio: No pierdes pestañas
+
+2. Licencia se guarda automáticamente
+   - Antes: Debes ingresar cada vez
+   - Ahora: Se guarda en localStorage
+   - Beneficio: Solo ingresas 1 vez
+
+3. Licencia se carga automáticamente
+   - Antes: Campo vacío
+   - Ahora: Se carga automáticamente
+   - Beneficio: Dashboard listo al abrir
+
+================================================================================
+  ⚡ CÓMO USAR (3 PASOS)
+================================================================================
+
+PASO 1: VERIFICAR
+  Ejecuta: verificar_mejoras.bat
+  Verifica que todo está en su lugar
+
+PASO 2: ABRIR DASHBOARD
+  Ejecuta: abrir_dashboard.bat
+  Se abre en Chrome (no se cierra)
+
+PASO 3: INGRESAR LICENCIA (SOLO PRIMERA VEZ)
+  1. Ingresa tu email de licencia
+  2. Haz click en "Validar"
+  3. Email se guarda automáticamente
+
+PRÓXIMAS VECES:
+  1. Ejecuta: abrir_dashboard.bat
+  2. Tu email se carga automáticamente
+  3. ¡Listo para usar!
+
+================================================================================
+  ✨ BENEFICIOS
+================================================================================
+
+✅ Chrome permanece abierto
+   - No pierdes pestañas
+   - No pierdes sesiones
+   - Continuidad entre sesiones
+
+✅ Licencia se guarda automáticamente
+   - Solo ingresas 1 vez
+   - Se carga automáticamente
+   - Sin configuración manual
+
+✅ Más rápido
+   - No cierra/abre Chrome
+   - Abre en segundos
+   - Especialmente útil si abres varias veces
+
+================================================================================
+  🔧 COMANDOS ÚTILES (EN CONSOLA F12)
+================================================================================
+
+Guardar licencia manualmente:
+  window.LicensePersistence.save('tu_email@ejemplo.com');
+
+Cargar licencia guardada:
+  window.LicensePersistence.load();
+
+Limpiar licencia:
+  window.LicensePersistence.clear();
+
+Inyectar licencia en campo:
+  window.LicensePersistence.inject('tu_email@ejemplo.com');
+
+================================================================================
+  📁 ARCHIVOS NUEVOS
+================================================================================
+
+license_persistence.js
+  - Gestiona persistencia de licencia
+  - Guarda en localStorage
+  - Carga automáticamente
+
+PERSISTENCIA_LICENCIA.md
+  - Guía completa
+  - Cómo usar
+  - Solución de problemas
+
+CAMBIOS_ABRIR_DASHBOARD_MEJORADO.md
+  - Detalles de cambios
+  - Comparativa antes/después
+
+RESUMEN_MEJORAS_DASHBOARD.txt
+  - Resumen ejecutivo
+
+VERIFICAR_MEJORAS.bat
+  - Script de verificación
+
+================================================================================
+  ✅ CHECKLIST
+================================================================================
+
+- [ ] Ejecuté verificar_mejoras.bat
+- [ ] Todo pasó la verificación
+- [ ] Ejecuté abrir_dashboard.bat
+- [ ] Chrome NO se cerró
+- [ ] Dashboard se abrió en Chrome
+- [ ] Ingresé mi email de licencia
+- [ ] Hice click en "Validar"
+- [ ] Abrí DevTools (F12)
+- [ ] Ejecuté window.LicensePersistence.load()
+- [ ] Devolvió mi email
+- [ ] Cerré el dashboard
+- [ ] Ejecuté abrir_dashboard.bat nuevamente
+- [ ] Mi email se cargó automáticamente
+- [ ] ¡Todo funciona! ✅
+
+================================================================================
+  🎉 RESULTADO
+================================================================================
+
+✅ Chrome NO se cierra
+✅ Licencia se guarda automáticamente
+✅ Licencia se carga automáticamente
+✅ Más rápido y eficiente
+✅ Mejor experiencia de usuario
+
+================================================================================
+  📞 PROBLEMAS?
+================================================================================
+
+Problema: Chrome no se abre
+  Solución: Verifica que Chrome está instalado
+
+Problema: La licencia no se guarda
+  Solución: Abre DevTools (F12) y verifica Console
+
+Problema: La licencia no se carga
+  Solución: Ejecuta window.LicensePersistence.load() en consola
+
+Problema: Quiero cambiar la licencia
+  Solución: Ejecuta window.LicensePersistence.clear() y recarga
+
+================================================================================
+  🚀 PRÓXIMO PASO
+================================================================================
+
+Ejecuta: abrir_dashboard.bat
+
+¡Disfruta del dashboard mejorado!
+
+================================================================================
+Última actualización: 2026-05-21
+Estado: ✅ COMPLETADO
+================================================================================
