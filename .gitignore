@@ -16,6 +16,8 @@ build_fixed/
 dist/
 *.spec
 !launcher.spec
+!build_specs/
+!build_specs/*.spec
 !flow_agent_apk/
 !flow_agent_apk/build/
 !flow_agent_apk/build/flowagent-debug.apk
