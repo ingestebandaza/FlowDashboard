@@ -72,7 +72,8 @@ function Action-QuickRelease {
     $sel = Read-Host "Seleccione"
     $bump = switch ($sel) { "1" { "patch" } "2" { "minor" } "3" { "major" } default { $null } }
     if (-not $bump) { Write-Host "Opcion invalida" -ForegroundColor Red; return }
-    $code = Invoke-Release @("-Action", "stable", "-Bump", $bump, "-CommitPush")
+    Invoke-Release @("-Action", "stable", "-Bump", $bump, "-CommitPush") | Out-Null
+    $code = $LASTEXITCODE
     if ($code -eq 0) {
         Write-Host ""
         Write-Host "Release rapida completada. Revise el draft en GitHub y publique con la opcion 7." -ForegroundColor Green

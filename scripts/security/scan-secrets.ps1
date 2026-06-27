@@ -36,6 +36,19 @@ $patterns = @(
     @{ Name = "SECRET_ASSIGNMENT"; Severity = "WARN"; Regex = "(?i)(password|passwd|pwd|secret|api[_-]?key|access[_-]?token|client[_-]?secret)\s*[:=]\s*[`"'][^`"'\s]{8,}[`"']" }
 )
 
+function Test-PublicAnonJwt {
+    param([string]$Token)
+    $parts = $Token.Split(".")
+    if ($parts.Count -lt 2) { return $false }
+    $payload = $parts[1].Replace("-", "+").Replace("_", "/")
+    switch ($payload.Length % 4) { 2 { $payload += "==" } 3 { $payload += "=" } }
+    try {
+        $bytes = [Convert]::FromBase64String($payload)
+        $json = [System.Text.Encoding]::UTF8.GetString($bytes)
+    } catch { return $false }
+    return ($json -match '"role"\s*:\s*"anon"')
+}
+
 function Get-TargetFiles {
     switch ($Scope) {
         "staged" { $list = & git diff --cached --name-only 2>$null }
@@ -85,6 +98,7 @@ foreach ($rel in $files) {
     foreach ($p in $patterns) {
         $m = [regex]::Matches($content, $p.Regex)
         foreach ($hit in $m) {
+            if ($p.Name -eq "JWT" -and (Test-PublicAnonJwt $hit.Value)) { continue }
             $prefix = $content.Substring(0, $hit.Index)
             $lineNo = ([regex]::Matches($prefix, "`n")).Count + 1
             $snippet = $hit.Value
