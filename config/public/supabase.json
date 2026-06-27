@@ -1,6 +1,6 @@
 {
   "url": "https://qcwvfeqyczkhmkhqicqi.supabase.co",
-  "anonKey": "",
-  "_comment_anonKey": "Vacio a proposito. Publicar la anon/publishable key publica SOLO cuando RLS este verificado en todas las tablas. La service_role nunca debe ir aqui.",
+  "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjd3ZmZXF5Y3praG1raHFpY3FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2OTg2MzcsImV4cCI6MjA5NDI3NDYzN30.XL3NLmiFZLbH-4sEMTlNn_2ni2ZHicrgXOfMAKb1hqs",
+  "_comment_anonKey": "Clave anon publica (role=anon). Segura por diseno: RLS activo en todas las tablas (migracion 005), anon solo puede ejecutar el RPC validate_flowdashboard_license. NUNCA poner service_role ni sb_secret aqui.",
   "_comment_file": "Configuracion publica no secreta. No incluir service_role, tokens ni credenciales."
 }

@@ -126,6 +126,11 @@ Copy-ResourceFile $flowAgentUniversalApk "android\flowagent\agent-v1.0.0-univers
 Copy-ResourceFile $flowTrackNameExe "Herramientas\FlowTrackName.exe" "FlowTrackName executable"
 Copy-ResourceFile $thirdPartyNotices "THIRD_PARTY_NOTICES.txt" "third-party notices"
 
+$codesignCer = Join-Path $RepoRoot "secrets\flowdashboard-codesign.cer"
+if (Test-Path -LiteralPath $codesignCer -PathType Leaf) {
+    Copy-ResourceFile $codesignCer "flowdashboard-codesign.cer" "self-signed code-signing certificate"
+}
+
 $scriptFiles = @("Login.js", "Register.js")
 foreach ($scriptFile in $scriptFiles) {
     $source = Join-Path $RepoRoot $scriptFile

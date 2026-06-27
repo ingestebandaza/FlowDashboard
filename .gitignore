@@ -74,6 +74,8 @@ restore_points/
 *.pfx
 *.cert
 *.cer
+*.keystore
+*.jks
 secrets/
 
 # EXCLUSIONES DE USUARIO/DATOS DESCUBIERTAS

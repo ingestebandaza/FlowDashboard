@@ -85,7 +85,8 @@
                                "createDesktopShortcut":  true,
                                "createStartMenuShortcut":  true,
                                "shortcutName":  "FlowDashboard",
-                               "deleteAppDataOnUninstall":  false
+                               "deleteAppDataOnUninstall":  false,
+                               "include":  "build/installer.nsh"
                            },
                   "artifactName":  "FlowDashboard-Setup-${version}.${ext}",
                   "publish":  [
