@@ -11,7 +11,7 @@ venv/
 *.log
 
 # PyInstaller
-build/
+/build/
 build_fixed/
 dist/
 *.spec
