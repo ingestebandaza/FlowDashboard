@@ -7706,57 +7706,13 @@ async function validateLicense(opts = {}) {
   }
 })();
 
-// ─── Sistema de Actualizaciones ───────────────────────────────────────────────
-function showUpdateModal(title, msg, progress = 20) {
-  let modal = document.getElementById('updateModal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'updateModal';
-    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:99998;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;';
-    modal.innerHTML = `
-      <div style="background:#0d1117;border:1px solid rgba(69,202,255,.3);border-radius:12px;padding:28px;max-width:440px;width:90%;box-shadow:0 22px 80px rgba(0,0,0,.5);">
-        <h2 id="updateTitle" style="margin:0 0 10px;color:#edf3fb;font-size:18px;"></h2>
-        <p id="updateMsg" style="margin:0 0 16px;color:#9fb1c7;font-size:14px;"></p>
-        <div style="height:6px;overflow:hidden;border-radius:999px;background:rgba(147,167,190,.15);">
-          <div id="updateBar" style="height:100%;border-radius:inherit;background:linear-gradient(90deg,#45caff,#3ddc97);transition:width .35s ease;"></div>
-        </div>
-        <p style="margin:12px 0 0;color:#6f8198;font-size:12px;">No cierres el programa durante la actualización.</p>
-      </div>`;
-    document.body.appendChild(modal);
-  }
-  document.getElementById('updateTitle').textContent = title;
-  document.getElementById('updateMsg').textContent = msg;
-  document.getElementById('updateBar').style.width = `${Math.max(8, Math.min(100, progress))}%`;
-  modal.style.display = 'flex';
-}
-
-function hideUpdateModal() {
-  const m = document.getElementById('updateModal');
-  if (m) m.style.display = 'none';
-}
-
-async function checkForUpdates() {
-  try {
-    showUpdateModal('Buscando actualizaciones', 'Revisando si hay una versión nueva disponible.', 20);
-    await window.electronAPI?.checkForUpdates?.();
-    let attempts = 0;
-    const poll = setInterval(async () => {
-      attempts++;
-      try {
-        const s = await window.electronAPI?.getUpdateStatus?.();
-        if (!s) throw new Error('UpdateManager no disponible');
-        if (s.state === 'downloading') showUpdateModal('Descargando actualización', s.message || 'Descargando...', 60);
-        else if (s.state === 'installing') showUpdateModal('Instalando', s.message || 'Reiniciando...', 100);
-        else if (s.state === 'no_update' || s.state === 'error' || attempts > 30) {
-          clearInterval(poll);
-          setTimeout(hideUpdateModal, s.state === 'error' ? 4000 : 800);
-        }
-      } catch { clearInterval(poll); hideUpdateModal(); }
-    }, 1000);
-  } catch { hideUpdateModal(); }
-}
-
-// ─── FlowAgent Setup ──────────────────────────────────────────────────────────
+// ─── Sistema de Actualizaciones ───────────────────────────────────────────────
+function hideUpdateModal() {
+  const m = document.getElementById('updateModal');
+  if (m) m.style.display = 'none';
+}
+
+// ─── FlowAgent Setup ──────────────────────────────────────────────────────────
 async function setupFlowAgentAll() {
   const devices = app.devices;
   if (!devices.length) { alert('No hay dispositivos conectados'); return; }
