@@ -10,6 +10,11 @@ const {
 } = require('./path-resolver');
 const { RuntimeManager } = require('./runtime-manager');
 const { UpdateManager } = require('./update-manager');
+const {
+  saveEntitlementsCache,
+  loadEntitlementsCache,
+  clearEntitlementsCache
+} = require('./entitlements-cache');
 
 let mainWindow;
 let runtimeManager;
@@ -310,6 +315,30 @@ ipcMain.handle('write-json-file', async (event, filename, data) => {
 
 ipcMain.handle('get-data-dir', async () => paths.dataRoot);
 ipcMain.handle('get-path-info', async () => ({ ...paths, migratedDataFiles }));
+
+ipcMain.handle('entitlements-cache-save', async (event, payload) => {
+  try {
+    return saveEntitlementsCache(paths.dataRoot, payload || {});
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('entitlements-cache-load', async () => {
+  try {
+    return loadEntitlementsCache(paths.dataRoot);
+  } catch (e) {
+    return { ok: false, reason: 'exception', error: e.message };
+  }
+});
+
+ipcMain.handle('entitlements-cache-clear', async () => {
+  try {
+    return clearEntitlementsCache(paths.dataRoot);
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
 ipcMain.handle('runtime-status', async () => {
   if (!runtimeManager) return { ready: false, error: 'RuntimeManager no inicializado' };
   return runtimeManager.refreshHealth();

@@ -3,6 +3,7 @@ using FlowDashboard.Core.Hubs;
 using System.Net.WebSockets;
 using System.Net;
 using System.Reflection;
+using System.Text.Json;
 // using FlowDashboard.Core.Hubs; // Comentado temporalmente - Canvas Streaming en desarrollo
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,6 +37,7 @@ builder.Services.AddSingleton<VideoStreamingService>();
 builder.Services.AddSingleton<StreamingWebSocketService>();
 builder.Services.AddSingleton<DeviceMappingService>();
 builder.Services.AddSingleton<MailService>();
+builder.Services.AddSingleton<EntitlementsService>();
 // builder.Services.AddSingleton<CanvasStreamingService>(); // Comentado temporalmente - Canvas Streaming en desarrollo
 
 var app = builder.Build();
@@ -193,6 +195,43 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowElectron");
 
 app.UseAuthorization();
+
+app.Use(async (context, next) =>
+{
+    var entitlements = context.RequestServices.GetRequiredService<EntitlementsService>();
+    if (entitlements.EnforcementEnabled && HttpMethods.IsPost(context.Request.Method))
+    {
+        var (allowed, feature) = entitlements.CheckPath(context.Request.Path.Value ?? string.Empty);
+        if (!allowed)
+        {
+            context.Response.StatusCode = 403;
+            await context.Response.WriteAsJsonAsync(new
+            {
+                error = "feature_not_entitled",
+                feature
+            });
+            return;
+        }
+    }
+
+    await next();
+});
+
+app.MapGet("/api/entitlements", (EntitlementsService entitlements) => Results.Ok(entitlements.GetState()));
+app.MapPost("/api/entitlements", async (HttpContext context, EntitlementsService entitlements) =>
+{
+    try
+    {
+        using var document = await JsonDocument.ParseAsync(context.Request.Body);
+        entitlements.SetEntitlements(document.RootElement.Clone(), "push");
+        return Results.Ok(entitlements.GetState());
+    }
+    catch
+    {
+        return Results.BadRequest(new { error = "invalid_payload" });
+    }
+});
+
 app.MapGet("/api/health", (AdbService adbService) => Results.Ok(new
 {
     status = "ok",

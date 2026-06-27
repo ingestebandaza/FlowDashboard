@@ -113,6 +113,14 @@ except ImportError as _exc:
     SCRCPY_CONTROL_MANAGER = None
     print(f"[scrcpy-control] modulo no disponible: {_exc}")
 
+try:
+    import entitlements as entitlements_module
+    ENTITLEMENTS_AVAILABLE = True
+except ImportError as _exc:
+    entitlements_module = None
+    ENTITLEMENTS_AVAILABLE = False
+    print(f"[entitlements] modulo no disponible: {_exc}")
+
 BASE_DIR = _resolve_base_dir()
 RESOURCE_DIR = _resolve_resource_dir(BASE_DIR)
 DATA_DIR = _resolve_data_dir(BASE_DIR)
@@ -7303,6 +7311,12 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/devices/subnets":
                 self._json({"subnets": get_local_subnets()})
                 return
+            elif path == "/entitlements":
+                if ENTITLEMENTS_AVAILABLE and entitlements_module is not None:
+                    self._json(entitlements_module.get_state())
+                else:
+                    self._json({"enforcement": False, "loaded": False, "features": [], "limits": {}, "plan": {}, "grace": {}})
+                return
 
             elif path == "/client-info":
                 self._json(get_client_info())
@@ -7400,6 +7414,11 @@ class Handler(BaseHTTPRequestHandler):
             multipart_paths = {"/apps/install", "/file-push", "/autojs/push"}
             is_multipart = path in multipart_paths and "multipart/form-data" in (self.headers.get("content-type", "") or "").lower()
             body = {} if is_multipart else self._body()
+            if ENTITLEMENTS_AVAILABLE and entitlements_module is not None:
+                _ent_allowed, _ent_feature = entitlements_module.check_post(path)
+                if not _ent_allowed:
+                    self._json({"error": "feature_not_entitled", "feature": _ent_feature, "message": "Tu plan actual no incluye esta funcion."}, 403)
+                    return
             if path == "/adb":
                 self._json({"result": run_adb_command(body.get("command", ""), body.get("deviceIds", "all")), "devices": _get_cached_devices()})
             
@@ -7868,6 +7887,8 @@ class Handler(BaseHTTPRequestHandler):
                         "country_name": body.get("country_name", ""),
                     }
                 )
+                if ENTITLEMENTS_AVAILABLE and entitlements_module is not None and isinstance(result, dict):
+                    entitlements_module.set_entitlements(result, source="validate")
                 self._json(result)
             elif path == "/screen-stream/start" and SCRCPY_AVAILABLE:
                 # Iniciar streaming de pantalla

@@ -7558,8 +7558,186 @@ async function refreshLicenseDevicePill() {
   }
 }
 
-function hideLicenseModal() {
-  const modal = document.getElementById('licenseModal');
+const EntitlementsManager = {
+  state: {
+    enforcementEnabled: false,
+    loaded: false,
+    features: new Set(),
+    plan: null,
+    status: null,
+    limits: null,
+    validUntil: null,
+    blocked: false
+  },
+  featureSelectors: {},
+  log(message, extra) {
+    try {
+      console.log(`[Entitlements] ${message}`, extra || '');
+    } catch {}
+  },
+  isAllowed(code) {
+    if (!this.state.enforcementEnabled) return true;
+    if (!this.state.loaded) return true;
+    if (this.state.features.size === 0) return true;
+    return this.state.features.has(code);
+  },
+  setFromData(data) {
+    if (!data || typeof data !== 'object') return;
+    const features = Array.isArray(data.features) ? data.features : [];
+    this.state.features = new Set(features);
+    this.state.loaded = true;
+    this.state.plan = data.plan || data.plan_code || null;
+    this.state.status = data.status || data.device_status || null;
+    this.state.limits = data.limits || null;
+    this.state.validUntil = data.valid_until || null;
+    this.log('features actualizadas', { count: features.length, plan: this.state.plan });
+    this.applyUiGating();
+  },
+  async refreshFromBackend() {
+    try {
+      const r = await fetch(`${PYTHON_API}/entitlements`);
+      const s = await r.json();
+      if (s && typeof s === 'object') {
+        this.state.enforcementEnabled = Boolean(s.enforcement_enabled);
+        if (Array.isArray(s.features)) {
+          this.state.features = new Set(s.features);
+        }
+        this.state.loaded = Boolean(s.loaded);
+        this.state.plan = s.plan || this.state.plan;
+        this.log('estado backend', { enforce: this.state.enforcementEnabled, loaded: this.state.loaded });
+        this.applyUiGating();
+      }
+    } catch {}
+  },
+  async cacheToMain(data, identity) {
+    try {
+      if (!window.electronAPI || !window.electronAPI.saveEntitlementsCache) return;
+      await window.electronAPI.saveEntitlementsCache({
+        license_id: (identity && identity.licenseId) || data.license_id || null,
+        plan: data.plan || data.plan_code || null,
+        plan_version: data.plan_version || null,
+        features: Array.isArray(data.features) ? data.features : [],
+        limits: data.limits || null,
+        issued_at: data.issued_at || new Date().toISOString(),
+        valid_until: data.valid_until || null,
+        installation_id: (identity && identity.installationId) || data.installation_id || null,
+        offline_max_hours: data.offline_max_hours,
+        expiration_grace_hours: data.expiration_grace_hours
+      });
+      this.log('cache offline guardada');
+    } catch (e) {
+      this.log('error guardando cache', e && e.message);
+    }
+  },
+  async pushToCSharp(data) {
+    try {
+      await fetch(`${CSHARP_API}/entitlements`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          features: Array.isArray(data.features) ? data.features : [],
+          plan: data.plan || data.plan_code || null,
+          status: data.status || data.device_status || null
+        })
+      });
+      this.log('push a backend C#');
+    } catch {}
+  },
+  async loadOfflineCache() {
+    try {
+      if (!window.electronAPI || !window.electronAPI.loadEntitlementsCache) return null;
+      const res = await window.electronAPI.loadEntitlementsCache();
+      if (res && res.ok && res.data) {
+        this.state.features = new Set(Array.isArray(res.data.features) ? res.data.features : []);
+        this.state.loaded = true;
+        this.state.plan = res.data.plan || null;
+        this.state.limits = res.data.limits || null;
+        this.state.validUntil = res.data.valid_until || null;
+        this.state.blocked = Boolean(res.blocked);
+        this.log('cache offline cargada', { blocked: res.blocked, age: res.age_hours });
+        this.applyUiGating();
+        this.evaluateBlock();
+      }
+      return res;
+    } catch (e) {
+      this.log('error cargando cache', e && e.message);
+      return null;
+    }
+  },
+  applyUiGating() {
+    if (!this.state.enforcementEnabled) return;
+    const nodes = document.querySelectorAll('[data-feature]');
+    nodes.forEach((node) => {
+      const code = node.getAttribute('data-feature');
+      if (!code) return;
+      const allowed = this.isAllowed(code);
+      node.classList.toggle('feature-locked', !allowed);
+      if ('disabled' in node) {
+        node.disabled = !allowed;
+      }
+      if (!allowed && !node.getAttribute('data-feature-title')) {
+        node.setAttribute('data-feature-title', node.getAttribute('title') || '');
+        node.setAttribute('title', 'Funcion no incluida en tu plan. Actualiza tu licencia para habilitarla.');
+      } else if (allowed && node.getAttribute('data-feature-title') !== null) {
+        const original = node.getAttribute('data-feature-title');
+        if (original !== null) {
+          if (original) node.setAttribute('title', original); else node.removeAttribute('title');
+          node.removeAttribute('data-feature-title');
+        }
+      }
+    });
+  },
+  async applyFromValidation(data, identity) {
+    this.setFromData(data);
+    await this.refreshFromBackend();
+    await this.cacheToMain(data, identity);
+    await this.pushToCSharp(data);
+    this.evaluateBlock();
+  },
+  evaluateBlock() {
+    if (!this.state.enforcementEnabled) {
+      this.hideBlockScreen();
+      return;
+    }
+    if (this.state.blocked) {
+      this.showBlockScreen();
+    } else {
+      this.hideBlockScreen();
+    }
+  },
+  ensureBlockStyles() {
+    if (document.getElementById('entitlementsBlockStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'entitlementsBlockStyles';
+    style.textContent = '#entitlementsBlockOverlay{position:fixed;inset:0;z-index:99999;background:rgba(7,12,24,0.97);display:flex;align-items:center;justify-content:center;color:#e6eefc;font-family:inherit}#entitlementsBlockOverlay .eb-card{max-width:520px;padding:32px;background:#0f1830;border:1px solid #24304f;border-radius:14px;text-align:center}#entitlementsBlockOverlay h2{margin:0 0 12px;font-size:20px}#entitlementsBlockOverlay p{margin:0 0 18px;color:#a9b6d6;line-height:1.5}#entitlementsBlockOverlay .eb-actions{display:flex;flex-direction:column;gap:10px}#entitlementsBlockOverlay button{padding:11px 16px;border-radius:9px;border:1px solid #2c3a5e;background:#16223f;color:#e6eefc;cursor:pointer;font-size:14px}#entitlementsBlockOverlay button.eb-primary{background:#2563eb;border-color:#2563eb}';
+    document.head.appendChild(style);
+  },
+  showBlockScreen() {
+    this.ensureBlockStyles();
+    if (document.getElementById('entitlementsBlockOverlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'entitlementsBlockOverlay';
+    overlay.innerHTML = '<div class="eb-card"><h2>Licencia vencida</h2><p>Tu licencia ha expirado o no se pudo validar dentro del periodo permitido. Revalida tu licencia para restaurar el acceso completo. Tus datos no se han eliminado.</p><div class="eb-actions"><button class="eb-primary" id="ebRevalidate">Revalidar licencia</button><button id="ebUpdate">Buscar actualizacion</button><button id="ebContact">Contactar soporte</button><button id="ebClose">Cerrar aplicacion</button></div></div>';
+    document.body.appendChild(overlay);
+    const revalidate = document.getElementById('ebRevalidate');
+    if (revalidate) revalidate.onclick = () => { this.hideBlockScreen(); if (typeof showLicenseModal === 'function') showLicenseModal(); };
+    const update = document.getElementById('ebUpdate');
+    if (update) update.onclick = () => { if (typeof checkForUpdates === 'function') checkForUpdates(); };
+    const contact = document.getElementById('ebContact');
+    if (contact && window.electronAPI && window.electronAPI.openPath) contact.onclick = () => { try { window.open('mailto:soporte@flowdashboard.app'); } catch {} };
+    const close = document.getElementById('ebClose');
+    if (close && window.electronAPI && window.electronAPI.closeWindow) close.onclick = () => window.electronAPI.closeWindow();
+  },
+  hideBlockScreen() {
+    const overlay = document.getElementById('entitlementsBlockOverlay');
+    if (overlay) overlay.remove();
+  }
+};
+
+window.EntitlementsManager = EntitlementsManager;
+
+function hideLicenseModal() {
+  const modal = document.getElementById('licenseModal');
   if (modal) {
     modal.classList.remove('is-open');
     modal.style.display = 'none';
@@ -7626,9 +7804,10 @@ async function validateLicense(opts = {}) {
     });
     const data = await response.json();
 
-    if (data.device_status === 'approved' || data.status === 'ok') {
-      await saveLicense(email, key);
-      setMsg('✓ Licencia validada. Acceso concedido.', 'success');
+    if (data.device_status === 'approved' || data.status === 'ok') {
+      await saveLicense(email, key);
+      await EntitlementsManager.applyFromValidation(data, { installationId: data.installation_id, licenseId: data.license_id });
+      setMsg('✓ Licencia validada. Acceso concedido.', 'success');
       setTimeout(() => { hideLicenseModal(); checkForUpdates(); }, 900);
     } else if (data.device_status === 'pending') {
       setMsg('Pendiente de aprobación. Contacta al administrador.', 'warn');
@@ -7697,13 +7876,15 @@ async function validateLicense(opts = {}) {
         device_serial: detected.serial,
       }),
     });
-    const d = await r.json();
-    if (d.device_status !== 'approved' && d.status !== 'ok') {
-      showLicenseModal();
-    }
-  } catch {
-    // Sin conexion al backend: permitir uso offline (el modal sigue oculto).
-  }
+    const d = await r.json();
+    if (d.device_status !== 'approved' && d.status !== 'ok') {
+      showLicenseModal();
+    } else {
+      await EntitlementsManager.applyFromValidation(d, { installationId: d.installation_id, licenseId: d.license_id });
+    }
+  } catch {
+    await EntitlementsManager.loadOfflineCache();
+  }
 })();
 
 // ─── Sistema de Actualizaciones ───────────────────────────────────────────────

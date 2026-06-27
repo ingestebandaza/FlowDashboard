@@ -42,6 +42,7 @@ datas += safe_collect_data_files("certifi")
 
 hiddenimports = [
     "app_meta",
+    "entitlements",
     "scrcpy_manager",
     "scrcpy_raw_streamer",
     "scrcpy_raw_ws_server",
