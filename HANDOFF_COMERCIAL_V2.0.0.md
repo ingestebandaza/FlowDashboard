@@ -95,6 +95,11 @@ GitHub. Detalle en `BUILD_AND_RELEASE.md`.
 - Firma de artefactos: `scripts/security/sign-artifacts.ps1` (signtool; usa
   variables de entorno FLOWDASHBOARD_CODESIGN_PFX y FLOWDASHBOARD_CODESIGN_PASSWORD).
   Sin certificado, omite la firma de forma controlada.
+- Firma autofirmada gratuita: `scripts/security/new-selfsigned-cert.ps1` genera
+  un certificado de firma de codigo sin coste (valido en equipos que confien en
+  su `.cer`). Verificada de extremo a extremo (firma + verify). Guia completa en
+  `docs/FIRMA_CODIGO_AUTOFIRMADA.md`. Para distribucion publica sin avisos se
+  requiere CA de pago (Azure Trusted Signing).
 - Logs con rotacion y sanitizacion: `electron-app/src/main/log-manager.js`
   (rotacion 5MB x 5 archivos; redacta JWT, tokens, conexiones con contrasena).
 
@@ -134,8 +139,10 @@ en `reports/FASE{n}_CIERRE_COMERCIAL_V2.md`.
 
 ## 11. Pendientes abiertos (no bloqueantes)
 
-- Certificado de firma de codigo (configurar variables de entorno y ejecutar
-  release con firma).
+- Certificado de firma de codigo: opcion gratuita autofirmada ya disponible y
+  verificada (`scripts/security/new-selfsigned-cert.ps1`, ver
+  `docs/FIRMA_CODIGO_AUTOFIRMADA.md`); valida para uso interno. Para distribucion
+  publica sin avisos, certificado de CA de pago (Azure Trusted Signing).
 - Politicas RLS de Supabase y `anonKey` publica en config.
 - Limites comerciales de planes STARTER/GROWTH/ENTERPRISE.
 - Decision sobre el keystore de depuracion Android en git.
