@@ -349,10 +349,13 @@
       <div class="tabs">
         <button class="tab active" type="button" data-tab="licenses">Licencias</button>
         <button class="tab" type="button" data-tab="devices">Dispositivos</button>
+        <button class="tab" type="button" data-tab="plans">Planes</button>
         <button class="tab" type="button" data-tab="logs">Intentos</button>
+        <button class="tab" type="button" data-tab="audit">Auditoria</button>
       </div>
       <input id="searchInput" type="search" placeholder="Buscar por cliente, licencia, PC, IP o pais" />
       <button id="newLicenseBtn" class="primary" type="button">Nueva licencia</button>
+      <button id="newPlanBtn" class="primary hidden" type="button">Nuevo plan</button>
     </section>
 
     <section class="panel">
@@ -413,6 +416,111 @@
     </form>
   </section>
 
+  <section id="planModal" class="modal hidden" aria-hidden="true">
+    <form id="planForm" class="modal-card">
+      <h3 id="planModalTitle">Nuevo plan</h3>
+      <input id="planIdInput" type="hidden" />
+      <div class="form-grid">
+        <div class="field">
+          <label for="planCodeInput">Codigo</label>
+          <input id="planCodeInput" required placeholder="STARTER" />
+        </div>
+        <div class="field">
+          <label for="planNameInput">Nombre</label>
+          <input id="planNameInput" placeholder="Plan Starter" />
+        </div>
+        <div class="field">
+          <label for="planStatusInput">Estado</label>
+          <select id="planStatusInput">
+            <option value="draft">draft</option>
+            <option value="active">active</option>
+            <option value="retired">retired</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="planInternalInput">Interno</label>
+          <select id="planInternalInput">
+            <option value="false">No</option>
+            <option value="true">Si</option>
+          </select>
+        </div>
+        <div class="field span-2">
+          <label for="planDescInput">Descripcion</label>
+          <textarea id="planDescInput" rows="2" placeholder="Descripcion comercial"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="cancelPlanBtn" type="button">Cancelar</button>
+        <button class="primary" type="submit">Guardar plan</button>
+      </div>
+    </form>
+  </section>
+
+  <section id="versionModal" class="modal hidden" aria-hidden="true">
+    <form id="versionForm" class="modal-card">
+      <h3 id="versionModalTitle">Nueva version</h3>
+      <input id="versionIdInput" type="hidden" />
+      <input id="versionPlanIdInput" type="hidden" />
+      <div class="form-grid">
+        <div class="field">
+          <label for="versionLabelInput">Version</label>
+          <input id="versionLabelInput" required placeholder="1" />
+        </div>
+        <div class="field">
+          <label for="versionMaxPcInput">Max PCs (vacio = ilimitado)</label>
+          <input id="versionMaxPcInput" type="number" min="0" placeholder="" />
+        </div>
+        <div class="field">
+          <label for="versionMaxAndroidInput">Max Android (vacio = ilimitado)</label>
+          <input id="versionMaxAndroidInput" type="number" min="0" placeholder="" />
+        </div>
+        <div class="field">
+          <label for="versionMaxConcurrentInput">Max Android concurrentes</label>
+          <input id="versionMaxConcurrentInput" type="number" min="0" placeholder="" />
+        </div>
+        <div class="field">
+          <label for="versionOfflineInput">Gracia offline (h)</label>
+          <input id="versionOfflineInput" type="number" min="0" value="72" />
+        </div>
+        <div class="field">
+          <label for="versionExpInput">Gracia expiracion (h)</label>
+          <input id="versionExpInput" type="number" min="0" value="48" />
+        </div>
+        <div class="field span-2">
+          <label>Features</label>
+          <div id="versionFeatures" class="muted">Guarda la version para gestionar features.</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="cancelVersionBtn" type="button">Cancelar</button>
+        <button class="primary" type="submit">Guardar version</button>
+      </div>
+    </form>
+  </section>
+
+  <section id="lifecycleModal" class="modal hidden" aria-hidden="true">
+    <form id="lifecycleForm" class="modal-card">
+      <h3 id="lifecycleTitle">Accion</h3>
+      <input id="lifecycleLicenseIdInput" type="hidden" />
+      <input id="lifecycleKindInput" type="hidden" />
+      <div id="lifecycleBody" class="form-grid"></div>
+      <div class="modal-actions">
+        <button id="cancelLifecycleBtn" type="button">Cancelar</button>
+        <button class="primary" type="submit">Aplicar</button>
+      </div>
+    </form>
+  </section>
+
+  <section id="historyModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card">
+      <h3>Historial de licencia</h3>
+      <div id="historyBody" class="table-wrap" style="max-height: 60vh;"></div>
+      <div class="modal-actions">
+        <button id="closeHistoryBtn" type="button">Cerrar</button>
+      </div>
+    </div>
+  </section>
+
   <div id="toast" class="toast hidden"></div>
 
   <script>
@@ -425,6 +533,14 @@
       licenses: [],
       devices: [],
       logs: [],
+      plans: [],
+      planVersions: [],
+      features: [],
+      entitlements: [],
+      assignments: [],
+      overrides: [],
+      payments: [],
+      audit: [],
       search: ''
     };
 
@@ -463,6 +579,7 @@
       logoutBtn: $('logoutBtn'),
       searchInput: $('searchInput'),
       newLicenseBtn: $('newLicenseBtn'),
+      newPlanBtn: $('newPlanBtn'),
       panelTitle: $('panelTitle'),
       panelSubtitle: $('panelSubtitle'),
       tableHost: $('tableHost'),
@@ -554,6 +671,13 @@
       return data;
     }
 
+    async function rpc(name, params = {}) {
+      return api(`/rest/v1/rpc/${name}`, {
+        method: 'POST',
+        body: JSON.stringify(params)
+      });
+    }
+
     async function login(email, password) {
       const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
         method: 'POST',
@@ -589,14 +713,30 @@
 
     async function loadAll() {
       try {
-        const [licenses, devices, logs] = await Promise.all([
+        const [licenses, devices, logs, plans, planVersions, features, entitlements, assignments, overrides, payments, audit] = await Promise.all([
           api('/rest/v1/app_licenses?select=*&order=created_at.desc'),
           api('/rest/v1/app_devices?select=*,app_licenses(license_key,customer_name,customer_email)&order=last_seen_at.desc'),
-          api('/rest/v1/app_access_logs?select=*&order=created_at.desc&limit=250')
+          api('/rest/v1/app_access_logs?select=*&order=created_at.desc&limit=250'),
+          api('/rest/v1/plans?select=*&order=created_at.desc'),
+          api('/rest/v1/plan_versions?select=*&order=plan_id.asc,version.asc'),
+          api('/rest/v1/features?select=*&order=code.asc'),
+          api('/rest/v1/plan_feature_entitlements?select=*'),
+          api('/rest/v1/license_plan_assignments?select=*'),
+          api('/rest/v1/license_overrides?select=*'),
+          api('/rest/v1/payments?select=*&order=paid_at.desc'),
+          api('/rest/v1/audit_events?select=*&order=id.desc&limit=300')
         ]);
         state.licenses = licenses || [];
         state.devices = devices || [];
         state.logs = logs || [];
+        state.plans = plans || [];
+        state.planVersions = planVersions || [];
+        state.features = features || [];
+        state.entitlements = entitlements || [];
+        state.assignments = assignments || [];
+        state.overrides = overrides || [];
+        state.payments = payments || [];
+        state.audit = audit || [];
         renderStats();
         renderTable();
       } catch (error) {
@@ -626,6 +766,7 @@
       els.panelSubtitle.textContent = subtitle;
       els.rowCount.textContent = `${count} registros`;
       els.newLicenseBtn.classList.toggle('hidden', state.tab !== 'licenses');
+      els.newPlanBtn.classList.toggle('hidden', state.tab !== 'plans');
     }
 
     function renderTable() {
@@ -635,7 +776,18 @@
 
       if (state.tab === 'licenses') return renderLicenses();
       if (state.tab === 'devices') return renderDevices();
+      if (state.tab === 'plans') return renderPlans();
+      if (state.tab === 'audit') return renderAudit();
       return renderLogs();
+    }
+
+    function planLabel(planId) {
+      const plan = state.plans.find((item) => item.id === planId);
+      return plan ? `${plan.code}${plan.name ? ' - ' + plan.name : ''}` : '';
+    }
+
+    function assignmentFor(licenseId) {
+      return state.assignments.find((item) => item.license_id === licenseId) || null;
     }
 
     function renderLicenses() {
@@ -645,17 +797,20 @@
         <table>
           <thead>
             <tr>
-              <th>Clave</th><th>Cliente</th><th>Email</th><th>Estado</th><th>PCs</th><th>Expira</th><th>Creada</th><th>Acciones</th>
+              <th>Clave</th><th>Cliente</th><th>Email</th><th>Plan</th><th>Estado</th><th>PCs</th><th>Expira</th><th>Creada</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             ${rows.map((item) => {
               const deviceCount = state.devices.filter((device) => device.license_id === item.id).length;
+              const assignment = assignmentFor(item.id);
+              const planText = assignment ? escapeHtml(planLabel(assignment.plan_id)) : '<span class="muted">Sin plan</span>';
               return `
                 <tr>
                   <td class="mono">${escapeHtml(item.license_key)}</td>
                   <td>${escapeHtml(item.customer_name)}</td>
                   <td>${escapeHtml(item.customer_email)}</td>
+                  <td>${planText}</td>
                   <td>${statusBadge(item.status)}</td>
                   <td>${deviceCount} / ${escapeHtml(item.max_devices)}</td>
                   <td>${item.expires_at ? escapeHtml(dateTime(item.expires_at)) : '<span class="muted">Sin limite</span>'}</td>
@@ -663,13 +818,17 @@
                   <td>
                     <div class="actions">
                       <button type="button" data-action="edit-license" data-id="${item.id}">Editar</button>
+                      <button type="button" data-action="lc-plan" data-id="${item.id}">Plan</button>
+                      <button type="button" data-action="lc-grace" data-id="${item.id}">Gracia</button>
+                      <button type="button" data-action="lc-payment" data-id="${item.id}">Pago</button>
+                      <button type="button" data-action="lc-history" data-id="${item.id}">Historial</button>
                       <button class="success" type="button" data-action="license-status" data-id="${item.id}" data-status="approved">Aprobar</button>
                       <button class="danger" type="button" data-action="license-status" data-id="${item.id}" data-status="blocked">Bloquear</button>
                       <button class="danger" type="button" data-action="delete-license" data-id="${item.id}">Dar de baja</button>
                     </div>
                   </td>
                 </tr>`;
-            }).join('') || '<tr><td colspan="8" class="muted">No hay licencias.</td></tr>'}
+            }).join('') || '<tr><td colspan="9" class="muted">No hay licencias.</td></tr>'}
           </tbody>
         </table>`;
     }
@@ -706,6 +865,7 @@
                     <button type="button" data-action="device-rename" data-id="${item.id}">Renombrar</button>
                     <button class="danger" type="button" data-action="device-status" data-id="${item.id}" data-status="blocked">Bloquear</button>
                     <button class="danger" type="button" data-action="device-status" data-id="${item.id}" data-status="revoked">Revocar</button>
+                    <button class="danger" type="button" data-action="device-unlink" data-id="${item.id}">Desvincular</button>
                   </div>
                 </td>
               </tr>`).join('') || '<tr><td colspan="13" class="muted">No hay dispositivos.</td></tr>'}
@@ -738,6 +898,92 @@
                 <td>${escapeHtml(item.app_version)}</td>
                 <td>${escapeHtml(item.message)}</td>
               </tr>`).join('') || '<tr><td colspan="11" class="muted">No hay intentos registrados.</td></tr>'}
+          </tbody>
+        </table>`;
+    }
+
+    function versionsForPlan(planId) {
+      return state.planVersions
+        .filter((v) => v.plan_id === planId)
+        .sort((a, b) => Number(a.version) - Number(b.version));
+    }
+
+    function featureLabel(featureId) {
+      const f = state.features.find((item) => item.id === featureId);
+      return f ? (f.name || f.code) : featureId;
+    }
+
+    function limitText(value) {
+      return (value === null || value === undefined || value === '') ? 'ilimitado' : value;
+    }
+
+    function renderPlans() {
+      const plans = state.plans.filter(matchesSearch);
+      setPanel('Plan Studio', 'Define planes, versiones, limites y features. Publica la version vigente.', plans.length);
+      els.tableHost.innerHTML = plans.map((plan) => {
+        const versions = versionsForPlan(plan.id);
+        const versionRows = versions.map((v) => {
+          const ents = state.entitlements.filter((e) => e.plan_version_id === v.id && e.enabled);
+          const featNames = ents.map((e) => escapeHtml(featureLabel(e.feature_id))).join(', ') || '<span class="muted">sin features</span>';
+          return `
+            <tr>
+              <td>${escapeHtml(v.version)}${v.is_current ? ' <span class="status approved">vigente</span>' : ''}</td>
+              <td>PC ${escapeHtml(limitText(v.max_pc_installations))} / Android ${escapeHtml(limitText(v.max_android_devices))} / Conc ${escapeHtml(limitText(v.max_concurrent_android_devices))}</td>
+              <td>off ${escapeHtml(v.offline_grace_hours)}h / exp ${escapeHtml(v.expiration_grace_hours)}h</td>
+              <td>${featNames}</td>
+              <td>
+                <div class="actions">
+                  <button type="button" data-action="edit-version" data-id="${v.id}">Editar</button>
+                  <button class="success" type="button" data-action="publish-version" data-id="${v.id}">Publicar</button>
+                </div>
+              </td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="5" class="muted">Sin versiones.</td></tr>';
+        return `
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-head" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+              <div>
+                <strong>${escapeHtml(plan.code)}</strong> &middot; ${escapeHtml(plan.name)}
+                ${statusBadge(plan.status)} ${plan.is_internal ? '<span class="status pending">interno</span>' : ''}
+                <div class="muted">${escapeHtml(plan.description || '')}</div>
+              </div>
+              <div class="actions">
+                <button type="button" data-action="edit-plan" data-id="${plan.id}">Editar plan</button>
+                <button type="button" data-action="new-version" data-id="${plan.id}">Nueva version</button>
+                <button type="button" data-action="plan-status" data-id="${plan.id}" data-status="active">Activar</button>
+                <button type="button" data-action="plan-status" data-id="${plan.id}" data-status="retired">Retirar</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Version</th><th>Limites</th><th>Gracia</th><th>Features</th><th>Acciones</th></tr></thead>
+                <tbody>${versionRows}</tbody>
+              </table>
+            </div>
+          </div>`;
+      }).join('') || '<p class="muted">No hay planes. Crea uno con "Nuevo plan".</p>';
+    }
+
+    function renderAudit() {
+      const rows = [...state.audit]
+        .filter(matchesSearch)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setPanel('Auditoria', 'Registro de acciones administrativas (solo lectura).', rows.length);
+      els.tableHost.innerHTML = `
+        <table>
+          <thead>
+            <tr><th>Fecha</th><th>Actor</th><th>Accion</th><th>Entidad</th><th>ID</th><th>Detalle</th></tr>
+          </thead>
+          <tbody>
+            ${rows.map((item) => `
+              <tr>
+                <td>${escapeHtml(dateTime(item.created_at))}</td>
+                <td>${escapeHtml(item.actor)}</td>
+                <td>${escapeHtml(item.action)}</td>
+                <td>${escapeHtml(item.entity_type)}</td>
+                <td class="mono" title="${escapeHtml(item.entity_id)}">${escapeHtml(shortHash(item.entity_id))}</td>
+                <td class="mono">${escapeHtml(JSON.stringify(item.details || {}))}</td>
+              </tr>`).join('') || '<tr><td colspan="6" class="muted">Sin eventos de auditoria.</td></tr>'}
           </tbody>
         </table>`;
     }
@@ -808,10 +1054,7 @@
     }
 
     async function updateLicenseStatus(id, status) {
-      await api(`/rest/v1/app_licenses?id=eq.${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status, updated_at: new Date().toISOString() })
-      });
+      await rpc('admin_set_license_status', { p_license_id: id, p_status: status });
       toast(`Licencia marcada como ${status}.`);
       await loadAll();
     }
@@ -825,36 +1068,323 @@
         `Dar de baja la licencia "${label}"?\n\nSe marcara como CANCELADA y sus ${deviceCount} PC(s) vinculada(s) como REVOCADAS. Los datos e historial se conservan y la baja puede revertirse cambiando el estado.`
       );
       if (!confirmed) return;
-
-      const now = new Date().toISOString();
-      await api(`/rest/v1/app_licenses?id=eq.${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: 'cancelled', updated_at: now })
-      });
-      await api(`/rest/v1/app_devices?license_id=eq.${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: 'revoked', last_seen_at: now })
-      });
-      if (license.license_key) {
-        const encodedKey = encodeURIComponent(license.license_key);
-        await Promise.allSettled([
-          api(`/rest/v1/app_device_registrations?license_key=eq.${encodedKey}`, {
-            method: 'PATCH',
-            body: JSON.stringify({ status: 'blocked', blocked_reason: 'license_cancelled' })
-          })
-        ]);
-      }
+      const reason = window.prompt('Motivo de la baja (opcional):', '') || null;
+      await rpc('admin_cancel_license', { p_license_id: id, p_reason: reason });
       toast('Licencia dada de baja (cancelada).');
       await loadAll();
     }
 
     async function updateDeviceStatus(id, status) {
-      await api(`/rest/v1/app_devices?id=eq.${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status, last_seen_at: new Date().toISOString() })
-      });
+      await rpc('admin_set_device_status', { p_device_id: id, p_status: status });
       toast(`Dispositivo marcado como ${status}.`);
       await loadAll();
+    }
+
+    async function renameDevice(id) {
+      const device = state.devices.find((item) => item.id === id);
+      if (!device) return;
+      const next = window.prompt('Nuevo nombre para la PC:', device.pc_name || '');
+      if (next === null) return;
+      const name = next.trim();
+      if (!name) return;
+      await rpc('admin_rename_device', { p_device_id: id, p_name: name });
+      toast('PC renombrada.');
+      await loadAll();
+    }
+
+    async function unlinkDevice(id) {
+      const device = state.devices.find((item) => item.id === id);
+      if (!device) return;
+      const label = device.pc_name || device.windows_user || shortHash(device.device_hash) || id;
+      if (!window.confirm(`Desvincular la PC "${label}"?\n\nSe liberara el cupo de instalacion. El equipo debera volver a registrarse para usar la licencia.`)) return;
+      const reason = window.prompt('Motivo (opcional):', '') || null;
+      await rpc('admin_unlink_device', { p_device_id: id, p_reason: reason });
+      toast('PC desvinculada.');
+      await loadAll();
+    }
+
+    function showModal(node) {
+      node.classList.remove('hidden');
+      node.setAttribute('aria-hidden', 'false');
+    }
+
+    function hideModal(node) {
+      node.classList.add('hidden');
+      node.setAttribute('aria-hidden', 'true');
+    }
+
+    function openPlanModal(plan = null) {
+      $('planModalTitle').textContent = plan ? 'Editar plan' : 'Nuevo plan';
+      $('planIdInput').value = plan?.id || '';
+      $('planCodeInput').value = plan?.code || '';
+      $('planNameInput').value = plan?.name || '';
+      $('planStatusInput').value = plan?.status || 'draft';
+      $('planInternalInput').value = plan?.is_internal ? 'true' : 'false';
+      $('planDescInput').value = plan?.description || '';
+      showModal($('planModal'));
+      $('planCodeInput').focus();
+    }
+
+    async function savePlan(event) {
+      event.preventDefault();
+      const id = $('planIdInput').value;
+      const payload = {
+        code: $('planCodeInput').value.trim(),
+        name: $('planNameInput').value.trim() || $('planCodeInput').value.trim(),
+        status: $('planStatusInput').value,
+        is_internal: $('planInternalInput').value === 'true',
+        description: $('planDescInput').value.trim() || null,
+        updated_at: new Date().toISOString()
+      };
+      if (id) {
+        await api(`/rest/v1/plans?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(payload)
+        });
+      } else {
+        await api('/rest/v1/plans', {
+          method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(payload)
+        });
+      }
+      hideModal($('planModal'));
+      toast('Plan guardado.');
+      await loadAll();
+    }
+
+    function buildVersionFeatures(versionId) {
+      if (!state.features.length) return '<span class="muted">No hay features definidas.</span>';
+      return state.features.map((f) => {
+        const ent = state.entitlements.find((e) => e.plan_version_id === versionId && e.feature_id === f.id);
+        const checked = ent ? ent.enabled : false;
+        const limit = ent && ent.limit_value != null ? ent.limit_value : '';
+        return `
+          <label style="display:flex;align-items:center;gap:8px;margin:4px 0;">
+            <input type="checkbox" data-feature="${f.id}" ${checked ? 'checked' : ''} style="width:auto;" />
+            <span>${escapeHtml(f.name || f.code)}</span>
+            <input type="number" min="0" placeholder="limite" data-feature-limit="${f.id}" value="${escapeHtml(limit)}" style="width:90px;margin-left:auto;" />
+          </label>`;
+      }).join('');
+    }
+
+    function openVersionModal(planId, version = null) {
+      $('versionModalTitle').textContent = version ? 'Editar version' : 'Nueva version';
+      $('versionIdInput').value = version?.id || '';
+      $('versionPlanIdInput').value = planId;
+      const nextVersion = version ? version.version : (versionsForPlan(planId).reduce((m, v) => Math.max(m, Number(v.version)), 0) + 1);
+      $('versionLabelInput').value = nextVersion;
+      $('versionMaxPcInput').value = version?.max_pc_installations ?? '';
+      $('versionMaxAndroidInput').value = version?.max_android_devices ?? '';
+      $('versionMaxConcurrentInput').value = version?.max_concurrent_android_devices ?? '';
+      $('versionOfflineInput').value = version?.offline_grace_hours ?? 72;
+      $('versionExpInput').value = version?.expiration_grace_hours ?? 48;
+      $('versionFeatures').innerHTML = buildVersionFeatures(version?.id || null);
+      showModal($('versionModal'));
+      $('versionLabelInput').focus();
+    }
+
+    function numOrNull(value) {
+      const v = String(value).trim();
+      return v === '' ? null : Number(v);
+    }
+
+    async function saveVersion(event) {
+      event.preventDefault();
+      const id = $('versionIdInput').value;
+      const planId = $('versionPlanIdInput').value;
+      const payload = {
+        plan_id: planId,
+        version: Number($('versionLabelInput').value || 1),
+        max_pc_installations: numOrNull($('versionMaxPcInput').value),
+        max_android_devices: numOrNull($('versionMaxAndroidInput').value),
+        max_concurrent_android_devices: numOrNull($('versionMaxConcurrentInput').value),
+        offline_grace_hours: Number($('versionOfflineInput').value || 72),
+        expiration_grace_hours: Number($('versionExpInput').value || 48)
+      };
+      let versionId = id;
+      if (id) {
+        await api(`/rest/v1/plan_versions?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(payload)
+        });
+      } else {
+        const created = await api('/rest/v1/plan_versions', {
+          method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(payload)
+        });
+        versionId = Array.isArray(created) ? created[0]?.id : created?.id;
+      }
+      if (versionId) {
+        const rows = Array.from($('versionFeatures').querySelectorAll('[data-feature]')).map((cb) => {
+          const featureId = cb.dataset.feature;
+          const limitEl = $('versionFeatures').querySelector(`[data-feature-limit="${featureId}"]`);
+          return {
+            plan_version_id: versionId,
+            feature_id: featureId,
+            enabled: cb.checked,
+            limit_value: numOrNull(limitEl ? limitEl.value : '')
+          };
+        });
+        if (rows.length) {
+          await api('/rest/v1/plan_feature_entitlements?on_conflict=plan_version_id,feature_id', {
+            method: 'POST', headers: { Prefer: 'resolution=merge-duplicates' }, body: JSON.stringify(rows)
+          });
+        }
+      }
+      hideModal($('versionModal'));
+      toast('Version guardada.');
+      await loadAll();
+    }
+
+    function openLifecycle(kind, licenseId) {
+      const license = state.licenses.find((item) => item.id === licenseId);
+      if (!license) return;
+      $('lifecycleLicenseIdInput').value = licenseId;
+      $('lifecycleKindInput').value = kind;
+      const body = $('lifecycleBody');
+      if (kind === 'plan') {
+        $('lifecycleTitle').textContent = 'Cambiar plan';
+        const options = state.planVersions.map((v) => {
+          const plan = state.plans.find((p) => p.id === v.plan_id);
+          return `<option value="${v.id}">${escapeHtml(plan ? plan.code : '')} v${escapeHtml(v.version)}${v.is_current ? ' (vigente)' : ''}</option>`;
+        }).join('');
+        body.innerHTML = `
+          <div class="field span-2">
+            <label for="lcPlanVersion">Version de plan</label>
+            <select id="lcPlanVersion">${options}</select>
+          </div>
+          <div class="field span-2">
+            <label for="lcReason">Motivo</label>
+            <input id="lcReason" placeholder="opcional" />
+          </div>`;
+      } else if (kind === 'grace') {
+        $('lifecycleTitle').textContent = 'Override de gracia / limite';
+        const ovr = (key) => {
+          const o = state.overrides.find((x) => x.license_id === licenseId && x.key === key);
+          return o ? o.value : '';
+        };
+        body.innerHTML = `
+          <div class="field">
+            <label for="lcOvrPc">Max PCs (vacio = sin override)</label>
+            <input id="lcOvrPc" type="number" min="0" value="${escapeHtml(ovr('max_pc_installations'))}" />
+          </div>
+          <div class="field">
+            <label for="lcOvrOffline">Gracia offline h</label>
+            <input id="lcOvrOffline" type="number" min="0" value="${escapeHtml(ovr('offline_grace_hours'))}" />
+          </div>
+          <div class="field">
+            <label for="lcOvrExp">Gracia expiracion h</label>
+            <input id="lcOvrExp" type="number" min="0" value="${escapeHtml(ovr('expiration_grace_hours'))}" />
+          </div>
+          <div class="field span-2">
+            <label for="lcReason">Motivo</label>
+            <input id="lcReason" placeholder="opcional" />
+          </div>`;
+      } else if (kind === 'payment') {
+        $('lifecycleTitle').textContent = 'Registrar pago';
+        body.innerHTML = `
+          <div class="field">
+            <label for="lcAmount">Importe</label>
+            <input id="lcAmount" type="number" min="0" step="0.01" required />
+          </div>
+          <div class="field">
+            <label for="lcCurrency">Moneda</label>
+            <input id="lcCurrency" value="USD" />
+          </div>
+          <div class="field">
+            <label for="lcMethod">Metodo</label>
+            <input id="lcMethod" placeholder="transferencia / tarjeta" />
+          </div>
+          <div class="field">
+            <label for="lcReference">Referencia</label>
+            <input id="lcReference" placeholder="factura / recibo" />
+          </div>
+          <div class="field">
+            <label for="lcPeriodStart">Periodo desde</label>
+            <input id="lcPeriodStart" type="date" />
+          </div>
+          <div class="field">
+            <label for="lcPeriodEnd">Periodo hasta</label>
+            <input id="lcPeriodEnd" type="date" />
+          </div>
+          <div class="field span-2">
+            <label for="lcNotes">Notas</label>
+            <input id="lcNotes" placeholder="opcional" />
+          </div>`;
+      }
+      showModal($('lifecycleModal'));
+    }
+
+    async function submitLifecycle(event) {
+      event.preventDefault();
+      const licenseId = $('lifecycleLicenseIdInput').value;
+      const kind = $('lifecycleKindInput').value;
+      const reason = $('lcReason') ? ($('lcReason').value.trim() || null) : null;
+      if (kind === 'plan') {
+        await rpc('admin_change_license_plan', {
+          p_license_id: licenseId, p_plan_version_id: $('lcPlanVersion').value, p_reason: reason
+        });
+      } else if (kind === 'grace') {
+        const map = {
+          max_pc_installations: $('lcOvrPc').value,
+          offline_grace_hours: $('lcOvrOffline').value,
+          expiration_grace_hours: $('lcOvrExp').value
+        };
+        for (const [key, raw] of Object.entries(map)) {
+          const value = numOrNull(raw);
+          await rpc('admin_set_license_override', {
+            p_license_id: licenseId, p_key: key, p_value: value, p_reason: reason
+          });
+        }
+      } else if (kind === 'payment') {
+        await rpc('admin_record_payment', {
+          p_license_id: licenseId,
+          p_amount: Number($('lcAmount').value || 0),
+          p_currency: $('lcCurrency').value.trim() || 'USD',
+          p_method: $('lcMethod').value.trim() || null,
+          p_reference: $('lcReference').value.trim() || null,
+          p_period_start: $('lcPeriodStart').value || null,
+          p_period_end: $('lcPeriodEnd').value || null,
+          p_notes: $('lcNotes').value.trim() || null
+        });
+      }
+      hideModal($('lifecycleModal'));
+      toast('Accion aplicada.');
+      await loadAll();
+    }
+
+    function openHistory(licenseId) {
+      const license = state.licenses.find((item) => item.id === licenseId);
+      if (!license) return;
+      const pays = state.payments.filter((p) => p.license_id === licenseId);
+      const events = state.audit
+        .filter((e) => e.entity_type === 'license' && e.entity_id === licenseId)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      $('historyBody').innerHTML = `
+        <h4>Pagos</h4>
+        <table>
+          <thead><tr><th>Fecha</th><th>Importe</th><th>Metodo</th><th>Referencia</th><th>Periodo</th></tr></thead>
+          <tbody>
+            ${pays.map((p) => `
+              <tr>
+                <td>${escapeHtml(dateTime(p.paid_at))}</td>
+                <td>${escapeHtml(p.amount)} ${escapeHtml(p.currency || '')}</td>
+                <td>${escapeHtml(p.method)}</td>
+                <td>${escapeHtml(p.reference)}</td>
+                <td>${p.period_start ? escapeHtml(dateTime(p.period_start)) : ''} - ${p.period_end ? escapeHtml(dateTime(p.period_end)) : ''}</td>
+              </tr>`).join('') || '<tr><td colspan="5" class="muted">Sin pagos.</td></tr>'}
+          </tbody>
+        </table>
+        <h4 style="margin-top:16px;">Eventos</h4>
+        <table>
+          <thead><tr><th>Fecha</th><th>Actor</th><th>Accion</th><th>Detalle</th></tr></thead>
+          <tbody>
+            ${events.map((e) => `
+              <tr>
+                <td>${escapeHtml(dateTime(e.created_at))}</td>
+                <td>${escapeHtml(e.actor)}</td>
+                <td>${escapeHtml(e.action)}</td>
+                <td class="mono">${escapeHtml(JSON.stringify(e.details || {}))}</td>
+              </tr>`).join('') || '<tr><td colspan="4" class="muted">Sin eventos.</td></tr>'}
+          </tbody>
+        </table>`;
+      showModal($('historyModal'));
     }
 
     els.loginForm.addEventListener('submit', async (event) => {
@@ -874,6 +1404,20 @@
     els.licenseForm.addEventListener('submit', (event) => {
       saveLicense(event).catch((error) => toast(error.message));
     });
+    els.newPlanBtn.addEventListener('click', () => openPlanModal());
+    $('cancelPlanBtn').addEventListener('click', () => hideModal($('planModal')));
+    $('planForm').addEventListener('submit', (event) => {
+      savePlan(event).catch((error) => toast(error.message));
+    });
+    $('cancelVersionBtn').addEventListener('click', () => hideModal($('versionModal')));
+    $('versionForm').addEventListener('submit', (event) => {
+      saveVersion(event).catch((error) => toast(error.message));
+    });
+    $('cancelLifecycleBtn').addEventListener('click', () => hideModal($('lifecycleModal')));
+    $('lifecycleForm').addEventListener('submit', (event) => {
+      submitLifecycle(event).catch((error) => toast(error.message));
+    });
+    $('closeHistoryBtn').addEventListener('click', () => hideModal($('historyModal')));
     els.searchInput.addEventListener('input', () => {
       state.search = els.searchInput.value;
       renderTable();
@@ -898,11 +1442,39 @@
         deleteLicense(id).catch((error) => toast(error.message));
       } else if (name === 'device-status') {
         updateDeviceStatus(id, status).catch((error) => toast(error.message));
+      } else if (name === 'device-rename') {
+        renameDevice(id).catch((error) => toast(error.message));
+      } else if (name === 'device-unlink') {
+        unlinkDevice(id).catch((error) => toast(error.message));
+      } else if (name === 'lc-plan') {
+        openLifecycle('plan', id);
+      } else if (name === 'lc-grace') {
+        openLifecycle('grace', id);
+      } else if (name === 'lc-payment') {
+        openLifecycle('payment', id);
+      } else if (name === 'lc-history') {
+        openHistory(id);
+      } else if (name === 'edit-plan') {
+        openPlanModal(state.plans.find((item) => item.id === id));
+      } else if (name === 'new-version') {
+        openVersionModal(id);
+      } else if (name === 'edit-version') {
+        openVersionModal(state.planVersions.find((v) => v.id === id)?.plan_id, state.planVersions.find((v) => v.id === id));
+      } else if (name === 'publish-version') {
+        rpc('admin_publish_plan_version', { p_plan_version_id: id })
+          .then(() => { toast('Version publicada.'); return loadAll(); })
+          .catch((error) => toast(error.message));
+      } else if (name === 'plan-status') {
+        rpc('admin_set_plan_status', { p_plan_id: id, p_status: status })
+          .then(() => { toast(`Plan: ${status}.`); return loadAll(); })
+          .catch((error) => toast(error.message));
       }
     });
 
-    els.licenseModal.addEventListener('click', (event) => {
-      if (event.target === els.licenseModal) closeLicenseModal();
+    [els.licenseModal, $('planModal'), $('versionModal'), $('lifecycleModal'), $('historyModal')].forEach((node) => {
+      node.addEventListener('click', (event) => {
+        if (event.target === node) hideModal(node);
+      });
     });
 
     showAuthState();
