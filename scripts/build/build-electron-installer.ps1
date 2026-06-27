@@ -137,7 +137,7 @@ Assert-File (Join-Path $ResourceRoot "RESOURCE_MANIFEST.json") "commercial resou
 Assert-File (Join-Path $ResourceRoot "runtime\python\FlowDashboard.Backend.exe") "packaged Python backend"
 Assert-File (Join-Path $ResourceRoot "runtime\dotnet\FlowDashboard.Core.exe") "packaged C# backend"
 Assert-File (Join-Path $ResourceRoot "scrcpy-win64-v4.0\adb.exe") "bundled ADB"
-Assert-File (Join-Path $ResourceRoot "android\flowagent\agent-v1.0.0-arm64-v8a.apk") "FlowAgent APK"
+Assert-File (Join-Path $ResourceRoot "android\flowagent\agent-v1.0.0-universal.apk") "FlowAgent APK"
 
 $preflightDataRoot = Join-Path $RepoRoot "scratch\phase9-installer-preflight"
 New-Item -ItemType Directory -Force -Path $preflightDataRoot | Out-Null
@@ -165,7 +165,7 @@ try {
     if (-not $selfCheck.flowAgentApkExists) {
         throw "Packaged Python cannot see staged FlowAgent APK: $($selfCheck.flowAgentApk)"
     }
-    if ([string]$selfCheck.flowAgentApk -notmatch 'android[\\/]+flowagent[\\/]+agent-v1\.0\.0-arm64-v8a\.apk$') {
+    if ([string]$selfCheck.flowAgentApk -notmatch 'android[\\/]+flowagent[\\/]+agent-v1\.0\.0-universal\.apk$') {
         throw "Packaged Python resolved unexpected FlowAgent path: $($selfCheck.flowAgentApk)"
     }
 } finally {
@@ -216,7 +216,7 @@ $requiredPackagedFiles = @(
     "resources\runtime\dotnet\FlowDashboard.Core.exe",
     "resources\scrcpy-win64-v4.0\adb.exe",
     "resources\scrcpy-win64-v4.0\scrcpy.exe",
-    "resources\android\flowagent\agent-v1.0.0-arm64-v8a.apk",
+    "resources\android\flowagent\agent-v1.0.0-universal.apk",
     "resources\Herramientas\FlowTrackName.exe",
     "resources\scripts\Login.js",
     "resources\THIRD_PARTY_NOTICES.txt",
