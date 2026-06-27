@@ -287,11 +287,16 @@ def find_flow_agent_apk():
     #   Prioriza el APK release del FlowAgent monolito (Etapa B). Si no esta
     #   construido todavia, cae al debug del monolito, y como ultimo recurso
     #   al 0.3.8 historico (Etapa A) para rollback de emergencia.
+    commercial_universal = []
     commercial_arm64 = []
     monolito_release_universal = []
     monolito_release_arm64 = []
     monolito_debug_arm64 = []
     for root in unique_paths([BASE_DIR, RESOURCE_DIR]):
+        commercial_universal.extend([
+            root / "android" / "flowagent" / "agent-v1.0.0-universal.apk",
+            root / "flow_agent" / "agent-v1.0.0-universal.apk",
+        ])
         commercial_arm64.extend([
             root / "android" / "flowagent" / "agent-v1.0.0-arm64-v8a.apk",
             root / "flow_agent" / "agent-v1.0.0-arm64-v8a.apk",
@@ -307,9 +312,10 @@ def find_flow_agent_apk():
     monolito_release_arm64 = sorted(monolito_release_arm64, key=lambda path: path.stat().st_mtime, reverse=True)
     monolito_debug_arm64 = sorted(monolito_debug_arm64, key=lambda path: path.stat().st_mtime, reverse=True)
     candidates = [
+        *commercial_universal,
         *commercial_arm64,
-        *monolito_release_arm64,
         *monolito_release_universal,
+        *monolito_release_arm64,
         *monolito_debug_arm64,
         BASE_DIR / "flow_agent_apk" / "build" / "flowagent-debug.apk",
         RESOURCE_DIR / "flow_agent_apk" / "build" / "flowagent-debug.apk",
@@ -317,7 +323,7 @@ def find_flow_agent_apk():
     for candidate in candidates:
         if candidate.exists() and candidate.is_file():
             return candidate
-    return RESOURCE_DIR / "android" / "flowagent" / "agent-v1.0.0-arm64-v8a.apk"
+    return RESOURCE_DIR / "android" / "flowagent" / "agent-v1.0.0-universal.apk"
 
 
 FLOW_AGENT_APK = find_flow_agent_apk()
