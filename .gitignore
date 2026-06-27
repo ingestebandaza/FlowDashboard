@@ -31,6 +31,9 @@ src-tauri/target/
 
 # Configuracion local y secretos
 .supabase_config.json
+.supabase_db_url
+scripts/db/_probe_supabase.py
+scripts/db/_*.py
 .env
 update_config.json
 device_registrations.json

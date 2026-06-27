@@ -522,14 +522,17 @@
 
     function authHeaders(extra = {}) {
       const token = state.session?.access_token;
-      return {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${token || SUPABASE_KEY}`,
-        ...extra
-      };
+      const headers = { apikey: SUPABASE_KEY, ...extra };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      return headers;
     }
 
     async function api(path, options = {}, retry = true) {
+      if (!state.session?.access_token) {
+        clearSession();
+        showAuthState();
+        throw new Error('Sesion requerida. Inicia sesion para continuar.');
+      }
       const response = await fetch(`${SUPABASE_URL}${path}`, {
         ...options,
         headers: authHeaders({
@@ -541,10 +544,10 @@
       const data = text ? JSON.parse(text) : null;
       if (!response.ok) {
         const errorMessage = data?.message || data?.error_description || data?.hint || `HTTP ${response.status}`;
-        if (response.status === 401 && retry && state.session?.access_token) {
+        if (response.status === 401) {
           clearSession();
           showAuthState();
-          return api(path, options, false);
+          throw new Error('Sesion expirada o sin permisos. Vuelve a iniciar sesion.');
         }
         throw new Error(errorMessage);
       }
@@ -662,7 +665,7 @@
                       <button type="button" data-action="edit-license" data-id="${item.id}">Editar</button>
                       <button class="success" type="button" data-action="license-status" data-id="${item.id}" data-status="approved">Aprobar</button>
                       <button class="danger" type="button" data-action="license-status" data-id="${item.id}" data-status="blocked">Bloquear</button>
-                      <button class="danger" type="button" data-action="delete-license" data-id="${item.id}">Eliminar</button>
+                      <button class="danger" type="button" data-action="delete-license" data-id="${item.id}">Dar de baja</button>
                     </div>
                   </td>
                 </tr>`;
@@ -700,7 +703,9 @@
                   <div class="actions">
                     <button class="success" type="button" data-action="device-status" data-id="${item.id}" data-status="approved">Aprobar</button>
                     <button type="button" data-action="device-status" data-id="${item.id}" data-status="pending">Pendiente</button>
+                    <button type="button" data-action="device-rename" data-id="${item.id}">Renombrar</button>
                     <button class="danger" type="button" data-action="device-status" data-id="${item.id}" data-status="blocked">Bloquear</button>
+                    <button class="danger" type="button" data-action="device-status" data-id="${item.id}" data-status="revoked">Revocar</button>
                   </div>
                 </td>
               </tr>`).join('') || '<tr><td colspan="13" class="muted">No hay dispositivos.</td></tr>'}
@@ -758,8 +763,15 @@
     }
 
     function generateLicenseKey() {
-      const part = () => Math.random().toString(36).slice(2, 6).toUpperCase();
-      return `FLOW-${new Date().getFullYear()}-${part()}-${part()}`;
+      const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      const part = (len) => {
+        const bytes = new Uint32Array(len);
+        crypto.getRandomValues(bytes);
+        let out = '';
+        for (let i = 0; i < len; i += 1) out += alphabet[bytes[i] % alphabet.length];
+        return out;
+      };
+      return `FLOW-${new Date().getFullYear()}-${part(4)}-${part(4)}`;
     }
 
     async function saveLicense(event) {
@@ -810,20 +822,29 @@
       const deviceCount = state.devices.filter((device) => device.license_id === id).length;
       const label = license.customer_name || license.customer_email || license.license_key || id;
       const confirmed = window.confirm(
-        `Eliminar licencia "${label}"?\n\nSe borraran tambien ${deviceCount} PC(s) vinculada(s). Se intentara limpiar registros de aprobacion e intentos de acceso de esta licencia. Esta accion no se puede deshacer.`
+        `Dar de baja la licencia "${label}"?\n\nSe marcara como CANCELADA y sus ${deviceCount} PC(s) vinculada(s) como REVOCADAS. Los datos e historial se conservan y la baja puede revertirse cambiando el estado.`
       );
       if (!confirmed) return;
 
-      await api(`/rest/v1/app_devices?license_id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
-      await api(`/rest/v1/app_licenses?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const now = new Date().toISOString();
+      await api(`/rest/v1/app_licenses?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'cancelled', updated_at: now })
+      });
+      await api(`/rest/v1/app_devices?license_id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'revoked', last_seen_at: now })
+      });
       if (license.license_key) {
         const encodedKey = encodeURIComponent(license.license_key);
         await Promise.allSettled([
-          api(`/rest/v1/app_device_registrations?license_key=eq.${encodedKey}`, { method: 'DELETE' }),
-          api(`/rest/v1/app_access_logs?license_key=eq.${encodedKey}`, { method: 'DELETE' })
+          api(`/rest/v1/app_device_registrations?license_key=eq.${encodedKey}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: 'blocked', blocked_reason: 'license_cancelled' })
+          })
         ]);
       }
-      toast('Licencia eliminada.');
+      toast('Licencia dada de baja (cancelada).');
       await loadAll();
     }
 
