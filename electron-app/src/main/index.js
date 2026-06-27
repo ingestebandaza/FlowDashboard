@@ -10,6 +10,7 @@ const {
 } = require('./path-resolver');
 const { RuntimeManager } = require('./runtime-manager');
 const { UpdateManager } = require('./update-manager');
+const { createConsoleLog } = require('./log-manager');
 const {
   saveEntitlementsCache,
   loadEntitlementsCache,
@@ -61,13 +62,12 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
 
   // Capturar logs de la consola en un archivo
-  const logPath = path.join(paths.logsRoot, 'electron-console.log');
-  const logStream = fs.createWriteStream(logPath, { flags: 'a' });
-  
+  const appLog = createConsoleLog(paths.logsRoot);
+
   mainWindow.webContents.on('console-message', (level, message, line, sourceId) => {
     const timestamp = new Date().toISOString();
     const logMessage = `[${timestamp}] [${level}] ${message} (${sourceId}:${line})\n`;
-    logStream.write(logMessage);
+    appLog.write(logMessage);
     console.log(logMessage.trim());
   });
   
@@ -76,7 +76,7 @@ function createWindow() {
     updateManager?.broadcast();
     updateManager?.startAutoCheck();
     console.log('✅ Página cargada en Electron');
-    logStream.write(`[${new Date().toISOString()}] ✅ Página cargada en Electron\n`);
+    appLog.write(`[${new Date().toISOString()}] ✅ Página cargada en Electron\n`);
   });
 
   // Abrir DevTools automáticamente para diagnóstico

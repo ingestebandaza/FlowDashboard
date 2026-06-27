@@ -53,7 +53,8 @@ _check_*.ps1
 # EXCLUSIONES OBLIGATORIAS COMERCIALES
 node_modules/
 dist/
-release/
+/release/
+informacion de scrcpy/release/
 win-unpacked/
 bin/
 obj/

@@ -1,0 +1,6 @@
+{
+  "url": "https://qcwvfeqyczkhmkhqicqi.supabase.co",
+  "anonKey": "",
+  "_comment_anonKey": "Vacio a proposito. Publicar la anon/publishable key publica SOLO cuando RLS este verificado en todas las tablas. La service_role nunca debe ir aqui.",
+  "_comment_file": "Configuracion publica no secreta. No incluir service_role, tokens ni credenciales."
+}
