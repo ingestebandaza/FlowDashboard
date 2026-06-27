@@ -28,10 +28,11 @@ function Show-Menu {
     Write-Host "  3. Crear build comercial local"
     Write-Host "  4. Crear version Beta"
     Write-Host "  5. Crear version Stable"
-    Write-Host "  6. Publicar release preparada"
-    Write-Host "  7. Restaurar version"
-    Write-Host "  8. Ver diagnosticos"
-    Write-Host "  9. Salir"
+    Write-Host "  6. Release rapida (Stable + commit + push automatico)" -ForegroundColor Green
+    Write-Host "  7. Publicar release preparada"
+    Write-Host "  8. Restaurar version"
+    Write-Host "  9. Ver diagnosticos"
+    Write-Host "  0. Salir"
     Write-Host ""
 }
 
@@ -56,6 +57,28 @@ function Action-Stable {
         "2" { Invoke-Release @("-Action", "stable", "-Bump", "minor") | Out-Null }
         "3" { Invoke-Release @("-Action", "stable", "-Bump", "major") | Out-Null }
         default { Write-Host "Opcion invalida" -ForegroundColor Red }
+    }
+}
+
+function Action-QuickRelease {
+    Write-Host "RELEASE RAPIDA" -ForegroundColor Green
+    Write-Host "Genera la build Stable, confirma el incremento de version, hace push de la rama" -ForegroundColor DarkGray
+    Write-Host "y la etiqueta, y crea el draft en GitHub. La publicacion final sigue siendo manual (opcion 7)." -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "Tipo de incremento de version:" -ForegroundColor Cyan
+    Write-Host "  1. patch"
+    Write-Host "  2. minor"
+    Write-Host "  3. major"
+    $sel = Read-Host "Seleccione"
+    $bump = switch ($sel) { "1" { "patch" } "2" { "minor" } "3" { "major" } default { $null } }
+    if (-not $bump) { Write-Host "Opcion invalida" -ForegroundColor Red; return }
+    $code = Invoke-Release @("-Action", "stable", "-Bump", $bump, "-CommitPush")
+    if ($code -eq 0) {
+        Write-Host ""
+        Write-Host "Release rapida completada. Revise el draft en GitHub y publique con la opcion 7." -ForegroundColor Green
+    } else {
+        Write-Host ""
+        Write-Host "La release rapida fallo (codigo $code). Revise el log." -ForegroundColor Red
     }
 }
 
@@ -86,10 +109,11 @@ while ($true) {
         "3" { Invoke-Release @("-Action", "local") | Out-Null; Pause-Menu }
         "4" { Invoke-Release @("-Action", "beta") | Out-Null; Pause-Menu }
         "5" { Action-Stable; Pause-Menu }
-        "6" { Action-Publish; Pause-Menu }
-        "7" { Action-Restore; Pause-Menu }
-        "8" { Invoke-Release @("-Action", "diagnostics") | Out-Null; Pause-Menu }
-        "9" { Write-Host "Hasta luego." -ForegroundColor Cyan; break }
+        "6" { Action-QuickRelease; Pause-Menu }
+        "7" { Action-Publish; Pause-Menu }
+        "8" { Action-Restore; Pause-Menu }
+        "9" { Invoke-Release @("-Action", "diagnostics") | Out-Null; Pause-Menu }
+        "0" { Write-Host "Hasta luego." -ForegroundColor Cyan; break }
         default { Write-Host "Opcion invalida." -ForegroundColor Red; Start-Sleep -Seconds 1 }
     }
 }

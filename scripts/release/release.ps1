@@ -8,7 +8,9 @@ param(
 
     [string]$RestorePoint,
 
-    [switch]$Approve
+    [switch]$Approve,
+
+    [switch]$CommitPush
 )
 
 $ErrorActionPreference = "Stop"
@@ -348,6 +350,50 @@ function Step-ReleaseNotes {
     return $notes
 }
 
+function Get-CurrentBranch {
+    $branch = (& git -C $RepoRoot rev-parse --abbrev-ref HEAD 2>$null)
+    if ($LASTEXITCODE -ne 0 -or -not $branch) { throw "No se pudo determinar la rama Git actual" }
+    return $branch.Trim()
+}
+
+function Step-CommitBump {
+    param([string]$Version)
+    Write-Step "Commit del incremento de version"
+    $files = @(
+        "version.json",
+        "electron-app\package.json",
+        "package.json",
+        "app_meta.py",
+        "FlowDashboard.Core\FlowDashboard.Core.csproj",
+        "RELEASE_NOTES_$Version.md"
+    )
+    foreach ($rel in $files) {
+        $path = Join-Path $RepoRoot $rel
+        if (Test-Path -LiteralPath $path) { & git -C $RepoRoot add -- $rel | Out-Null }
+    }
+    $pending = & git -C $RepoRoot status --porcelain -- $files
+    if (-not $pending) { Write-Warn "Sin cambios de version que confirmar"; return }
+    & git -C $RepoRoot commit -m "chore(release): v$Version"
+    if ($LASTEXITCODE -ne 0) { throw "No se pudo crear el commit de release" }
+    Write-Ok "Commit de release v$Version creado"
+}
+
+function Step-PushBranch {
+    Write-Step "Push de la rama"
+    $branch = Get-CurrentBranch
+    & git -C $RepoRoot push origin $branch
+    if ($LASTEXITCODE -ne 0) { throw "No se pudo hacer push de la rama $branch" }
+    Write-Ok "Rama $branch publicada en origin"
+}
+
+function Step-PushTag {
+    param([string]$Tag)
+    Write-Step "Push de la etiqueta"
+    & git -C $RepoRoot push origin $Tag
+    if ($LASTEXITCODE -ne 0) { throw "No se pudo hacer push de la etiqueta $Tag" }
+    Write-Ok "Etiqueta $Tag publicada en origin"
+}
+
 function Step-Tag {
     param([string]$Version)
     Write-Step "Etiqueta Git"
@@ -429,7 +475,7 @@ function Invoke-Diagnostics {
 }
 
 function Invoke-FullPipeline {
-    param([string]$BumpType)
+    param([string]$BumpType, [switch]$DoCommitPush)
 
     New-Item -ItemType Directory -Force -Path $LogRoot | Out-Null
 
@@ -453,7 +499,12 @@ function Invoke-FullPipeline {
         $info = Get-VersionInfo
         $notes = Step-ReleaseNotes -Version $info.version -Channel $info.channel
         if ($BumpType) {
+            if ($DoCommitPush) {
+                Step-CommitBump -Version $info.version
+                Step-PushBranch
+            }
             $tag = Step-Tag -Version $info.version
+            if ($DoCommitPush) { Step-PushTag -Tag $tag }
             $installer = if ($hashInfo) { $hashInfo.File } else { $null }
             Step-DraftRelease -Tag $tag -NotesFile $notes -InstallerPath $installer -Channel $info.channel
         }
@@ -474,7 +525,8 @@ function Invoke-FullPipeline {
     Write-Ok "Version: $($info.version) (canal $($info.channel))"
     $installer = Get-LatestInstaller
     if ($installer) { Write-Ok "Instalador: $($installer.FullName)" }
-    if ($BumpType) { Write-Host "    Para publicar: GESTOR opcion 6 (o release.ps1 -Action publish -Approve)" -ForegroundColor Yellow }
+    if ($BumpType -and $DoCommitPush) { Write-Host "    Rama y etiqueta ya publicadas. Para publicar la release: GESTOR opcion 7 (o release.ps1 -Action publish -Approve)" -ForegroundColor Yellow }
+    elseif ($BumpType) { Write-Host "    Para publicar: GESTOR opcion 7 (o release.ps1 -Action publish -Approve)" -ForegroundColor Yellow }
 }
 
 Write-Host "FlowDashboard release.ps1 - accion: $Action" -ForegroundColor Magenta
@@ -486,7 +538,7 @@ switch ($Action) {
     "stable" {
         $type = $Bump
         if (-not $type -or $type -eq "beta") { $type = "patch" }
-        Invoke-FullPipeline -BumpType $type
+        Invoke-FullPipeline -BumpType $type -DoCommitPush:$CommitPush
     }
     "publish" { Invoke-Preflight -RequirePublish; Invoke-Publish }
     "restore" { Invoke-Restore -Name $RestorePoint }
