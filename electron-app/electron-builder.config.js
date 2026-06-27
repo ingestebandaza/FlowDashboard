@@ -41,7 +41,6 @@ module.exports = {
     '!node_modules/electron-builder/**/*',
     '!node_modules/app-builder-bin/**/*',
     '!node_modules/app-builder-lib/**/*',
-    '!node_modules/builder-util-runtime/**/*',
     '!node_modules/builder-util/**/*',
     '!node_modules/dmg-builder/**/*',
     '!node_modules/nsis/**/*',
