@@ -1,3 +1,22 @@
+## ULTIMOS CAMBIOS (2026-06-28) - Fix instalador 2.1.x: builder-util-runtime + Supabase publico en PRODUCT_MODE
+
+**COMMERCIAL-V2-FIX-INSTALL-2.1.x-01:**
+- **Estado:** IMPLEMENTADO. No modifica H.264/WebCodecs, Grid/Focus, scrcpy-control, FlowTouch, pipeline de video ni el control tactil.
+- **Motivo:** Al instalar `FlowDashboard-Setup-2.1.1.exe` en una maquina limpia aparecieron dos fallos.
+- **BUG 1 - `Cannot find module 'builder-util-runtime'`:**
+  - Causa: `electron-app/electron-builder.config.js` excluia `node_modules/builder-util-runtime/**/*`, pero ese paquete es dependencia en runtime de `electron-updater`, no solo build.
+  - Fix: se elimino esa unica linea de exclusion. Se conservan las exclusiones de paquetes solo-build (`app-builder-lib`, `builder-util`, `dmg-builder`, `nsis`, `winCodeSign`, `app-builder-bin`, `electron-builder`).
+- **BUG 2 - `Supabase no configurado. No se permite modo local en esta build.`:**
+  - Causa: en build empaquetado el backend corre congelado (`PRODUCT_MODE=True`); no leia `.supabase_config.json` y solo tomaba `SUPABASE_URL`/`SUPABASE_ANON_KEY` del entorno, que en una maquina limpia estan vacios. Ademas `config/public/supabase.json` nunca se empaquetaba.
+  - Fix (A+B): `local_adb_server.py` ahora, solo en `PRODUCT_MODE`, rellena url/anon vacios desde `config/public/supabase.json` (en `RESOURCE_DIR`) y, como ultimo recurso, desde valores publicos por defecto embebidos. Las variables de entorno siguen teniendo prioridad. `scripts/build/prepare-commercial-resources.ps1` copia `config/public/supabase.json` al staging y lo agrega a `requiredRelativePaths`.
+  - Seguridad: la anon key es publica (RLS estricto, migracion 005; rol anon solo ejecuta RPC `validate_flowdashboard_license`). `scan-secrets.ps1` la permite via `Test-PublicAnonJwt`. La service_role sigue bloqueada.
+- **Archivos Actualizados:**
+  - `electron-app/electron-builder.config.js`
+  - `local_adb_server.py`
+  - `scripts/build/prepare-commercial-resources.ps1`
+  - `PROJECT_CONTEXT.md`
+- **Validacion:** `node --check` del config (OK), `py_compile` de `local_adb_server.py` (OK), PSParser del script de preparacion (OK), `scan-secrets -Scope tracked` (0 hallazgos). Pendiente: rebuild 2.1.2 y reinstalacion en maquina limpia (a cargo del usuario).
+
 ## ULTIMOS CAMBIOS (2026-06-24) - Fase 9 comercial: actualizador Electron
 
 **COMMERCIAL-V2-PHASE9_ELECTRON_UPDATER-01:**
@@ -195,6 +214,7 @@
   - `/health` reporta `productMode` e `isFrozen`.
   - `--self-check` valida ADB, scrcpy, `scrcpy-server.jar`, H.264 raw, scrcpy-control, WebSocket y APK FlowAgent.
   - En producto se desactiva local license fallback, no se lee `.supabase_config.json` empaquetado y se ignora `SUPABASE_SERVICE_ROLE_KEY`.
+  - En producto el backend obtiene la configuracion publica de Supabase (url + anon key) por este orden: variables de entorno `SUPABASE_URL`/`SUPABASE_ANON_KEY` (override), luego `config/public/supabase.json` empaquetado en `RESOURCE_DIR` (copiado por `prepare-commercial-resources.ps1` a `resources/config/public/supabase.json`), y como ultimo recurso los valores publicos por defecto embebidos en `local_adb_server.py`. La anon key es publica y segura (RLS estricto, migracion 005; el rol anon solo puede ejecutar la RPC `validate_flowdashboard_license`). Este flujo solo aplica en `PRODUCT_MODE`; en desarrollo el comportamiento no cambia.
 - **scrcpy Manager:**
   - `scrcpy_manager.py` usa rutas desde `FLOWDASHBOARD_RESOURCE_DIR`, `FLOWDASHBOARD_ADB` y `SCRCPY_SERVER_JAR`; no depende de `adb` del PATH.
 - **FlowMail:**
@@ -4820,15 +4840,15 @@ AuditorÃ­a tÃ©cnica profunda sobre la viabilidad de `scrcpy-control` como motor 
 **Restore Point:**
 - `restore_points/2026-06-11_PRE_HOTFIX_UI_BOOT_01_LOADING_DEVICES`
 
-## Registro de Cambios Recientes (Visión UI y Core)
+## Registro de Cambios Recientes (Visiï¿½n UI y Core)
 
 ### Fase HOTFIX-H264-RECONNECT-RACE-01 (Estabilidad H.264)
 - **Fecha:** 2026-06-21
-- **Problema:** Tras reiniciar un dispositivo, el stream H.264 quedaba con canvas negro a pesar de conectarse. Requería cambio manual de calidad para recuperar el vídeo.
-- **Causa Raíz:** Condición de carrera temporal. Al reconectar ('offline' -> 'device'), app.js detectaba el cambio y llamaba a createCanvasesForVisibleDevices(). Simultáneamente, el timeout de 250ms de refreshDeviceStreamAfterReconnect volvía a forzar createCanvasesForVisibleDevices(). Como el WebSocket aún estaba CONNECTING (scrcpy tarda ~500ms en emitir frames), se abría un **segundo WebSocket**. El primer socket consumía el SPS/PPS pero los ignoraba por el cambio de puntero, y el segundo socket nunca los recibía, atascando al VideoDecoder.
-- **Solución:**
-  1. Se protegió attach y attachFocus en stream-renderer-h264.js para no invocar session.open() si session.ws.readyState === WebSocket.CONNECTING.
-  2. Se limpió refreshDeviceStreamAfterReconnect en app.js para evitar que elimine destructivamente las referencias y evite dobles llamados redundantes.
+- **Problema:** Tras reiniciar un dispositivo, el stream H.264 quedaba con canvas negro a pesar de conectarse. Requerï¿½a cambio manual de calidad para recuperar el vï¿½deo.
+- **Causa Raï¿½z:** Condiciï¿½n de carrera temporal. Al reconectar ('offline' -> 'device'), app.js detectaba el cambio y llamaba a createCanvasesForVisibleDevices(). Simultï¿½neamente, el timeout de 250ms de refreshDeviceStreamAfterReconnect volvï¿½a a forzar createCanvasesForVisibleDevices(). Como el WebSocket aï¿½n estaba CONNECTING (scrcpy tarda ~500ms en emitir frames), se abrï¿½a un **segundo WebSocket**. El primer socket consumï¿½a el SPS/PPS pero los ignoraba por el cambio de puntero, y el segundo socket nunca los recibï¿½a, atascando al VideoDecoder.
+- **Soluciï¿½n:**
+  1. Se protegiï¿½ attach y attachFocus en stream-renderer-h264.js para no invocar session.open() si session.ws.readyState === WebSocket.CONNECTING.
+  2. Se limpiï¿½ refreshDeviceStreamAfterReconnect en app.js para evitar que elimine destructivamente las referencias y evite dobles llamados redundantes.
 - **Estado:** Implementado y verificado.
 
 

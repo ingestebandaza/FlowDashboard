@@ -871,6 +871,26 @@ CAPSOLVER_API_KEY = ""
 ALLOW_LOCAL_LICENSE_MODE = (not PRODUCT_MODE) and _truthy_env("FLOWDASHBOARD_ALLOW_LOCAL_LICENSE")
 USE_SYSTEM_PROXY = _truthy_env("FLOWDASHBOARD_USE_SYSTEM_PROXY")
 
+SUPABASE_PUBLIC_URL_DEFAULT = "https://qcwvfeqyczkhmkhqicqi.supabase.co"
+SUPABASE_PUBLIC_ANON_KEY_DEFAULT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjd3ZmZXF5Y3praG1raHFpY3FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2OTg2MzcsImV4cCI6MjA5NDI3NDYzN30.XL3NLmiFZLbH-4sEMTlNn_2ni2ZHicrgXOfMAKb1hqs"
+
+
+def _load_public_supabase_config():
+    for root in (RESOURCE_DIR, BASE_DIR):
+        path = root / "config" / "public" / "supabase.json"
+        try:
+            if path.exists():
+                with path.open("r", encoding="utf-8") as fh:
+                    data = json.load(fh)
+                url = str(data.get("url") or data.get("SUPABASE_URL") or "").strip()
+                anon = str(data.get("anonKey") or data.get("SUPABASE_ANON_KEY") or "").strip()
+                if url or anon:
+                    return url, anon
+        except Exception:
+            pass
+    return "", ""
+
+
 if (not PRODUCT_MODE) and SUPABASE_CONFIG_FILE.exists():
     try:
         with SUPABASE_CONFIG_FILE.open("r", encoding="utf-8") as fh:
@@ -891,6 +911,18 @@ else:
     # Solo desarrollo: service_role puede existir en el entorno local del PC de trabajo.
     SUPABASE_API_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", os.getenv("SUPABASE_API_KEY", os.getenv("SUPABASE_ANON_KEY", SUPABASE_API_KEY)))
 CAPSOLVER_API_KEY = os.getenv("CAPSOLVER_API_KEY", CAPSOLVER_API_KEY)
+
+if PRODUCT_MODE:
+    if not SUPABASE_URL or not SUPABASE_API_KEY:
+        _pub_url, _pub_anon = _load_public_supabase_config()
+        if not SUPABASE_URL and _pub_url:
+            SUPABASE_URL = _pub_url
+        if not SUPABASE_API_KEY and _pub_anon:
+            SUPABASE_API_KEY = _pub_anon
+    if not SUPABASE_URL:
+        SUPABASE_URL = SUPABASE_PUBLIC_URL_DEFAULT
+    if not SUPABASE_API_KEY:
+        SUPABASE_API_KEY = SUPABASE_PUBLIC_ANON_KEY_DEFAULT
 
 SUPABASE_HEADERS = {
     "apikey": SUPABASE_API_KEY,

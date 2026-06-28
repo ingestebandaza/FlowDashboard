@@ -131,6 +131,9 @@ if (Test-Path -LiteralPath $codesignCer -PathType Leaf) {
     Copy-ResourceFile $codesignCer "flowdashboard-codesign.cer" "self-signed code-signing certificate"
 }
 
+$publicSupabase = Join-Path $RepoRoot "config\public\supabase.json"
+Copy-ResourceFile $publicSupabase "config\public\supabase.json" "public Supabase config (anon)"
+
 $scriptFiles = @("Login.js", "Register.js")
 foreach ($scriptFile in $scriptFiles) {
     $source = Join-Path $RepoRoot $scriptFile
@@ -200,6 +203,7 @@ $requiredRelativePaths = @(
     "android/flowagent/agent-v1.0.0-universal.apk",
     "Herramientas/FlowTrackName.exe",
     "scripts/Login.js",
+    "config/public/supabase.json",
     "THIRD_PARTY_NOTICES.txt"
 )
 $stagedPaths = @{}
