@@ -10,12 +10,16 @@
   - Causa: en build empaquetado el backend corre congelado (`PRODUCT_MODE=True`); no leia `.supabase_config.json` y solo tomaba `SUPABASE_URL`/`SUPABASE_ANON_KEY` del entorno, que en una maquina limpia estan vacios. Ademas `config/public/supabase.json` nunca se empaquetaba.
   - Fix (A+B): `local_adb_server.py` ahora, solo en `PRODUCT_MODE`, rellena url/anon vacios desde `config/public/supabase.json` (en `RESOURCE_DIR`) y, como ultimo recurso, desde valores publicos por defecto embebidos. Las variables de entorno siguen teniendo prioridad. `scripts/build/prepare-commercial-resources.ps1` copia `config/public/supabase.json` al staging y lo agrega a `requiredRelativePaths`.
   - Seguridad: la anon key es publica (RLS estricto, migracion 005; rol anon solo ejecuta RPC `validate_flowdashboard_license`). `scan-secrets.ps1` la permite via `Test-PublicAnonJwt`. La service_role sigue bloqueada.
+- **BUG 3 - Release rapida abortaba con codigo 1 tras empaquetar:**
+  - Causa: `config/public/supabase.json` se empaqueta tambien suelto en `release_packages/win-unpacked/resources/config/public/supabase.json`. El escaner inline de `scripts/release/release.ps1` (Step-SecretScan) busca el literal `service_role` en los `.json` de `release_packages`, y los comentarios del JSON contenian esa palabra, abortando la release.
+  - Fix: se reformularon los comentarios `_comment_*` de `config/public/supabase.json` para no incluir los literales bloqueados (`service_role`, etc.) manteniendo el significado. El escaner sigue estricto para el resto.
 - **Archivos Actualizados:**
   - `electron-app/electron-builder.config.js`
   - `local_adb_server.py`
   - `scripts/build/prepare-commercial-resources.ps1`
+  - `config/public/supabase.json`
   - `PROJECT_CONTEXT.md`
-- **Validacion:** `node --check` del config (OK), `py_compile` de `local_adb_server.py` (OK), PSParser del script de preparacion (OK), `scan-secrets -Scope tracked` (0 hallazgos). Pendiente: rebuild 2.1.2 y reinstalacion en maquina limpia (a cargo del usuario).
+- **Validacion:** `node --check` del config (OK), `py_compile` de `local_adb_server.py` (OK), PSParser del script de preparacion (OK), self-check del backend empaquetado en PRODUCT_MODE (`ok=true`, `supabaseConfigured=true`), `prepare-commercial-resources.ps1` (OK, 443 archivos, supabase.json staged), build completo del instalador con `build-electron-installer.ps1` (`ok=true`, `FlowDashboard-Setup-*.exe` generado), simulacion de Step-SecretScan sobre `release_packages` (limpio) y `scan-secrets -Scope tracked` (0 hallazgos). Pendiente: release 2.1.2 y reinstalacion en maquina limpia (a cargo del usuario).
 
 ## ULTIMOS CAMBIOS (2026-06-24) - Fase 9 comercial: actualizador Electron
 
