@@ -10,7 +10,9 @@ param(
 
     [switch]$Approve,
 
-    [switch]$CommitPush
+    [switch]$CommitPush,
+
+    [string]$NotesPath
 )
 
 $ErrorActionPreference = "Stop"
@@ -329,24 +331,31 @@ function Step-ReleaseNotes {
     param([string]$Version, [string]$Channel)
     Write-Step "Notas de release"
     $notes = Join-Path $RepoRoot "RELEASE_NOTES_$Version.md"
-    if (-not (Test-Path -LiteralPath $notes)) {
-        $text = @(
-            "# Release Notes - FlowDashboard $Version",
-            "",
-            "Canal: $Channel",
-            "Fecha: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd'))",
-            "",
-            "## Cambios",
-            "",
-            "- Pendiente de completar por el propietario.",
-            ""
-        ) -join [Environment]::NewLine
-        $encoding = New-Object System.Text.UTF8Encoding($false)
-        [System.IO.File]::WriteAllText($notes, $text, $encoding)
-        Write-Ok "Generadas $notes"
-    } else {
-        Write-Ok "Ya existen $notes"
+    $changes = @()
+    if ($NotesPath -and (Test-Path -LiteralPath $NotesPath)) {
+        $raw = Get-Content -LiteralPath $NotesPath -Encoding UTF8
+        foreach ($line in $raw) {
+            $t = $line.TrimEnd()
+            if ($t.Trim().Length -eq 0) { continue }
+            if ($t -match '^\s*[-*]') { $changes += $t } else { $changes += "- $($t.Trim())" }
+        }
     }
+    if ($changes.Count -eq 0) {
+        if (Test-Path -LiteralPath $notes) { Write-Ok "Ya existen $notes"; return $notes }
+        $changes = @("- Pendiente de completar por el propietario.")
+    }
+    $text = (@(
+        "# Release Notes - FlowDashboard $Version",
+        "",
+        "Canal: $Channel",
+        "Fecha: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd'))",
+        "",
+        "## Cambios",
+        ""
+    ) + $changes + @("")) -join [Environment]::NewLine
+    $encoding = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($notes, $text, $encoding)
+    Write-Ok "Generadas $notes"
     return $notes
 }
 
@@ -435,6 +444,12 @@ function Invoke-Publish {
     $ghOk = $false
     try { & gh --version 2>$null | Out-Null; if ($LASTEXITCODE -eq 0) { $ghOk = $true } } catch { }
     if (-not $ghOk) { throw "GitHub CLI requerido para publicar." }
+    if ($NotesPath -and (Test-Path -LiteralPath $NotesPath)) {
+        $notesFile = Step-ReleaseNotes -Version $info.version -Channel $info.channel
+        & gh release edit $tag --notes-file $notesFile
+        if ($LASTEXITCODE -ne 0) { throw "gh release edit (notas) fallo" }
+        Write-Ok "Notas de la release $tag actualizadas"
+    }
     & gh release edit $tag --draft=false
     if ($LASTEXITCODE -ne 0) { throw "gh release edit fallo" }
     Write-Ok "Release $tag publicada"

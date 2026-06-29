@@ -1,3 +1,15 @@
+## ULTIMOS CAMBIOS (2026-06-29) - Release notes editables desde el GESTOR
+
+**COMMERCIAL-V2-RELEASE-NOTES-GESTOR-01:**
+- **Estado:** IMPLEMENTADO. Toca `scripts/release/release.ps1` y `scripts/release/gestor.ps1`. No afecta runtime ni codigo protegido. Sintaxis verificada con PSParser (ambos OK).
+- **Problema:** Al publicar (GESTOR opcion 6 -> opcion 7), en la pagina de GitHub salia "Cambios: Pendiente de completar por el propietario." porque `Step-ReleaseNotes` generaba el archivo con un placeholder fijo y no permitia documentar los cambios reales.
+- **Solucion:**
+  - `release.ps1`: nuevo parametro `[string]$NotesPath` (param block). `Step-ReleaseNotes` (~328) ahora, si `$NotesPath` apunta a un archivo existente, lee sus lineas, ignora vacias, antepone "- " a las que no empiecen por `-`/`*`, y construye `RELEASE_NOTES_<version>.md` con esos cambios bajo "## Cambios" (sobrescribe). Sin notas: respeta el archivo si ya existe, o usa el placeholder. `Invoke-Publish` (~430): si recibe `$NotesPath`, regenera las notas y hace `gh release edit <tag> --notes-file` ANTES de `--draft=false` (permite arreglar un draft que quedo en "Pendiente").
+  - `gestor.ps1`: nueva funcion `Read-ReleaseNotes` que ofrece 1) escribir linea por linea (vacia para terminar), 2) abrir Bloc de notas (Start-Process -Wait, filtra lineas vacias y las que empiezan con `#`), 3) omitir. Devuelve la ruta de un archivo temporal en `%TEMP%` o `$null`. `Action-QuickRelease` (opcion 6) y `Action-Publish` (opcion 7) la invocan y, si hay notas, agregan `-NotesPath <temp>` a los args de `release.ps1`.
+- **Flujo para el usuario:** opcion 6 -> elige bump -> documenta los cambios (o los escribe luego en opcion 7) -> se suben al draft/release de GitHub automaticamente.
+- **Nota menor:** editar notas en opcion 7 regenera el `RELEASE_NOTES_<version>.md` local sin commitearlo (la accion publish no commitea); divergencia cosmetica aceptable.
+- **Accion pendiente (usuario):** commitear/pushear los cambios (modo ahorro de costos).
+
 ## ULTIMOS CAMBIOS (2026-06-29) - Diagnostico fallo Release rapida (codigo 1) tras el fix del icono
 
 **COMMERCIAL-V2-DIAG-RELEASE-WINCODESIGN-01:**

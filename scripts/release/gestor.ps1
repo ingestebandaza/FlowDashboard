@@ -60,6 +60,41 @@ function Action-Stable {
     }
 }
 
+function Read-ReleaseNotes {
+    Write-Host ""
+    Write-Host "Documentar los cambios de esta version (apareceran en GitHub):" -ForegroundColor Cyan
+    Write-Host "  1. Escribir aqui (una linea por cambio)"
+    Write-Host "  2. Abrir el Bloc de notas"
+    Write-Host "  3. Omitir (se usara el texto pendiente por defecto)"
+    $sel = Read-Host "Seleccione"
+    $tmp = Join-Path $env:TEMP ("flowdashboard_release_notes_{0}.txt" -f (Get-Date -Format "yyyyMMddHHmmss"))
+    switch ($sel) {
+        "1" {
+            Write-Host "Escriba un cambio por linea. Deje una linea vacia para terminar:" -ForegroundColor DarkGray
+            $lines = @()
+            while ($true) {
+                $line = Read-Host
+                if ($line -eq "") { break }
+                $lines += $line
+            }
+            if ($lines.Count -eq 0) { return $null }
+            Set-Content -LiteralPath $tmp -Value $lines -Encoding UTF8
+            return $tmp
+        }
+        "2" {
+            $template = @("Escriba un cambio por linea.", "Las lineas que empiecen con # se ignoran.", "", "")
+            Set-Content -LiteralPath $tmp -Value $template -Encoding UTF8
+            Write-Host "Guarde y cierre el Bloc de notas para continuar..." -ForegroundColor DarkGray
+            Start-Process -FilePath notepad.exe -ArgumentList $tmp -Wait
+            $content = @(Get-Content -LiteralPath $tmp -Encoding UTF8 | Where-Object { $_.Trim() -ne "" -and -not $_.TrimStart().StartsWith("#") })
+            if ($content.Count -eq 0) { return $null }
+            Set-Content -LiteralPath $tmp -Value $content -Encoding UTF8
+            return $tmp
+        }
+        default { return $null }
+    }
+}
+
 function Action-QuickRelease {
     Write-Host "RELEASE RAPIDA" -ForegroundColor Green
     Write-Host "Genera la build Stable, confirma el incremento de version, hace push de la rama" -ForegroundColor DarkGray
@@ -72,7 +107,10 @@ function Action-QuickRelease {
     $sel = Read-Host "Seleccione"
     $bump = switch ($sel) { "1" { "patch" } "2" { "minor" } "3" { "major" } default { $null } }
     if (-not $bump) { Write-Host "Opcion invalida" -ForegroundColor Red; return }
-    Invoke-Release @("-Action", "stable", "-Bump", $bump, "-CommitPush") | Out-Null
+    $notesPath = Read-ReleaseNotes
+    $relArgs = @("-Action", "stable", "-Bump", $bump, "-CommitPush")
+    if ($notesPath) { $relArgs += @("-NotesPath", $notesPath) }
+    Invoke-Release $relArgs | Out-Null
     $code = $LASTEXITCODE
     if ($code -eq 0) {
         Write-Host ""
@@ -85,9 +123,13 @@ function Action-QuickRelease {
 
 function Action-Publish {
     Write-Host "Esta a punto de publicar la release preparada en GitHub." -ForegroundColor Yellow
+    Write-Host "Puede actualizar los cambios (release notes) antes de publicar." -ForegroundColor DarkGray
+    $notesPath = Read-ReleaseNotes
     $confirm = Read-Host "Escriba PUBLICAR para confirmar"
     if ($confirm -eq "PUBLICAR") {
-        Invoke-Release @("-Action", "publish", "-Approve") | Out-Null
+        $relArgs = @("-Action", "publish", "-Approve")
+        if ($notesPath) { $relArgs += @("-NotesPath", $notesPath) }
+        Invoke-Release $relArgs | Out-Null
     } else {
         Write-Host "Publicacion cancelada." -ForegroundColor Yellow
     }
