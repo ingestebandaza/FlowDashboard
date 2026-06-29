@@ -19,6 +19,8 @@ STEPS = [
     "005_rls_grants_cutover",
     "006_admin_rpcs",
     "007_entitlements_features",
+    "008_seed_plan_limits",
+    "009_rate_limit_validation",
 ]
 
 

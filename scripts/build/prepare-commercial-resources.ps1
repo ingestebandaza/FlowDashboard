@@ -132,7 +132,17 @@ if (Test-Path -LiteralPath $codesignCer -PathType Leaf) {
 }
 
 $publicSupabase = Join-Path $RepoRoot "config\public\supabase.json"
-Copy-ResourceFile $publicSupabase "config\public\supabase.json" "public Supabase config (anon)"
+Assert-File $publicSupabase "public Supabase config (anon)"
+$publicSupabaseRaw = Get-Content -LiteralPath $publicSupabase -Raw | ConvertFrom-Json
+$publicSupabaseUrl = if ($publicSupabaseRaw.url) { [string]$publicSupabaseRaw.url } else { [string]$publicSupabaseRaw.SUPABASE_URL }
+$publicSupabaseAnon = if ($publicSupabaseRaw.anonKey) { [string]$publicSupabaseRaw.anonKey } else { [string]$publicSupabaseRaw.SUPABASE_ANON_KEY }
+if ([string]::IsNullOrWhiteSpace($publicSupabaseUrl) -or [string]::IsNullOrWhiteSpace($publicSupabaseAnon)) {
+    throw "public Supabase config is missing url/anonKey"
+}
+$publicSupabaseTarget = Join-Path $OutputRootFull "config\public\supabase.json"
+New-Item -ItemType Directory -Force -Path (Split-Path -Parent $publicSupabaseTarget) | Out-Null
+$publicSupabaseMinimal = [ordered]@{ url = $publicSupabaseUrl; anonKey = $publicSupabaseAnon } | ConvertTo-Json
+[System.IO.File]::WriteAllText($publicSupabaseTarget, $publicSupabaseMinimal, (New-Object System.Text.UTF8Encoding($false)))
 
 $scriptFiles = @("Login.js", "Register.js")
 foreach ($scriptFile in $scriptFiles) {

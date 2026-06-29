@@ -1,3 +1,19 @@
+## ULTIMOS CAMBIOS (2026-06-29) - Seguridad servidor: rate-limit anti fuerza bruta en el RPC de licencias
+
+**COMMERCIAL-V2-SEC-RPC-RATELIMIT-01:**
+- **Estado:** IMPLEMENTADO (SQL). No toca el cliente ni runtime protegido.
+- **Contexto:** El rol `anon` solo puede ejecutar `validate_flowdashboard_license` (`004_validate_v2.sql:244`), que es la unica superficie expuesta. Faltaba proteccion anti fuerza bruta de claves de licencia.
+- **Fix:** migracion `database/migrations/009_rate_limit_validation.sql` (+ rollback `rollbacks/009_rollback.sql`). `CREATE OR REPLACE` del RPC con la MISMA firma (13 params) y MISMO contrato de respuesta. Antes de buscar la licencia, cuenta intentos `license_not_found` recientes por `device_hash` e `ip` sobre `app_access_logs` (ventana 10 min; umbral 8/dispositivo, 25/ip) y, si se excede, devuelve `status=error, device_status=rate_limited, reason_code=rate_limited` con mensaje. Solo cuenta `license_not_found`: un usuario con licencia valida (`approved`) o expirada/bloqueada NUNCA se ve afectado. El evento de bloqueo se registra con `decision='throttled'` para no realimentar el contador (self-healing). Dos indices parciales nuevos en `app_access_logs` para el conteo. El cliente (`app.js:7817`) ya maneja cualquier `device_status` desconocido mostrando `message`, asi que no requiere cambios. `scripts/db/apply_migrations.py` ahora incluye los pasos 008 y 009.
+- **Validacion:** diff del cuerpo del RPC 009 vs 004 = solo las adiciones previstas; rollback 009 vs 004 = codigo identico. Pendiente (usuario): aplicar `apply_migrations.py --only 009` contra Supabase y verificar.
+
+## ULTIMOS CAMBIOS (2026-06-29) - Endurecimiento: JSON Supabase empaquetado minimo (sin fuga de arquitectura)
+
+**COMMERCIAL-V2-SEC-SUPABASE-JSON-01:**
+- **Estado:** IMPLEMENTADO. No toca runtime protegido ni el flujo de carga del backend.
+- **Contexto:** El instalador dejaba en `resources/config/public/supabase.json` la copia literal del archivo del repo, con comentarios `_comment_*` que describian arquitectura interna (RLS, migracion 005, nombre de la RPC). La anon key es publica/segura por diseno (RLS estricto + anon solo ejecuta la RPC `validate_flowdashboard_license`), pero esos comentarios facilitaban reconocimiento a un atacante.
+- **Fix:** `scripts/build/prepare-commercial-resources.ps1` ya no copia el archivo tal cual; ahora lee el JSON del repo, extrae solo `url`/`anonKey` (acepta tambien `SUPABASE_URL`/`SUPABASE_ANON_KEY`) y escribe en staging un JSON minimo (solo esas dos claves, UTF-8 sin BOM, sin comentarios). El repo conserva el `config/public/supabase.json` documentado. El backend lee `url`/`anonKey`, que se mantienen, asi que no cambia el comportamiento.
+- **Validacion:** PSParser del script (OK), generacion del JSON minimo contra el archivo real (solo `url`+`anonKey`). Pendiente (usuario): build 2.1.x y verificar el archivo instalado.
+
 ## ULTIMOS CAMBIOS (2026-06-28) - Fix instalador 2.1.x: builder-util-runtime + Supabase publico en PRODUCT_MODE
 
 **COMMERCIAL-V2-FIX-INSTALL-2.1.x-01:**
