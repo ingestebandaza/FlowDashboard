@@ -1,3 +1,22 @@
+## ULTIMOS CAMBIOS (2026-06-29) - Diagnostico fallo Release rapida (codigo 1) tras el fix del icono
+
+**COMMERCIAL-V2-DIAG-RELEASE-WINCODESIGN-01:**
+- **Estado:** DIAGNOSTICADO Y RESUELTO. No requirio cambios de codigo adicionales (la config del icono es correcta). El fallo era una descarga transitoria incompleta.
+- **Sintoma:** GESTOR opcion 6 (Release rapida, bump patch) fallo con "La release rapida fallo (codigo 1)". El log que se vio estaba truncado tras los 2 PyInstaller; el error real (en el paso electron-builder) no aparecia.
+- **Evidencia recogida:** backend+mailhelper PyInstaller OK; self-check del backend empaquetado OK (`ok:true`, exit 0); dotnet publicado OK; `build/staging/commercial-resources` poblado; `release_packages/win-unpacked/FlowDashboard.exe` (176MB) creado PERO con ProductVersion/FileVersion **VACIOS**, y **sin** instalador NSIS ni `latest.yml`. En la cache `winCodeSign` aparecian multiples carpetas numeradas a medio extraer creadas durante la corrida (reintentos).
+- **Causa raiz:** el fix del icono (`signAndEditExecutable: true`, ver entrada siguiente) hace que electron-builder invoque **rcedit** para incrustar icono+version en `FlowDashboard.exe`. `rcedit-x64.exe` vive dentro del paquete **winCodeSign**, que electron-builder **descarga de GitHub** la primera vez (~5.6MB). En la corrida del usuario esa descarga/extraccion no se completo, por lo que rcedit no pudo editar el exe (de ahi la version vacia) y el build aborto con codigo 1 DESPUES de empaquetar `win-unpacked` pero ANTES del NSIS. Con `signAndEditExecutable:false` esto no ocurria porque rcedit no se ejecutaba.
+- **Resolucion/verificacion:** se ejecuto `npm run build:win` completo: rcedit corrio OK (`command executed`, version incrustada 2.1.2.0), NSIS genero `FlowDashboard-Setup-2.1.2.exe` (354MB) + `latest.yml`, sin errores en el log. `winCodeSign-2.6.0` quedo **cacheado** (`%LOCALAPPDATA%\electron-builder\Cache\winCodeSign\winCodeSign-2.6.0\rcedit-x64.exe`), por lo que las siguientes builds lo reutilizan ("found existing") y no vuelven a descargarlo. La limpieza con `-Clean` solo borra `release_packages`, no la cache de electron-builder.
+- **Accion pendiente (usuario):** reintentar GESTOR opcion 6; ahora completa. Si en una maquina con cache limpia volviera a fallar la descarga de winCodeSign por red, basta reintentar (la descarga es puntual y queda cacheada).
+
+## ULTIMOS CAMBIOS (2026-06-29) - Fix icono del instalador: incrustar icono del proyecto en el .exe
+
+**COMMERCIAL-V2-FIX-INSTALLER-ICON-01:**
+- **Estado:** IMPLEMENTADO. Solo toca `electron-app/electron-builder.config.js`. No afecta runtime ni codigo protegido.
+- **Contexto:** Al instalar `FlowDashboard-Setup-2.1.2.exe`, el icono que aparece en "Programas instalados" / el `.exe` era el icono por defecto de Electron, no el del proyecto. El arte de `assets/icon.ico` (6 tamanos: 16/32/48/64/128/256) es CORRECTO e identico a `assets/icon.png` (diff de pixeles 1.3/765); el problema no era el icono sino que electron-builder no lo incrustaba.
+- **Causa:** `win.signAndEditExecutable: false`. Con ese flag, electron-builder no ejecuta `rcedit` y por tanto NO incrusta el icono ni el nombre/version en el `.exe` (el icono solo queda en el instalador NSIS, no en el ejecutable instalado). Confirmado por issues oficiales electron-builder #4343, #5784, #6934.
+- **Fix:** `signAndEditExecutable: false` -> `true`. Como no hay certificado y `forceCodeSigning:false`, electron-builder incrusta icono+version SIN firmar (salta la firma). `icon: assets/icon.ico` ya estaba bien.
+- **Validacion:** `node -e require(config)` OK (`win.signAndEditExecutable=true`). VERIFICADO con build real: `npm run build:win` completo, rcedit incrusto en `FlowDashboard.exe` ProductVersion=2.1.2.0 / FileVersion=2.1.2 / ProductName=FlowDashboard + el icono. NOTA: el primer build con este flag descarga `winCodeSign` (rcedit) de GitHub; ver entrada COMMERCIAL-V2-DIAG-RELEASE-WINCODESIGN-01 sobre el fallo de release que esto provoco y su resolucion. NOTA: si Windows sigue mostrando el icono viejo por cache, limpiar cache de iconos o reinstalar.
+
 ## ULTIMOS CAMBIOS (2026-06-29) - Seguridad servidor: rate-limit anti fuerza bruta en el RPC de licencias
 
 **COMMERCIAL-V2-SEC-RPC-RATELIMIT-01:**

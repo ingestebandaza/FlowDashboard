@@ -67,7 +67,7 @@ module.exports = {
     ],
     icon: 'assets/icon.ico',
     publisherName: 'FlowDashboard',
-    signAndEditExecutable: false,
+    signAndEditExecutable: true,
     signDlls: false,
     forceCodeSigning: false
   },
